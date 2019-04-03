@@ -1,0 +1,14 @@
+Quart
+Hypercorn
+Flask
+gunicorn
+slackclient
+attrdict
+ruamel.yaml
+urlpath
+pathlib2
+packaging
+virtualenv
+Werkzeug
+sh
+python-decouple

@@ -1,0 +1,103 @@
+---
+service:
+  name: function1
+
+plugins:
+  - serverless-python-requirements
+  - serverless-plugin-tracing
+
+provider:
+  name: aws
+  runtime: python3.6
+  region: us-east-1
+
+  stage: ${opt:stage, self:custom.defaultStage}
+  profile: ${opt:profile, "default"}
+  role: subhubRole
+  memorySize: 256
+  timeout: 10
+  tracing: true
+  deploymentBucket:
+    name: my.projects
+  stackTags:
+    service: ${self:service}
+
+package:
+  exclude:
+    - '../**/*'
+  include:
+    - '../subhub/**'
+
+custom:
+  awsAccountId: 177680776199
+  defaultStage: dev
+  pythonRequirements:
+    dockerizePip: 'true'
+    fileName: Pipfile
+    dockerFile: Dockerfile
+  git-repo: https://github.com/mozilla-it/subhub
+
+functions:
+  subhub:
+    name: subhub_${self:provider.stage}
+    description: >
+      funtion1 description
+    handler: wsgi_handler.handler
+    events:
+      - http: ANY /
+      - http: 'ANY {proxy+}'
+    environment:
+      STAGE: ${self:provider.stage}
+
+resources:
+  Resources:
+    subhubRole:
+      Type: AWS::IAM::Role
+      Properties:
+        Path: /service/
+        RoleName: mozilla-it-${self:provider.stage}-role
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        Policies:
+          - PolicyName: mozilla-it-${self:provider.stage}-policy
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource:
+                    - 'Fn::Join': [':', ['arn:aws:logs', Ref: 'AWS::Region', Ref: AWS::AccountId, 'log-group:/aws/lambda/*:*:*']]
+                -  Effect: Allow
+                   Action:
+                     - s3:PutObject
+                   Resource:
+                       - "arn:aws:s3:::${self:provider.deploymentBucket}/*"
+                - Effect: Allow
+                  Action:
+                    - kms:Decrypt
+                  Resource:
+                    - "arn:aws:kms:us-east-1:${self:custom.awsAccountId}:alias/*"
+                    - "arn:aws:kms:us-east-1:${self:custom.awsAccountId}:key/*"
+                - Effect: Allow
+                  Action:
+                    - "xray:PutTraceSegments"
+                    - "xray:PutTelemetryRecords"
+                  Resource:
+                    - "*"
+                # for VPC access
+                - Effect: Allow
+                  Action:
+                    - "ec2:CreateNetworkInterface"
+                    - "ec2:DescribeNetworkInterfaces"
+                    - "ec2:DeleteNetworkInterface"
+                  Resource:
+                    - "*"
