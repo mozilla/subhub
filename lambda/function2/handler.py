@@ -4,9 +4,9 @@
 import json
 
 
-def function2(event, context):
+def handle(event, context):
     body = {
-        'message': 'hello from functions2',
+        'message': 'hello from function2',
         'input': event,
     }
 

@@ -9,7 +9,7 @@ plugins:
 provider:
   name: aws
   runtime: python3.6
-  region: us-east-1
+  region: us-west-2
 
   stage: ${opt:stage, self:custom.defaultStage}
   profile: ${opt:profile, "default"}
@@ -40,7 +40,7 @@ functions:
     name: subhub_${self:provider.stage}
     description: >
       function2 description
-    handler: wsgi_handler.handler
+    handler: handler.handle
     events:
       - http: ANY /
       - http: 'ANY {proxy+}'
