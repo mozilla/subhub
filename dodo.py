@@ -322,7 +322,9 @@ def task_test():
 #        f'--exclude={CFG.APP_SRCTAR}',
 #        '--exclude=__pycache__',
 #        '--exclude=*.pyc',
+#        '--exclude=.tox*',
 #        '--exclude=.env',
+#        '--exclude=.coverage',
 #        '--exclude=.git',
 #    ])
 #    ## it is important to not that this is required to keep the tarballs from
@@ -486,6 +488,7 @@ def task_rmcache():
     names_types = {
         '__pycache__': 'd',
         '.pytest_cache': 'd',
+        'node_modules': 'd',
         '.venv': 'd',
         '.eggs': 'd',
         '.tox': 'd',
