@@ -5,9 +5,15 @@ import json
 
 
 def handle(event, context):
+
+    try:
+        from subhub.main import app
+        result = str(app)
+    except Exception as ex:
+        result = str(ex)
     body = {
         'message': 'hello from function1',
-        'input': event,
+        'result': result,
     }
 
     response = {
