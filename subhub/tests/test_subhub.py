@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask
-from subhub.main import create_app
+import connexion
+from subhub.app import create_app
 
 def test_subhub():
     '''
     something
     '''
     app = create_app()
-    assert isinstance(app, Flask)
+    assert isinstance(app, connexion.FlaskApp)

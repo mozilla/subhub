@@ -7,7 +7,7 @@ import json
 def handle(event, context):
 
     try:
-        from subhub.main import app
+        from subhub.app import app
         result = str(app)
     except Exception as ex:
         result = str(ex)
