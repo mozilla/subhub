@@ -1,6 +1,6 @@
 ---
 service:
-  name: function1
+  name: service1
 
 plugins:
   - serverless-python-requirements
@@ -12,7 +12,7 @@ provider:
   region: us-west-2
 
   stage: ${opt:stage, self:custom.defaultStage}
-  role: subhubRole
+  role: SubhubService1Role
   memorySize: 256
   timeout: 10
   tracing: true
@@ -23,20 +23,21 @@ package:
   exclude:
     - '**/*'
   include:
+    - 'handler.py'
     - 'subhub/**'
 
 custom:
   awsAccountId: 177680776199
   defaultStage: dev
   pythonRequirements:
-    dockerizePip: 'true'
-    fileName: subhub/Pipfile
+    dockerizePip: 'non-linux'
+    fileName: subhub/requirements.txt
     dockerFile: subhub/Dockerfile
   git-repo: https://github.com/mozilla-it/subhub
 
 functions:
-  subhub:
-    name: subhub_${self:provider.stage}
+  service1-function1-dev:
+    name: subhub-${self:service.name}-function1-${self:provider.stage}
     description: >
       function1 description
     handler: handler.handle
@@ -48,11 +49,11 @@ functions:
 
 resources:
   Resources:
-    subhubRole:
+    SubhubService1Role:
       Type: AWS::IAM::Role
       Properties:
         Path: /service/
-        RoleName: mozilla-it-${self:provider.stage}-role
+        RoleName: subhub-service1-${self:provider.stage}-role
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -62,7 +63,7 @@ resources:
                   - lambda.amazonaws.com
               Action: sts:AssumeRole
         Policies:
-          - PolicyName: mozilla-it-${self:provider.stage}-policy
+          - PolicyName: subhub-service1-${self:provider.stage}-policy
             PolicyDocument:
               Version: '2012-10-17'
               Statement:

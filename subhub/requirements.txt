@@ -1,7 +1,5 @@
-Quart
-Hypercorn
 Flask
-gunicorn
+Flask-Cors
 slackclient
 attrdict
 ruamel.yaml
@@ -9,6 +7,5 @@ urlpath
 pathlib2
 packaging
 virtualenv
-Werkzeug
 sh
 python-decouple

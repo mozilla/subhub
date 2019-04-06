@@ -3,22 +3,23 @@
 
 import json
 
+from subhub.main import create_app
 
 def handle(event, context):
-
     try:
-        from subhub.main import app
-        result = str(app)
+        app = create_app()
+        result = 'g2g'
     except Exception as ex:
         result = str(ex)
+
     body = {
-        'message': 'hello from function1',
-        'result': result,
+        "message": "well hello there buddy!",
+        "result": result,
     }
 
     response = {
-        'statusCode': 200,
-        'body': json.dumps(body)
+        "statusCode": 200,
+        "body": json.dumps(body)
     }
 
     return response
