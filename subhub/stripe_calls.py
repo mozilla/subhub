@@ -74,23 +74,31 @@ def list_all_plans(api_token):
     plans = stripe.Plan.list(limit=100)
     return plans, 200
 
-def cancel_subscription(api_token, subscription_id, customer_id):
+def cancel_subscription(api_token, fxa, subscription_id):
     valid_token = api_validation(api_token)
     if not valid_token:
         return 'Missing token ', 400
+    firefox_user = next(f for f in premium_customers if fxa == f['fxa'])
+    # print(f'firefox_user {len(firefox_user)}')
+    if firefox_user['cust_id'] is None:
+        return 'Missing customer ', 400
     tocancel = stripe.Subscription.retrieve(subscription_id)
     print(f'tocancel {tocancel["customer"]}')
-    if tocancel['customer'] == customer_id:
+    if tocancel['customer'] == firefox_user['cust_id']:
         tocancel.delete()
         return tocancel, 201
     else:
         return 'Error cancelling subscription', 400
 
-def subscription_status(api_token, fxa, customer_id):
+def subscription_status(api_token, fxa):
     valid_token = api_validation(api_token)
     if not valid_token:
         return 'Missing token ', 400
-    subscriptions = stripe.Subscription.list(customer=customer_id, limit=100)
+    firefox_user = next(f for f in premium_customers if fxa == f['fxa'])
+    # print(f'firefox_user {len(firefox_user)}')
+    if firefox_user['cust_id'] is None:
+        return 'Missing customer ', 400
+    subscriptions = stripe.Subscription.list(customer=firefox_user['cust_id'], limit=100)
     if subscriptions is None:
         return 'Bad data', 400
     return subscriptions, 201
@@ -99,9 +107,13 @@ def update_payment_method(api_token, fxa, pmt_token, cust_id):
     valid_token = api_validation(api_token)
     if not valid_token:
         return 'Missing token ', 400
-    customer = stripe.Customer.retrieve(cust_id)
+    firefox_user = next(f for f in premium_customers if fxa == f['fxa'])
+    # print(f'firefox_user {len(firefox_user)}')
+    if firefox_user['cust_id'] is None:
+        return 'Missing customer ', 400
+    customer = stripe.Customer.retrieve(firefox_user['cust_id'])
     if customer['metadata']['fxuid'] == fxa:
-        updated_customer = customer.modify(cust_id, source=pmt_token)
+        updated_customer = customer.modify(firefox_user['cust_id'], source=pmt_token)
         return updated_customer, 201
     else:
         return 'Customer mismatch.', 400

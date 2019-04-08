@@ -37,12 +37,6 @@ paths:
           description: FxA ID
           type: string
           required: True
-        - name: customer_id
-          in: query
-          description: Customer ID
-          type: string
-          required: True
-
   /stripe-list-plans:
     get:
       operationId: stripe_calls.list_all_plans
@@ -88,11 +82,6 @@ paths:
           description: FxA ID.
           type: string
           required: True
-        - name: cust_id
-          in: query
-          description: Customer ID.
-          type: string
-          required: True
   /stripe-cancel-subscription:
     post:
       operationId: stripe_calls.cancel_subscription
@@ -113,14 +102,14 @@ paths:
           description: API Token.
           type: string
           required: True
+        - name: fxa
+          in: query
+          description: FxA ID.
+          type: string
+          required: True
         - name: subscription_id
           in: query
           description: Subscription ID.
-          type: string
-          required: True
-        - name: customer_id
-          in: query
-          description: Customer ID.
           type: string
           required: True
   /stripe-plan-subscription:
@@ -193,10 +182,3 @@ paths:
           description: Pay Token.
           type: string
           required: True
-        - name: cust_id
-          in: query
-          description: Customer ID.
-          type: string
-          required: True
-
-
