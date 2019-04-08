@@ -39,6 +39,8 @@ test_requirements = [
     'mock',
     'flake8',
     'moto',
+    'stripe',
+    'connexion',
 ]
 
 extras = {'test': test_requirements}
