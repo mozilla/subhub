@@ -9,3 +9,4 @@ packaging
 virtualenv
 sh
 python-decouple
+stripe
