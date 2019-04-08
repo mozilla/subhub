@@ -158,9 +158,9 @@ paths:
           description: Plan ID.
           type: string
           required: True
-        - name: cust_id
+        - name: email
           in: query
-          description: Customer ID.
+          description: Email address.
           type: string
           required: True
   /stripe-update-payment-method:

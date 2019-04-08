@@ -8,19 +8,23 @@ premium_customers = [
 
 # Stripe methods begin
 
-def create_customer(source_token, fxa):
+def create_customer(source_token, fxa, email):
     """
     Create Stripe customer
     :param source_token:
     :param fxa:
     :return: Stripe Customer
     """
-    customer = stripe.Customer.create(
-        source=source_token,
-        description=fxa,
-        metadata={'fxuid': fxa}
-    )
-    return customer
+    try:
+        customer = stripe.Customer.create(
+            source=source_token,
+            email=email,
+            description=fxa,
+            metadata={'fxuid': fxa}
+        )
+        return customer
+    except stripe.error.InvalidRequestError as e:
+        return str(e)
 
 def subscribe_customer(customer, plan):
     """
@@ -29,34 +33,37 @@ def subscribe_customer(customer, plan):
     :param plan:
     :return: Subscription Object
     """
-    subscription = stripe.Subscription.create(
-        customer=customer,
-        items=[{
-            "plan": plan,
-        },
-        ]
-    )
-    return subscription
+    try:
+        subscription = stripe.Subscription.create(
+            customer=customer,
+            items=[{
+                "plan": plan,
+            },
+            ]
+        )
+        return subscription
+    except stripe.error.InvalidRequestError as e:
+        return str(e)
 
 
-def subscribe_to_plan(api_token, fxa, pmt_token, plan_id, cust_id):
+def subscribe_to_plan(api_token, fxa, pmt_token, plan_id, email):
     valid_token = api_validation(api_token)
     if not valid_token:
         return 'Missing token ', 400
     firefox_user = next(f for f in premium_customers if fxa == f['fxa'])
-    print(f'firefox_user {len(firefox_user)}')
+    # print(f'firefox_user {len(firefox_user)}')
     if firefox_user['cust_id'] is None:
-        customer = create_customer(pmt_token, fxa)
-        print(f'new customer {customer}')
+        customer = create_customer(pmt_token, fxa, email)
+        # print(f'new customer {customer}')
         subscription = subscribe_customer(customer, plan_id)
         for f in premium_customers:
             if f['fxa'] == fxa:
                 f['cust_id'] = customer['id']
                 f['subscriptions'].append(subscription)
-        print(f'premium_customers {premium_customers}')
+        # print(f'premium_customers {premium_customers}')
         return subscription, 201
     else:
-        subscription = subscribe_customer(cust_id, plan_id)
+        subscription = subscribe_customer(firefox_user['cust_id'], plan_id)
         return subscription, 201
 
 
@@ -104,6 +111,9 @@ def fxa_customer_update(api_token, fxa, cust_id):
     pass
 
 def api_validation(api_token):
-    if api_token is not None:
+    if api_token is None:
+        return False
+    elif isinstance(api_token, int):
+        return False
+    else:
         return True
-    return False
