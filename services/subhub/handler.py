@@ -8,7 +8,7 @@ from subhub.main import create_app
 def handle(event, context):
     try:
         app = create_app()
-        result = 'g2g'
+        result = 'good to go!'
     except Exception as ex:
         result = str(ex)
 

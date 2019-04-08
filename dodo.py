@@ -43,7 +43,7 @@ NEWLINE = '\n'
 #DOCKER_COMPOSE_YML = yaml.safe_load(open(f'{CFG.APP_PROJPATH}/docker-compose.yml'))
 #SVCS = DOCKER_COMPOSE_YML['services'].keys()
 
-FUNCTIONS = [item for item in os.listdir('lambda') if os.path.isdir(f'lambda/{item}')]
+SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}')]
 
 def envs(sep):
     return sep.join([

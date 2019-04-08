@@ -1,7 +1,7 @@
 {
-  "name": "function2",
+  "name": "subhub",
   "version": "0.0.1",
-  "description": "function2 desc",
+  "description": "tooling for subhub lambda function deployment",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mozilla-it/subhub"
