@@ -40,9 +40,7 @@ DOIT_CONFIG = {
 SPACE = ' '
 NEWLINE = '\n'
 
-#DOCKER_COMPOSE_YML = yaml.safe_load(open(f'{CFG.APP_PROJPATH}/docker-compose.yml'))
-#SVCS = DOCKER_COMPOSE_YML['services'].keys()
-
+SLS = f'{CFG.APP_REPOROOT}/node_modules/serverless/bin/serverless'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}')]
 
 def envs(sep):
@@ -130,28 +128,6 @@ def task_checkreqs():
         }
     }[get_pkgmgr()]
 
-#@docstr_format(version=MINIMUM_DOCKER_COMPOSE_VERSION)
-#def task_dockercompose():
-#    '''
-#    assert docker-compose version ({version}) or higher
-#    '''
-#    def check_docker_compose():
-#        import re
-#        from subprocess import check_output
-#        from packaging.version import parse as version_parse
-#        pattern = '(docker-compose version) ([0-9.]+(-rc[0-9])?)(, build [a-z0-9]+)'
-#        output = check_output('docker-compose --version', shell=True).decode('utf-8').strip()
-#        regex = re.compile(pattern)
-#        match = regex.search(output)
-#        version = match.groups()[1]
-#        assert version_parse(version) >= version_parse(MINIMUM_DOCKER_COMPOSE_VERSION)
-#
-#    return {
-#        'actions': [
-#            check_docker_compose,
-#        ],
-#    }
-
 def task_noroot():
     '''
     make sure script isn't run as root
@@ -190,80 +166,6 @@ def task_pull():
             ],
         }
 
-#def task_venv():
-#    '''
-#    setup venv
-#    '''
-#    yield {
-#        'name': 'main',
-#        'task_dep': [
-#            'noroot',
-#        ],
-#        'actions': [
-#            'virtualenv --python=$(which python3) venv',
-#            'venv/bin/pip3 install --upgrade pip',
-#            f'venv/bin/pip3 install -r {CFG.APP_TESTPATH}/requirements.txt',
-#        ],
-#    }
-#    for svc in SVCS:
-#        reqfile = f'{CFG.APP_PROJPATH}/{svc}/requirements.txt'
-#        yield {
-#            'name': svc,
-#            'task_dep': [
-#                'noroot',
-#                'venv:main',
-#            ],
-#            'actions': [
-#                f'[ -f {reqfile} ] && venv/bin/pip3 install -r {reqfile} || true',
-#            ],
-#        }
-
-#def task_pyfiles():
-#    '''
-#    list all of the pyfiles
-#    '''
-#    pyfiles_list = '\n'.join(pyfiles(CFG.APP_PROJPATH, f'{CFG.APP_BOTPATH}/utils'))
-#    return {
-#        'task_dep': [
-#        ],
-#        'actions': [
-#            f'echo "{pyfiles_list}"',
-#        ],
-#    }
-#
-#def task_pylint():
-#    '''
-#    run pylint before the build
-#    '''
-#    ##for svc in SVCS:
-#    pyfiles_list = pyfiles(f'{CFG.APP_PROJPATH}/', f'{CFG.APP_PROJPATH}/utils')
-#    for pyfile in pyfiles_list:
-#        yield {
-#            'name': f'{pyfile}',
-#            'task_dep': [
-#                'noroot',
-#            ],
-#            'actions': [
-#                f'cd {CFG.APP_PROJPATH} && pylint -j{CFG.APP_JOBS} --rcfile {CFG.APP_TESTPATH}/pylint.rc {pyfile} || true',
-#            ],
-#        }
-#
-#def task_test():
-#    '''
-#    run pytest
-#    '''
-#    PYTHONPATH = f'PYTHONPATH=.:{CFG.APP_PROJPATH}:$PYTHONPATH'
-#    return {
-#        'task_dep': [
-#            'noroot',
-#            'pylint',
-#            'venv'
-#        ],
-#        'actions': [
-#            f'{PYTHONPATH} venv/bin/python3 -m pytest -s -vv {CFG.APP_TESTPATH}',
-#        ],
-#    }
-
 def task_test():
     '''
     run tox in tests/
@@ -277,208 +179,59 @@ def task_test():
         ],
     }
 
-#def task_tls():
-#    '''
-#    create server key, csr and crt files
-#    '''
-#    name = 'server'
-#    tls = f'/data/{CFG.APP_PROJNAME}/tls'
-#    env = 'PASS=TEST'
-#    envp = 'env:PASS'
-#    targets = [
-#        f'{tls}/{name}.key',
-#        f'{tls}/{name}.crt',
-#    ]
-#    subject = '/C=US/ST=Oregon/L=Portland/O=Connected-Workplace Server/OU=Server/CN=0.0.0.0'
-#    def uptodate():
-#        return all([os.path.isfile(t) for t in targets])
-#    return {
-#        'actions': [
-#            f'mkdir -p {tls}',
-#            f'{env} openssl genrsa -aes256 -passout {envp} -out {tls}/{name}.key 2048',
-#            f'{env} openssl req -new -passin {envp} -subj "{subject}" -key {tls}/{name}.key -out {tls}/{name}.csr',
-#            f'{env} openssl x509 -req -days 365 -in {tls}/{name}.csr -signkey {tls}/{name}.key -passin {envp} -out {tls}/{name}.crt',
-#            f'{env} openssl rsa -passin {envp} -in {tls}/{name}.key -out {tls}/{name}.key',
-#        ],
-#        'targets': targets,
-#        'uptodate': [uptodate],
-#    }
-#
-#def task_genenv():
-#    '''
-#    generate env file
-#    '''
-#    return {
-#        'actions': [
-#            f'echo "{envs(NEWLINE)}" > {CFG.APP_PROJPATH}/generated.env'
-#        ],
-#    }
-#
-#def task_tar():
-#    '''
-#    tar up source files, dereferncing symlinks
-#    '''
-#    excludes = ' '.join([
-#        f'--exclude={CFG.APP_SRCTAR}',
-#        '--exclude=__pycache__',
-#        '--exclude=*.pyc',
-#        '--exclude=.tox*',
-#        '--exclude=.env',
-#        '--exclude=.coverage',
-#        '--exclude=.git',
-#    ])
-#    ## it is important to not that this is required to keep the tarballs from
-#    ## genereating different checksums and therefore different layers in docker
-#    cmd = f'cd {CFG.APP_PROJPATH} && tar cvh {excludes} . | gzip -n > {CFG.APP_SRCTAR}'
-#    return {
-#        'task_dep': [
-#            'noroot',
-#            'test',
-#        ],
-#        'actions': [
-#            f'echo "{cmd}"',
-#            f'{cmd}',
-#        ],
-#    }
-#
-#def task_build():
-#    '''
-#    build flask|quart app via docker-compose
-#    '''
-#    return {
-#        'task_dep': [
-#            'noroot',
-#            'tar',
-#            'genenv',
-#            #'dockercompose',
-#        ],
-#        'actions': [
-#            f'echo "cd {CFG.APP_PROJPATH} && env {envs(SPACE)} docker-compose build"',
-#            f'cd {CFG.APP_PROJPATH} && env {envs(SPACE)} docker-compose build',
-#        ],
-#    }
-#
-#def task_publish():
-#    '''
-#    publish docker image(s) to docker hub
-#    '''
-#    imagename = f'itcw/{CFG.APP_PROJNAME}'
-#    return {
-#        'task_dep': [
-#            'noroot',
-#            'build',
-#        ],
-#        'actions': [
-#            f'docker push {imagename}:{CFG.APP_VERSION}',
-#        ],
-#    }
-#
-#def task_deploy():
-#    '''
-#    deloy flask|quart app via docker-compose
-#    '''
-#    return {
-#        'task_dep': [
-#            'noroot',
-#            'checkreqs',
-#            'test',
-#            'build',
-#            #'dockercompose',
-#        ],
-#        'actions': [
-#            f'echo "cd {CFG.APP_PROJPATH} && env {envs(SPACE)} docker-compose up --remove-orphans -d"',
-#            f'cd {CFG.APP_PROJPATH} && env {envs(SPACE)} docker-compose up --remove-orphans -d',
-#        ],
-#    }
-#
-#def task_stop():
-#    '''
-#    stop running containers
-#    '''
-#    def check_docker_ps():
-#        cmd = 'docker ps --format "{{.Names}}" | grep ' + CFG.APP_PROJNAME + ' | { grep -v grep || true; }'
-#        out = check_output(cmd, shell=True).decode('utf-8').strip()
-#        return out.split('\n') if out else []
-#    containers = ' '.join(check_docker_ps())
-#    return {
-#        'actions': [
-#            f'docker rm -f {containers}',
-#        ],
-#        'uptodate': [
-#            lambda: len(check_docker_ps()) == 0,
-#        ],
-#    }
-#
-#@docstr_format(projname=CFG.APP_PROJNAME)
-#def task_rmtagged():
-#    '''
-#    remove all tagged images matching: itcw/{projname}_
-#    '''
-#    awk = """awk '{print $1 ":" $2}'"""
-#    query = f'$(docker images | grep itcw/{CFG.APP_PROJNAME}_ | {awk})'
-#    return {
-#        'actions': [
-#            f'docker rmi {query}',
-#        ],
-#        'uptodate': [
-#            f'[ -z "{query}" ] && exit 0 || exit 1',
-#        ],
-#    }
-#
-#def task_rmcontainers():
-#    '''
-#    remove stopped containers
-#    '''
-#    query = '$(docker ps -q -f "status=exited")'
-#    return {
-#        'actions': [
-#            f'docker rm {query}',
-#        ],
-#        'uptodate': [
-#            f'[ -z "{query}" ] && exit 0 || exit 1',
-#        ],
-#    }
-#
-#def task_rmimages():
-#    '''
-#    remove dangling docker images
-#    '''
-#    query = '$(docker images -q -f dangling=true)'
-#    return {
-#        'task_dep': [
-#            'rmcontainers',
-#        ],
-#        'actions': [
-#            f'docker rmi {query}',
-#        ],
-#        'uptodate': [
-#            f'[ -z "{query}" ] && exit 0 || exit 1',
-#        ],
-#    }
-#
-#def task_rmvolumes():
-#    '''
-#    remove dangling docker volumes
-#    '''
-#    query = '$(docker volume ls -q -f dangling=true)'
-#    return {
-#        'actions': [
-#            f'docker volume rm {query}',
-#        ],
-#        'uptodate': [
-#            f'[ -z "{query}" ] && exit 0 || exit 1',
-#        ],
-#    }
-#
-#def task_logs():
-#    '''
-#    simple wrapper that calls 'docker-compose logs'
-#    '''
-#    return {
-#        'actions': [
-#            f'cd {CFG.APP_PROJPATH} && docker-compose logs',
-#        ],
-#    }
+ESCAPE_REGEX = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
+OUTDATED_REGEX = re.compile(' +'.join([
+    '(?P<package>.*)',
+    '(?P<current>MISSING|[0-9]+(\.[0-9]+)+)',
+    '(?P<wanted>[0-9]+(\.[0-9]+)+)',
+    '(?P<latest>[0-9]+(\.[0-9]+)+)',
+    '(?P<location>.*)',
+]))
+def task_setup():
+    '''
+    run all of the setup steps
+    '''
+    def uptodate():
+        '''
+        custom uptodate to check for outdated npm pkgs
+        '''
+        result = sh.npm('outdated').strip()
+        for line in result.split('\n'):
+            print(line)
+            line = ESCAPE_REGEX.sub('', line)
+            if line.startswith('Package') or line.startswith('undefined'):
+                continue
+            match = OUTDATED_REGEX.match(line)
+            if match.groupdict()['current'] != match.groupdict()['wanted']:
+                return False
+        return True
+    return {
+        'task_dep': [
+            'noroot',
+        ],
+        'actions': [
+            'npm install',
+        ],
+        'uptodate': [
+            uptodate,
+        ],
+    }
+
+def task_deploy():
+    '''
+    run serverless deploy -v for every service
+    '''
+    for svc in SVCS:
+        yield {
+            'name': svc,
+            'task_dep': [
+                'noroot',
+                'setup',
+            ],
+            'actions': [
+                f'cd services/{svc} && {SLS} deploy -v',
+            ],
+        }
 
 def task_rmcache():
     '''
