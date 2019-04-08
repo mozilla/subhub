@@ -1,0 +1,12 @@
+{
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mozilla-it/subhub"
+  },
+  "license": "MPL-2.0",
+  "devDependencies": {
+    "serverless": "^1.27.3",
+    "serverless-plugin-tracing": "^2.0.0",
+    "serverless-python-requirements": "^3.3.1"
+  }
+}
