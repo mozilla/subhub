@@ -9,176 +9,268 @@ consumes:
 produces:
   - "application/json"
 
-basePath: /v1
+basePath: /v1/
+schemes:
+  - https
+
+securityDefinitions:
+  AuthApiKey:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: |
+      Ops issued token.
+      An example of the Authorization header would be:
+      ```Authorization: Bearer 00secret00```
+
+parameters:
+  uidParam:
+    in: path
+    name: uid
+    type: string
+    required: true
+    description: User ID
+  subIdParam:
+    in: path
+    name: sub_id
+    type: string
+    required: true
+    description: Subscription ID
 
 paths:
-  /stripe-subscription-status:
-    get:
-      operationId: stripe_calls.subscription_status
-      tags:
-        - Stripe
-      summary: List of Subscriptions
-      description: Get list of subscriptions for a premium payments customer
-      produces:
-        - appliation/json;
-      responses:
-        200:
-          description: Success
-        400:
-          description: Error missing parameter
-      parameters:
-        - name: api_token
-          in: query
-          description: API token
-          type: string
-          required: True
-        - name: fxa
-          in: query
-          description: FxA ID
-          type: string
-          required: True
-  /stripe-list-plans:
-    get:
-      operationId: stripe_calls.list_all_plans
-      tags:
-        - Stripe
-      summary: List all Stripe Plans
-      description: List all plans available from Stripe
-      produces:
-        - appliation/json;
-      responses:
-        200:
-          description: Success
-        400:
-          description: Error missing parameter
-      parameters:
-        - name: api_token
-          in: query
-          description: API token
-          type: string
-          required: True
-  /fxa-customer-status:
+  /customer/{uid}:
     get:
       operationId: stripe_calls.fxa_customer_update
-      tags:
-        - FxA
-      summary: Firefox Customer Update
-      description: Get updated customer subscription data
+      summary: Retrieve customer data
+      description: |
+        Returns customer payment information.
+        \
+        The available values differ depending on the payment type. Currently only
+        card is a valid payment type.
       produces:
-        - application/json;
+        - application/json
+      security:
+        - AuthApiKey: []
       responses:
         200:
           description: Success
+          schema:
+            type: object
+            properties:
+              payment_type:
+                type: string
+                enum:
+                  - card
+              last4:
+                type: integer
+                example: 4242
+              exp_month:
+                type: integer
+                example: 8
+              exp_year:
+                type: integer
+                example: 2020
+              subscriptions:
+                description: |
+                  Optionally included subscriptions.
+                type: array
+                items:
+                  $ref: '#/definitions/subscriptionObject'
+
         400:
           description: Error missing paremeter
+        404:
+          description: No customer data on file.
       parameters:
-        - name: api_token
-          in: query
-          description: API Token
-          type: string
-          required: True
-        - name: fxa
-          in: query
-          description: FxA ID.
-          type: string
-          required: True
-  /stripe-cancel-subscription:
-    post:
-      operationId: stripe_calls.cancel_subscription
-      tags:
-        - Stripe
-      summary: Cancel a Subscription
-      description: Cancel a Customers Subscription
-      produces:
-        - application/json;
-      responses:
-        201:
-          description: Subscription cancelation successful
-        400:
-          description: Error - missing paramenter
-      parameters:
-        - name: api_token
-          in: query
-          description: API Token.
-          type: string
-          required: True
-        - name: fxa
-          in: query
-          description: FxA ID.
-          type: string
-          required: True
-        - name: subscription_id
-          in: query
-          description: Subscription ID.
-          type: string
-          required: True
-  /stripe-plan-subscription:
-    post:
-      operationId: stripe_calls.subscribe_to_plan
-      tags:
-        - Stripe
-      summary: Subscribe to Plan
-      description: Subscribe to a Mozilla Plan
-      produces:
-        - application/json;
-      responses:
-        201:
-          description: Subscription successful
-        400:
-          description: Error - missing paramenter
-      parameters:
-        - name: api_token
-          in: query
-          description: API Token.
-          type: string
-          required: True
-        - name: fxa
-          in: query
-          description: FxA ID.
-          type: string
-          required: True
-        - name: pmt_token
-          in: query
-          description: Pay Token.
-          type: string
-          required: True
-        - name: plan_id
-          in: query
-          description: Plan ID.
-          type: string
-          required: True
-        - name: email
-          in: query
-          description: Email address.
-          type: string
-          required: True
-  /stripe-update-payment-method:
-    post:
+        - $ref: '#/parameters/uidParam'
+        - in: query
+          name: include_subscriptions
+          type: boolean
+          description: Whether subscriptions should be included in the response.
+    put:
       operationId: stripe_calls.update_payment_method
-      tags:
-        - Stripe
-      summary: Update Payment Method
-      description: Update the credit card on file for a user's account
+      summary: Update customer data
+      description: |
+        Update information stored for the user, currently only payment token.
       produces:
         - application/json
+      security:
+        - AuthApiKey: []
       responses:
         201:
           description: Update successful
         400:
           description: Error - missing parementer
       parameters:
-        - name: api_token
-          in: query
-          description: API Token.
+        - $ref: '#/parameters/uidParam'
+        - name: payment_token
+          in: body
+          schema:
+            type: object
+            required:
+              - payment_token
+            properties:
+              payment_token:
+                type: string
+                description: Pay Token.
+                example: tok_KPte7942xySKBKyrBu11yEpf
+  /customer/{uid}/subscriptions:
+    get:
+      operationId: stripe_calls.subscription_status
+      summary: List Subscriptions
+      description: Get list of subscriptions for a premium payments customer
+      produces:
+        - application/json
+      security:
+        - AuthApiKey: []
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            properties:
+              subscriptions:
+                type: array
+                items:
+                  $ref: '#/definitions/subscriptionObject'
+        404:
+          description: No subscriptions for this customer.
+      parameters:
+        - $ref: '#/parameters/uidParam'
+    post:
+      operationId: stripe_calls.subscribe_to_plan
+      summary: Subscribe a customer to a Plan
+      description: |
+        Subscribe to a Mozilla Plan
+        \
+        A customer record will be created if necessary, the customer will then be
+        subscribed to the specified plan with the provided token.
+      produces:
+        - application/json
+      security:
+        - AuthApiKey: []
+      responses:
+        201:
+          description: Subscription successful
+          headers:
+            Location:
+              type: string
+        400:
+          description: Error - missing paramenter
+      parameters:
+        - $ref: '#/parameters/uidParam'
+        - in: body
+          name: root
+          schema:
+            type: object
+            required:
+              - payment_token
+              - plan_id
+              - email
+            properties:
+              payment_token:
+                type: string
+                description: Pay Token.
+                example: tok_KPte7942xySKBKyrBu11yEpf
+              plan_id:
+                type: string
+                description: Plan ID.
+                example: firefox_pro_basic_823
+              email:
+                type: string
+                description: Email address.
+                example: user@gmail.com
+  /customer/{uid}/subscriptions/{sub_id}:
+    delete:
+      operationId: stripe_calls.cancel_subscription
+      summary: Cancel a Subscription
+      description: Cancel a Customers Subscription
+      produces:
+        - application/json
+      security:
+        - AuthApiKey: []
+      responses:
+        201:
+          description: Subscription cancelation successful
+        400:
+          description: Error - missing paramenter
+        404:
+          description: Subscription does not exist for this customer.
+      parameters:
+        - $ref: '#/parameters/uidParam'
+        - $ref: '#/parameters/subIdParam'
+  /plans:
+    get:
+      operationId: stripe_calls.list_all_plans
+      summary: List Plans
+      description: List available plans that can be subscribed to.
+      produces:
+        - application/json
+      security:
+        - AuthApiKey: []
+      responses:
+        200:
+          description: Success
+          schema:
+            type: object
+            properties:
+              plans:
+                type: array
+                items:
+                  $ref: '#/definitions/planObject'
+        400:
+          description: Error missing parameter
+      parameters:
+        - in: query
+          name: product
           type: string
-          required: True
-        - name: fxa
-          in: query
-          description: FxA ID.
-          type: string
-          required: True
-        - name: pmt_token
-          in: query
-          description: Pay Token.
-          type: string
-          required: True
+          description: Restrict plans returned to a single product
+
+definitions:
+  planObject:
+    type: object
+    description: A plan that can be subscribed to.
+    properties:
+      plan_id:
+        type: string
+        example: firefox_pro_basic_823
+      product_id:
+        type: string
+        example: firefox_pro_basic
+      interval:
+        type: string
+        example: month
+        enum:
+          - day
+          - week
+          - month
+          - year
+      amount:
+        type: integer
+        example: 500
+        description: |
+          A positive number in cents representing how much to charge on a
+          recurring basis.
+      currency:
+        type: string
+        example: usd
+  subscriptionObject:
+    type: object
+    description: |
+      A subscription for a customer, if the subscription is ending at a period
+      in time, the end_at will be specified.
+    properties:
+      plan_id:
+        type: string
+        example: firefox_pro_basic_823
+      product_id:
+        type: string
+        example: firefox_pro_basic
+      current_period_end:
+        type: number
+        description: Seconds since UNIX epoch.
+        example: 1557361022
+      end_at:
+        type: number
+        description: Non-null if the subscription is ending at a period in time.
+        example: 0
