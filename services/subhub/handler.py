@@ -3,7 +3,7 @@
 
 import json
 
-from subhub.main import create_app
+from subhub.app import create_app
 
 def handle(event, context):
     try:
