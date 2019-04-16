@@ -1,13 +1,16 @@
-from flask import Flask, request, jsonify, render_template, url_for
+from flask import Flask, request, jsonify, render_template, url_for, logging
 from flask_cors import CORS
 # from flask.views import MethodView
 import connexion
 import os
 
 
+
 def create_app(config=None):
-    app = connexion.FlaskApp(__name__, specification_dir='')
-    app.add_api('subhub_api.yaml', pass_context_arg_name='request')
+    options = {"swagger_ui": False}
+    app = connexion.FlaskApp(__name__, specification_dir='./', options=options)
+    app.add_api('subhub_api.yaml', pass_context_arg_name='request',
+                strict_validation=True)
 
     CORS(app.app)
     return app

@@ -9,7 +9,6 @@ import sys
 import glob
 
 from doit import get_var
-from ruamel import yaml
 from pathlib import Path
 from subprocess import check_call, check_output, CalledProcessError, PIPE
 
@@ -152,14 +151,6 @@ def task_test():
         ],
     }
 
-ESCAPE_REGEX = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-OUTDATED_REGEX = re.compile(' +'.join([
-    '(?P<package>.*)',
-    '(?P<current>MISSING|[0-9]+(\.[0-9]+)+)',
-    '(?P<wanted>[0-9]+(\.[0-9]+)+)',
-    '(?P<latest>[0-9]+(\.[0-9]+)+)',
-    '(?P<location>.*)',
-]))
 def task_setup():
     '''
     run all of the setup steps
@@ -168,16 +159,11 @@ def task_setup():
         '''
         custom uptodate to check for outdated npm pkgs
         '''
-        result = sh.npm('outdated').strip()
-        for line in result.split('\n'):
-            print(line)
-            line = ESCAPE_REGEX.sub('', line)
-            if line.startswith('Package') or line.startswith('undefined'):
-                continue
-            match = OUTDATED_REGEX.match(line)
-            if match.groupdict()['current'] != match.groupdict()['wanted']:
-                return False
-        return True
+        try:
+            sh.npm('outdated').strip()
+            return False
+        except sh.ErrorReturnCode_1:
+            return True
     return {
         'task_dep': [
             'noroot',
@@ -199,11 +185,10 @@ def task_package():
             'name': svc,
             'task_dep': [
                 'noroot',
-                'setup',
+                # 'setup',
             ],
             'actions': [
                 f'cd services/{svc} && {SLS} package -v',
-                f'cd services/{svc}/.serverless && unzip -l subhub.zip',
             ],
         }
 
@@ -217,7 +202,7 @@ def task_deploy():
             'name': svc,
             'task_dep': [
                 'noroot',
-                'setup',
+                # 'setup',
                 f'package:{svc}',
             ],
             'actions': [

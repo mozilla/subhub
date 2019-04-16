@@ -5,19 +5,57 @@ service:
 plugins:
   - serverless-python-requirements
   - serverless-plugin-tracing
+  - serverless-dynamodb-local
+  - serverless-offline
 
 provider:
   name: aws
   runtime: python3.7
   region: us-west-2
-
   stage: ${opt:stage, self:custom.defaultStage}
-  role: SubhubRole
   memorySize: 256
   timeout: 10
   tracing: true
   stackTags:
     service: ${self:service}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - "dynamodb:Query"
+        - "dynamodb:Scan"
+        - "dynamodb:GetItem"
+        - "dynamodb:PutItem"
+        - "dynamodb:UpdateItem"
+        - "dynamodb:DeleteItem"
+      Resource:
+        - { "Fn::GetAtt": ["SubhubDynamoDBTable", "Arn" ] }
+    - Effect: Allow
+      Action:
+        - "secretsmanager:GetSecretValue"
+      Resource:
+        - "arn:aws:secretsmanager:us-west-2:903937621340:secret:test/${self:provider.stage}-TESTER-*"
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource:
+        - 'Fn::Join': [':', ['arn:aws:logs', Ref: 'AWS::Region', Ref: AWS::AccountId, 'log-group:/aws/lambda/*:*:*']]
+    - Effect: Allow
+      Action:
+        - kms:Decrypt
+      Resource:
+        - "arn:aws:kms:us-west-2:${self:custom.awsAccountId}:alias/*"
+        - "arn:aws:kms:us-west-2:${self:custom.awsAccountId}:key/*"
+    - Effect: Allow
+      Action:
+        - "xray:PutTraceSegments"
+        - "xray:PutTelemetryRecords"
+      Resource:
+        - "*"
+  environment:
+    SUBHUB_TABLE: ${self:custom.tableName}
+
 
 package:
   exclude:
@@ -29,11 +67,15 @@ package:
 custom:
   awsAccountId: 177680776199
   defaultStage: dev
+  supersecret: ${ssm:/aws/reference/secretsmanager/test/dev-TESTER-POTATO~true}
   pythonRequirements:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt
-    dockerFile: subhub/Dockerfile
   git-repo: https://github.com/mozilla/subhub
+  tableName: 'it-mozilla-subhub-table-${self:provider.stage}'
+  dynamodb:
+    start:
+      migrate: true
 
 functions:
   subhub:
@@ -43,47 +85,27 @@ functions:
     handler: handler.handle
     timeout: 30
     events:
-      - http: ANY /
-      - http: 'ANY {proxy+}'
+      - http:
+          method: ANY
+          path: /
+          cors: true
+      - http:
+          method: ANY
+          path: '{proxy+}'
+          cors: true
     environment:
       STAGE: ${self:provider.stage}
+      TEST_TOKEN: ${ssm:testToken}
 
 resources:
   Resources:
-    SubhubRole:
-      Type: AWS::IAM::Role
+    SubhubDynamoDBTable:
+      Type: 'AWS::DynamoDB::Table'
       Properties:
-        Path: /service/
-        RoleName: ${self:service.name}-${self:provider.stage}-role
-        AssumeRolePolicyDocument:
-          Version: '2012-10-17'
-          Statement:
-            - Effect: Allow
-              Principal:
-                Service:
-                  - lambda.amazonaws.com
-              Action: sts:AssumeRole
-        Policies:
-          - PolicyName: ${self:service.name}-${self:provider.stage}-policy
-            PolicyDocument:
-              Version: '2012-10-17'
-              Statement:
-                - Effect: Allow
-                  Action:
-                    - logs:CreateLogGroup
-                    - logs:CreateLogStream
-                    - logs:PutLogEvents
-                  Resource:
-                    - 'Fn::Join': [':', ['arn:aws:logs', Ref: 'AWS::Region', Ref: AWS::AccountId, 'log-group:/aws/lambda/*:*:*']]
-                - Effect: Allow
-                  Action:
-                    - kms:Decrypt
-                  Resource:
-                    - "arn:aws:kms:us-east-1:${self:custom.awsAccountId}:alias/*"
-                    - "arn:aws:kms:us-east-1:${self:custom.awsAccountId}:key/*"
-                - Effect: Allow
-                  Action:
-                    - "xray:PutTraceSegments"
-                    - "xray:PutTelemetryRecords"
-                  Resource:
-                    - "*"
+        AttributeDefinitions:
+          - AttributeName: fxaId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fxaId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST

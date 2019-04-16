@@ -172,8 +172,11 @@ def test_cancel_subscription_with_valid_data(create_subscription_for_processing)
     THEN validate should cancel subscription
     """
     (subscription, code) = create_subscription_for_processing
+    print(f'subscription {subscription}')
+    print(f'code {code}')
     (cancelled, code) = stripe_calls.cancel_subscription('subscribe_test', subscription['id'])
-    assert cancelled['status'] == 'canceled'
+    for can in cancelled:
+        assert can['status'] == 'canceled'
     assert 201 == code
 
 

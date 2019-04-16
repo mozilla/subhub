@@ -1,12 +1,37 @@
 import stripe
 from subhub.cfg import CFG
 from flask import request
+import os
+import boto3
+from subhub.secrets import get_secret
+import logging
 
-stripe.api_key = CFG.STRIPE_API_KEY
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
 premium_customers = [
-    {'fxa': 'mcb12345', 'cust_id': None, 'subscriptions': []},
-    {'fxa': 'moz12345', 'cust_id': 'cus_EtNIP101PMoaS0', 'subscriptions': []}
+    {'fxaId': 'mcb12345', 'custId': None, 'subscriptions': []},
+    {'fxaId': 'moz12345', 'custId': 'cus_EtNIP101PMoaS0', 'subscriptions': []}
 ]
+
+IS_OFFLINE = os.environ.get('IS_OFFLINE')
+if IS_OFFLINE:
+    SUBHUB_TABLE = os.environ['SUBHUB_TABLE']
+    stripe.api_key = CFG.STRIPE_API_KEY
+    client = boto3.client(
+        'dynamodb',
+        region_name='localhost',
+        endpoint_url='http://localhost:8000'
+    )
+else:
+    SUBHUB_TABLE = premium_customers
+    subhub_values = get_secret('dev/SUBHUB')
+    logger.info(f'{type(subhub_values)}')
+    stripe.api_key = subhub_values['stripe_api_key']
+    client = boto3.client('dynamodb')
+
+
+
 
 # Stripe methods begin
 
@@ -27,6 +52,7 @@ def create_customer(source_token, fxa, email):
         return customer
     except stripe.error.InvalidRequestError as e:
         return str(e)
+
 
 def subscribe_customer(customer, plan):
     """
@@ -52,15 +78,28 @@ def subscribe_to_plan(uid, data):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
     try:
-        firefox_user = next(f for f in premium_customers if uid == f['fxa'])
+        firefox_user = next(f for f in premium_customers if uid == f['fxaId'])
+        if not IS_OFFLINE:
+            resp = client.get_item(
+                TableName=SUBHUB_TABLE,
+                Key={
+                    'fxaId': { 'S': uid}
+                }
+            )
+            logger.info(f'resp {resp}')
+            item = resp.get('Item')
+            logger.info(f'item {item}')
+        for fox in firefox_user['subscriptions']:
+            if data['plan_id'] == fox["plan"]["id"] and fox["plan"]["active"]:
+                logger.info(f'already subscribed')
+                return {"message": "User has current subscription.", "code": 400}, 400
     except StopIteration as e:
-        premium_customers.append({'fxa': uid, 'cust_id': None, 'subscriptions': []})
-        firefox_user = {'fxa': uid, 'cust_id': None, 'subscriptions': []}
-    if firefox_user['cust_id'] is None:
+        premium_customers.append({'fxaId': uid, 'custId': None, 'subscriptions': []})
+        firefox_user = {'fxaId': uid, 'custId': None, 'subscriptions': []}
+    if firefox_user['custId'] is None:
         if data['email'] is None:
             return 'Missing email parameter.', 400
         customer = create_customer(data['pmt_token'], uid, data['email'])
-        # print(f'customer {customer}')
         if 'No such token:' in customer:
             return 'Token not valid', 400
         subscription = subscribe_customer(customer, data['plan_id'])
@@ -69,12 +108,19 @@ def subscribe_to_plan(uid, data):
         elif 'No such plan' in subscription:
             return 'Plan not valid', 400
         for f in premium_customers:
-            if f['fxa'] == uid:
-                f['cust_id'] = customer['id']
+            if f['fxaId'] == uid:
+                f['custId'] = customer['id']
                 f['subscriptions'].append(subscription)
-        return subscription, 201
+        user_subscriptions = []
+        products = []
+        for prod in subscription["items"]["data"]:
+            products.append(prod["plan"]["product"])
+        user_subscriptions.append(
+            {"subscription_id": subscription["id"], "plan_id": subscription["plan"]["id"], "product_id": products,
+             "current_period_end": subscription["current_period_end"], "end_at": subscription["ended_at"]})
+        return user_subscriptions, 201
     else:
-        subscription = subscribe_customer(firefox_user['cust_id'], data['plan_id'])
+        subscription = subscribe_customer(firefox_user['custId'], data['plan_id'])
         if 'Missing required param' in subscription:
             return 'Missing parameter ', 400
         elif 'No such plan' in subscription:
@@ -89,10 +135,11 @@ def list_all_plans():
         stripe_plans.append({'plan_id': p['id'], 'product_id': p['product'], 'interval': p['interval'], 'amount': p['amount'], 'currency': p['currency']})
     return stripe_plans, 200
 
+
 def cancel_subscription(uid, sub_id):
     # TODO Remove payment source on cancel
     try:
-        firefox_user = next(f for f in premium_customers if uid == f['fxa'])
+        firefox_user = next(f for f in premium_customers if uid == f['fxaId'])
     except StopIteration as e:
         return 'User does not exist', 404
     subscriptions = []
@@ -113,31 +160,40 @@ def cancel_subscription(uid, sub_id):
     else:
         return 'Subscription not available.', 400
 
+
 def subscription_status(uid):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
     try:
-        firefox_user = next(f for f in premium_customers if uid == f['fxa'])
+        firefox_user = next(f for f in premium_customers if uid == f['fxaId'])
     except StopIteration as e:
-        return 'Customer ID not valid.', 404
-    subscriptions = stripe.Subscription.list(customer=firefox_user['cust_id'], limit=100)
+        return 'Customer ID not valid.', 400
+    subscriptions = stripe.Subscription.list(customer=firefox_user['custId'], limit=100)
     if subscriptions is None:
         return 'No subscriptions for this customer.', 404
-    return subscriptions, 201
+    user_subscriptions = []
+    for sub in subscriptions["data"]:
+        products = []
+        for prod in sub["items"]["data"]:
+            products.append(prod["plan"]["product"])
+        user_subscriptions.append({"subscription_id": sub["id"], "plan_id": sub["plan"]["id"], "product_id": products,
+                                   "current_period_end": sub["current_period_end"], "end_at": sub["ended_at"]})
+    return user_subscriptions, 201
+
 
 def update_payment_method(uid, data):
     if not isinstance(data['pmt_token'], str):
         return 'Missing token', 400
     try:
-        firefox_user = next(f for f in premium_customers if uid == f['fxa'])
+        firefox_user = next(f for f in premium_customers if uid == f['fxaId'])
     except StopIteration:
         return 'Missing or invalid user', 400
-    if firefox_user['cust_id'] is None:
+    if firefox_user['custId'] is None:
         return 'Customer does not exist.', 400
-    customer = stripe.Customer.retrieve(firefox_user['cust_id'])
+    customer = stripe.Customer.retrieve(firefox_user['custId'])
     if customer['metadata']['fxuid'] == uid:
         try:
-            updated_customer = customer.modify(firefox_user['cust_id'], source=data['pmt_token'])
+            updated_customer = customer.modify(firefox_user['custId'], source=data['pmt_token'])
             return updated_customer, 201
         except stripe.error.InvalidRequestError as e:
             return str(e), 400
@@ -146,8 +202,9 @@ def update_payment_method(uid, data):
 
 
 def fxa_customer_update(uid):
-    print(f'customer update {uid}')
+    logger.info(f'customer update {uid}')
     return {"customer": uid}, 200
+
 
 def api_validation(api_token):
     if api_token is None:
