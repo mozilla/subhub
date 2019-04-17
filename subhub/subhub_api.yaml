@@ -20,7 +20,7 @@ securityDefinitions:
       Ops issued token.
       An example of the Authorization header would be:
       ```Authorization: Bearer 00secret00```
-    x-apikeyInfoFunc: auth_validation.basic_auth
+    x-apikeyInfoFunc: subhub.auth_validation.basic_auth
 parameters:
   uidParam:
     in: path
@@ -37,13 +37,13 @@ parameters:
 paths:
   /customer/{uid}/subscriptions:
     get:
-      operationId: stripe_calls.subscription_status
+      operationId: subhub.stripe_calls.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
       description: Get list of subscriptions for a premium payments customer
       produces:
-        - appliation/json;
+        - application/json
       security:
         - AuthApiKey: []
       responses:
@@ -58,13 +58,13 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: stripe_calls.subscribe_to_plan
+      operationId: subhub.stripe_calls.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
       description: Subscribe to a Mozilla Plan
       produces:
-        - application/json;
+        - application/json
       security:
         - AuthApiKey: []
       responses:
@@ -97,13 +97,13 @@ paths:
                 example: user@gmail.com
   /plans:
     get:
-      operationId: stripe_calls.list_all_plans
+      operationId: subhub.stripe_calls.list_all_plans
       tags:
         - Subscriptions
       summary: List all Stripe Plans
       description: List all plans available from subscription provider
       produces:
-        - appliation/json;
+        - application/json
       security:
         - AuthApiKey: []
       responses:
@@ -115,7 +115,7 @@ paths:
           description: Error missing parameter
   /customer/{uid}/subscriptions/{sub_id}:
     delete:
-      operationId: stripe_calls.cancel_subscription
+      operationId: subhub.stripe_calls.cancel_subscription
       tags:
         - Subscriptions
       summary: Cancel a Subscription
@@ -136,13 +136,13 @@ paths:
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: stripe_calls.fxa_customer_update
+      operationId: subhub.stripe_calls.fxa_customer_update
       tags:
         - Subscriptions
       summary: Firefox Customer Update
       description: Get updated customer subscription data
       produces:
-        - application/json;
+        - application/json
       security:
         - AuthApiKey: []
       responses:
@@ -153,7 +153,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: stripe_calls.update_payment_method
+      operationId: subhub.stripe_calls.update_payment_method
       tags:
         - Subscriptions
       summary: Update Payment Method

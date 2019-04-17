@@ -28,6 +28,7 @@ def create_customer(source_token, fxa, email):
     except stripe.error.InvalidRequestError as e:
         return str(e)
 
+
 def subscribe_customer(customer, plan):
     """
     Subscribe Customer to Plan
@@ -89,6 +90,7 @@ def list_all_plans():
         stripe_plans.append({'plan_id': p['id'], 'product_id': p['product'], 'interval': p['interval'], 'amount': p['amount'], 'currency': p['currency']})
     return stripe_plans, 200
 
+
 def cancel_subscription(uid, sub_id):
     # TODO Remove payment source on cancel
     try:
@@ -113,6 +115,7 @@ def cancel_subscription(uid, sub_id):
     else:
         return 'Subscription not available.', 400
 
+
 def subscription_status(uid):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
@@ -124,6 +127,7 @@ def subscription_status(uid):
     if subscriptions is None:
         return 'No subscriptions for this customer.', 404
     return subscriptions, 201
+
 
 def update_payment_method(uid, data):
     if not isinstance(data['pmt_token'], str):
@@ -148,6 +152,7 @@ def update_payment_method(uid, data):
 def fxa_customer_update(uid):
     print(f'customer update {uid}')
     return {"customer": uid}, 200
+
 
 def api_validation(api_token):
     if api_token is None:
