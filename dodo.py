@@ -9,7 +9,6 @@ import sys
 import glob
 
 from doit import get_var
-from ruamel import yaml
 from pathlib import Path
 from subprocess import check_call, check_output, CalledProcessError, PIPE
 
