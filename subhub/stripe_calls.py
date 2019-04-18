@@ -181,6 +181,7 @@ def subscription_status(uid):
     return user_subscriptions, 201
 
 
+
 def update_payment_method(uid, data):
     if not isinstance(data['pmt_token'], str):
         return 'Missing token', 400
