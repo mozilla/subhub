@@ -185,7 +185,7 @@ def task_package():
             'name': svc,
             'task_dep': [
                 'noroot',
-                # 'setup',
+                'setup',
             ],
             'actions': [
                 f'cd services/{svc} && {SLS} package -v',
@@ -202,7 +202,7 @@ def task_deploy():
             'name': svc,
             'task_dep': [
                 'noroot',
-                # 'setup',
+                'setup',
                 f'package:{svc}',
             ],
             'actions': [
