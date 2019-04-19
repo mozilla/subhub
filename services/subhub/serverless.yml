@@ -33,7 +33,7 @@ provider:
       Action:
         - "secretsmanager:GetSecretValue"
       Resource:
-        - "arn:aws:secretsmanager:us-west-2:903937621340:secret:test/${self:provider.stage}-TESTER-*"
+        - "arn:aws:secretsmanager:us-west-2:903937621340:secret:${self:provider.stage}/*"
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
@@ -67,7 +67,6 @@ package:
 custom:
   awsAccountId: 177680776199
   defaultStage: dev
-  supersecret: ${ssm:/aws/reference/secretsmanager/test/dev-TESTER-POTATO~true}
   pythonRequirements:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt

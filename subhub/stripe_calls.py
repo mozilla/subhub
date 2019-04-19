@@ -14,9 +14,9 @@ premium_customers = [
     {'fxaId': 'moz12345', 'custId': 'cus_EtNIP101PMoaS0', 'subscriptions': []}
 ]
 
+
 IS_OFFLINE = os.environ.get('IS_OFFLINE')
 if IS_OFFLINE:
-    SUBHUB_TABLE = os.environ['SUBHUB_TABLE']
     stripe.api_key = CFG.STRIPE_API_KEY
     client = boto3.client(
         'dynamodb',
@@ -24,11 +24,11 @@ if IS_OFFLINE:
         endpoint_url='http://localhost:8000'
     )
 else:
-    SUBHUB_TABLE = premium_customers
     subhub_values = get_secret('dev/SUBHUB')
     logger.info(f'{type(subhub_values)}')
     stripe.api_key = subhub_values['stripe_api_key']
     client = boto3.client('dynamodb')
+
 
 
 
@@ -79,16 +79,7 @@ def subscribe_to_plan(uid, data):
         return 'Invalid ID', 400
     try:
         firefox_user = next(f for f in premium_customers if uid == f['fxaId'])
-        if not IS_OFFLINE:
-            resp = client.get_item(
-                TableName=SUBHUB_TABLE,
-                Key={
-                    'fxaId': { 'S': uid}
-                }
-            )
-            logger.info(f'resp {resp}')
-            item = resp.get('Item')
-            logger.info(f'item {item}')
+
         for fox in firefox_user['subscriptions']:
             if data['plan_id'] == fox["plan"]["id"] and fox["plan"]["active"]:
                 logger.info(f'already subscribed')
