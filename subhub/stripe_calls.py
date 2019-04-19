@@ -14,9 +14,8 @@ premium_customers = [
     {'fxaId': 'moz12345', 'custId': 'cus_EtNIP101PMoaS0', 'subscriptions': []}
 ]
 
-
-IS_OFFLINE = os.environ.get('IS_OFFLINE')
-if IS_OFFLINE:
+IS_DEPLOYED = os.environ.get("AWS_EXECUTION_ENV")
+if IS_DEPLOYED is None:
     stripe.api_key = CFG.STRIPE_API_KEY
     client = boto3.client(
         'dynamodb',
