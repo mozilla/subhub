@@ -172,7 +172,7 @@ def test_cancel_subscription_with_valid_data(create_subscription_for_processing)
     THEN validate should cancel subscription
     """
     (subscription, code) = create_subscription_for_processing
-    (cancelled, code) = stripe_calls.cancel_subscription('subscribe_test', subscription['id'])
+    (cancelled, code) = stripe_calls.cancel_subscription('process_test', subscription[0]['subscription_id'])
     assert cancelled['status'] == 'canceled'
     assert 201 == code
 
@@ -183,7 +183,7 @@ def test_cancel_subscription_with_missing_subscription_id(create_subscription_fo
     WHEN provided a api_token, and missing subscription id
     THEN validate should not cancel subscription
     """
-    (cancelled, code) = stripe_calls.cancel_subscription('subscribe_test', None)
+    (cancelled, code) = stripe_calls.cancel_subscription('process_test', None)
     assert 400 == code
 
 
@@ -195,7 +195,7 @@ def test_check_subscription_with_valid_parameters():
     """
     (sub_status, code) = stripe_calls.subscription_status('moz12345')
     assert 201 == code
-    assert len(sub_status['data']) > 0
+    assert len(sub_status) > 0
 
 
 

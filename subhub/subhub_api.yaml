@@ -70,8 +70,12 @@ paths:
       responses:
         201:
           description: Subscription successful
+          schema:
+            $ref: '#/definitions/Subscriptions'
         400:
           description: Error - missing paramenter
+          schema:
+            $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -212,12 +216,15 @@ definitions:
     items:
       type: object
       properties:
+        subscription_id:
+          type: string
+          example: sub_abc123
         plan_id:
           type: string
           example: firefox_pro_basic_823
         product_id:
-          type: string
-          example: firefox_pro_basic
+          type: array
+          example: ["firefox_pro_basic"]
         current_period_end:
           type: number
           description: Seconds since UNIX epoch.
@@ -226,4 +233,13 @@ definitions:
           type: number
           description: Non-null if the subscription is ending at a period in time.
           example: 1557361022
+  Errormessage:
+    type: object
+    properties:
+      message:
+        type: string
+        example: The resource is not available
+      code:
+        type: number
+        example: 5
 
