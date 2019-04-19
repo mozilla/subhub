@@ -65,8 +65,6 @@ paths:
       description: Subscribe to a Mozilla Plan
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         201:
           description: Subscription successful

@@ -13,6 +13,7 @@ provider:
   runtime: python3.7
   region: us-west-2
   stage: ${opt:stage, self:custom.defaultStage}
+  tableName: ${self:custom.tableName}
   memorySize: 256
   timeout: 10
   tracing: true
@@ -95,6 +96,7 @@ functions:
     environment:
       STAGE: ${self:provider.stage}
       TEST_TOKEN: ${ssm:testToken}
+      SUBHUB_TABLE: ${self:provider.tableName}
 
 resources:
   Resources:
@@ -102,9 +104,10 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          - AttributeName: fxaId
+          - AttributeName: userId
             AttributeType: S
         KeySchema:
-          - AttributeName: fxaId
+          - AttributeName: userId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.tableName}
