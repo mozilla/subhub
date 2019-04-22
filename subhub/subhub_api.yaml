@@ -97,6 +97,10 @@ paths:
                 type: string
                 description: Email address.
                 example: user@gmail.com
+              orig_system:
+                type: string
+                description: Originating System
+                example: Firefox
   /plans:
     get:
       operationId: subhub.stripe_calls.list_all_plans
@@ -221,8 +225,8 @@ definitions:
           type: string
           example: firefox_pro_basic_823
         product_id:
-          type: array
-          example: ["firefox_pro_basic"]
+          type: string
+          example: "firefox_pro_basic"
         current_period_end:
           type: number
           description: Seconds since UNIX epoch.

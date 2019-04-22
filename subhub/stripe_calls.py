@@ -5,6 +5,7 @@ import os
 import boto3
 from subhub.secrets import get_secret
 import logging
+import uuid
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -76,26 +77,32 @@ def subscribe_customer(customer, plan):
 
 
 def subscribe_to_plan(uid, data):
-    if not isinstance(uid, str):
-        return 'Invalid ID', 400
-    try:
-        subscription_user = next(f for f in premium_customers if uid == f['userId'])
-        # resp = client.get_item(
-        #     TableName=SUBHUB_TABLE,
-        #     Key={
-        #         'userId': {'S': uid}
-        #     }
-        # )
-        # subscription_user = resp.get('Item')
-        # print(f'sub user {subscription_user}')
-        for fox in subscription_user['subscriptions']:
-            if data['plan_id'] == fox["plan"]["id"] and fox["plan"]["active"]:
+    print(f'uid {uid} data {data}')
+    resp = client.get_item(
+        TableName=SUBHUB_TABLE,
+        Key={
+            'userId': {'S': uid}
+        }
+    )
+
+    print(f'resp {resp}')
+    subscription_user = resp.get('Item')
+    print(f'sub user {subscription_user}')
+    if subscription_user:
+        if subscription_user['subscriptions']:
+            if data['plan_id'] == subscription_user['subscriptions']:
                 logger.info(f'already subscribed')
                 return {"message": "User has current subscription.", "code": 400}, 400
-    except StopIteration as e:
-        premium_customers.append({'userId': uid, 'custId': None, 'subscriptions': []})
-        subscription_user = {'userId': uid, 'custId': None, 'subscriptions': []}
-    if subscription_user['custId'] is None:
+    else:
+        resp = client.put_item(
+            TableName=SUBHUB_TABLE,
+            Item={
+                'userId': {'S': uid},
+            }
+        )
+        subscription_user = resp
+
+    if 'custId' not in subscription_user:
         if data['email'] is None:
             return 'Missing email parameter.', 400
         customer = create_customer(data['pmt_token'], uid, data['email'])
@@ -106,25 +113,98 @@ def subscribe_to_plan(uid, data):
             return 'Missing parameter ', 400
         elif 'No such plan' in subscription:
             return 'Plan not valid', 400
-        for f in premium_customers:
-            if f['userId'] == uid:
-                f['custId'] = customer['id']
-                f['subscriptions'].append(subscription)
-        user_subscriptions = []
+        resp = client.get_item(
+            TableName=SUBHUB_TABLE,
+            Key={
+                'userId': {'S': uid}
+            }
+        )
+        updated_customer = stripe.Customer.retrieve(customer['id'])
+        item = resp['Item']
+        item['custId'] = {'S': customer['id']}
+        item['orig_system'] = {'S': data['orig_system']}
+        endedVal = 'None'
+        if subscription['ended_at']:
+            endedVal = str(subscription['ended_at'])
+        item['subscriptions'] = {'L': [{'M': {'subscription_id': {'S': subscription['id']},
+                          'current_period_end': {'S': str(subscription['current_period_end'])},
+                          'current_period_start': {'S': str(subscription['current_period_start'])},
+                          'plan_id': {'S': subscription['plan']['id']},
+                          'ended_at': {'S': endedVal},
+                          'orig_system': {'S': data['orig_system']},
+                          'status': {'S': subscription['status']},
+                          'nickname': {'S': subscription['plan']['nickname']}}}]}
+
+        client.put_item(TableName=SUBHUB_TABLE, Item=item)
         products = []
         for prod in subscription["items"]["data"]:
             products.append(prod["plan"]["product"])
-        user_subscriptions.append(
-            {"subscription_id": subscription["id"], "plan_id": subscription["plan"]["id"], "product_id": products,
-             "current_period_end": subscription["current_period_end"], "end_at": subscription["ended_at"]})
-        return user_subscriptions, 201
+        return_data = {}
+        return_data['userId'] = uid
+        return_data['orig_system'] = data['orig_system']
+        return_data['subscriptions'] = []
+        for subscription in updated_customer["subscriptions"]["data"]:
+            endedVal = 'None'
+            if subscription['ended_at']:
+                endedVal = str(subscription['ended_at'])
+            return_data['subscriptions'].append({
+                'current_period_end': subscription['current_period_end'],
+                'current_period_start': subscription['current_period_start'],
+                'ended_at': subscription['ended_at'],
+                'nickname': subscription['plan']['nickname'],
+                'plan_id': subscription['plan']['id'],
+                'status': subscription['status'],
+                'subscription_id': subscription['id']})
+        return return_data, 201
     else:
-        subscription = subscribe_customer(subscription_user['custId'], data['plan_id'])
+        resp = client.get_item(
+            TableName=SUBHUB_TABLE,
+            Key={
+                'userId': {'S': uid}
+            }
+        )
+        items = resp['Item']
+        print(f'item {items}')
+        for item in items['subscriptions']['L']:
+            if item["M"]["plan_id"]["S"] == data["plan_id"] and item["M"]["status"]["S"] in ['active', 'trialing']:
+                return 'User has existing plan', 400
+        subscription = subscribe_customer(subscription_user['custId']['S'], data['plan_id'])
         if 'Missing required param' in subscription:
             return 'Missing parameter ', 400
         elif 'No such plan' in subscription:
             return 'Plan not valid', 400
-        return subscription, 201
+
+        updated_customer = stripe.Customer.retrieve(subscription_user['custId']['S'])
+        updated_subscriptions = []
+        return_data = {}
+        return_data['userId'] = uid
+        return_data['orig_system'] = data['orig_system'],
+        return_data['subscriptions'] = []
+        for subscription in updated_customer["subscriptions"]["data"]:
+            endedVal = 'None'
+            if subscription['ended_at']:
+                endedVal = str(subscription['ended_at'])
+            item = {'M': {'subscription_id': {'S': subscription['id']},
+                          'current_period_end': {'S': str(subscription['current_period_end'])},
+                          'current_period_start': {'S': str(subscription['current_period_start'])},
+                          'plan_id': {'S': subscription['plan']['id']},
+                          'ended_at': {'S': endedVal},
+                          'orig_system': {'S': data['orig_system']},
+                          'status': {'S': subscription['status']},
+                          'nickname': {'S': subscription['plan']['nickname']}}}
+            updated_subscriptions.append(item)
+            return_data['subscriptions'].append({
+                'current_period_end': subscription['current_period_end'],
+                'current_period_start': subscription['current_period_start'],
+                'ended_at': subscription['ended_at'],
+                'nickname': subscription['plan']['nickname'],
+                'plan_id': subscription['plan']['id'],
+                'status': subscription['status'],
+                'subscription_id': subscription['id']})
+        items['subscriptions'] = {'L': updated_subscriptions}
+        client.put_item(TableName=SUBHUB_TABLE, Item=items)
+        return return_data, 201
+
 
 
 def list_all_plans():
