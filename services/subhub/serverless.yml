@@ -55,8 +55,7 @@ provider:
       Resource:
         - "*"
   environment:
-    SUBHUB_TABLE: ${self:custom.tableName}
-
+    SUBHUB_ACCT: ${self:custom.tableName}
 
 package:
   exclude:
@@ -72,7 +71,7 @@ custom:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt
   git-repo: https://github.com/mozilla/subhub
-  tableName: 'it-mozilla-subhub-table-${self:provider.stage}'
+  tableName: 'subhub-acct-table-${self:provider.stage}'
   dynamodb:
     start:
       migrate: true

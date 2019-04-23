@@ -1,6 +1,5 @@
 from subhub import stripe_calls
 import pytest
-import json
 
 
 def test_create_customer_tok_visa():
@@ -194,10 +193,7 @@ def test_cancel_subscription_with_valid_data(create_subscription_for_processing)
     THEN validate should cancel subscription
     """
     (subscription, code) = create_subscription_for_processing
-    print(f'subscription {subscription}')
     (cancelled, code) = stripe_calls.cancel_subscription('process_test', subscription['subscriptions'][0]['subscription_id'])
-    print(f'cancelled {cancelled}')
-    print(f'code {code}')
     assert cancelled['status'] == 'canceled'
     assert 201 == code
     stripe_calls.remove_from_db('process_test')
@@ -220,7 +216,6 @@ def test_check_subscription_with_valid_parameters(create_subscription_for_proces
     THEN validate should return list of active subscriptions
     """
     (subscription, code) = create_subscription_for_processing
-    print(f'subscription {subscription}')
     (sub_status, code) = stripe_calls.subscription_status('process_test')
     assert 201 == code
     assert len(sub_status) > 0
@@ -250,15 +245,16 @@ def test_check_subscription_with_invalid_fxa_id():
     assert 'Invalid ID' in sub_status
 
 
-def test_update_payment_method_valid_parameters():
+def test_update_payment_method_valid_parameters(create_subscription_for_processing):
     """
     GIVEN api_token, fxa, pmt_token
     WHEN all parameters are valid
     THEN update payment method for a customer
     """
-    (updated_pmt, code) = stripe_calls.update_payment_method('moz12345', {"pmt_token": 'tok_mastercard'})
+    (subscription, code) = create_subscription_for_processing
+    (updated_pmt, code) = stripe_calls.update_payment_method('process_test', {"pmt_token": 'tok_mastercard'})
     assert 201 == code
-    stripe_calls.remove_from_db('moz12345')
+    stripe_calls.remove_from_db('process_test')
 
 
 def test_update_payment_method_missing_fxa_id():
@@ -294,12 +290,13 @@ def test_update_payment_method_missing_payment_token():
     assert 'Missing token' in updated_pmt
 
 
-def test_update_payment_method_invalid_payment_token():
+def test_update_payment_method_invalid_payment_token(create_subscription_for_processing):
     """
     GIVEN api_token, fxa, pmt_token
     WHEN invalid pmt_token
     THEN do not update payment method for a customer
     """
-    (updated_pmt, code) = stripe_calls.update_payment_method('moz12345', {"pmt_token": 'tok_invalid'})
+    (updated_pmt, code) = stripe_calls.update_payment_method('process_test', {"pmt_token": 'tok_invalid'})
     assert 400 == code
     assert 'No such token:' in updated_pmt
+    stripe_calls.remove_from_db('process_test')

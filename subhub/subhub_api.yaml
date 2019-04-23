@@ -44,8 +44,6 @@ paths:
       description: Get list of subscriptions for a premium payments customer
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
@@ -110,8 +108,6 @@ paths:
       description: List all plans available from subscription provider
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
@@ -128,8 +124,6 @@ paths:
       description: Cancel a Customers Subscription
       produces:
         - application/json;
-      security:
-        - AuthApiKey: []
       responses:
         201:
           description: Subscription cancelation successful.
@@ -142,18 +136,38 @@ paths:
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: subhub.stripe_calls.fxa_customer_update
+      operationId: subhub.stripe_calls.customer_update
       tags:
         - Subscriptions
       summary: Firefox Customer Update
       description: Get updated customer subscription data
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
+          schema:
+            type: object
+            properties:
+              payment_type:
+                type: string
+                enum:
+                  - card
+              last4:
+                type: integer
+                example: 4242
+              exp_month:
+                type: integer
+                example: 8
+              exp_year:
+                type: integer
+                example: 2020
+              subscriptions:
+                description: |
+                  Optionally included subscriptions.
+                type: array
+                items:
+                  $ref: '#/definitions/Subscriptions'
         400:
           description: Error missing paremeter
       parameters:
@@ -166,26 +180,26 @@ paths:
       description: Update the credit card on file for a user's account
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         201:
-          description: Update successful
+          description: Update successful.
         400:
-          description: Error - missing parementer
+          description: Error - unable to update payment method.
+        404:
+          description: Customer does not exist.
       parameters:
         - $ref: '#/parameters/uidParam'
-        - name: pmt_token
-          in: body
+        - in: body
+          name: data
           schema:
             type: object
             required:
               - pmt_token
             properties:
               pmt_token:
-                description: Pay Token.
                 type: string
-                example: 'tok_KPte7942xySKBKyrBu11yEpf'
+                description: Pay Token.
+                example: tok_KPte7942xySKBKyrBu11yEpf
 definitions:
   Plans:
     type: array
