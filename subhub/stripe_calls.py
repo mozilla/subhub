@@ -77,6 +77,8 @@ def subscribe_customer(customer, plan):
 
 
 def subscribe_to_plan(uid, data):
+    if not isinstance(uid, str):
+        return 'Invalid ID', 400
     print(f'uid {uid} data {data}')
     resp = client.get_item(
         TableName=SUBHUB_TABLE,
@@ -89,7 +91,7 @@ def subscribe_to_plan(uid, data):
     subscription_user = resp.get('Item')
     print(f'sub user {subscription_user}')
     if subscription_user:
-        if subscription_user['subscriptions']:
+        if 'subscriptions' in subscription_user:
             if data['plan_id'] == subscription_user['subscriptions']:
                 logger.info(f'already subscribed')
                 return {"message": "User has current subscription.", "code": 400}, 400
@@ -140,8 +142,6 @@ def subscribe_to_plan(uid, data):
         for prod in subscription["items"]["data"]:
             products.append(prod["plan"]["product"])
         return_data = {}
-        return_data['userId'] = uid
-        return_data['orig_system'] = data['orig_system']
         return_data['subscriptions'] = []
         for subscription in updated_customer["subscriptions"]["data"]:
             endedVal = 'None'
@@ -177,8 +177,6 @@ def subscribe_to_plan(uid, data):
         updated_customer = stripe.Customer.retrieve(subscription_user['custId']['S'])
         updated_subscriptions = []
         return_data = {}
-        return_data['userId'] = uid
-        return_data['orig_system'] = data['orig_system'],
         return_data['subscriptions'] = []
         for subscription in updated_customer["subscriptions"]["data"]:
             endedVal = 'None'
@@ -216,14 +214,23 @@ def list_all_plans():
 
 
 def cancel_subscription(uid, sub_id):
+    if not isinstance(uid, str):
+        return 'Invalid ID', 400
+    if not isinstance(sub_id, str):
+        return 'Invalid Subscription ', 400
     # TODO Remove payment source on cancel
-    try:
-        subscription_user = next(f for f in premium_customers if uid == f['userId'])
-    except StopIteration as e:
-        return 'User does not exist', 404
+    resp = client.get_item(
+        TableName=SUBHUB_TABLE,
+        Key={
+            'userId': {'S': uid}
+        }
+    )
+    subscription_user = resp.get('Item')
+    print(f'sub user {subscription_user}')
     subscriptions = []
-    for fox in subscription_user['subscriptions']:
-        subscriptions.append(fox['id'])
+    for fox in subscription_user['subscriptions']['L']:
+        print(f'fox {fox}')
+        subscriptions.append(fox['M']['subscription_id']['S'])
     if sub_id in subscriptions:
         try:
             tocancel = stripe.Subscription.retrieve(sub_id)
@@ -233,6 +240,8 @@ def cancel_subscription(uid, sub_id):
             return 'Invalid subscription.', 400
         if tocancel['status'] in ['active', 'trialing']:
             tocancel.delete()
+            cancelled = stripe.Subscription.retrieve(sub_id)
+            print(f'cancelled {cancelled}')
             return tocancel, 201
         else:
             return 'Error cancelling subscription', 400
@@ -243,21 +252,44 @@ def cancel_subscription(uid, sub_id):
 def subscription_status(uid):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
-    try:
-        subscription_user = next(f for f in premium_customers if uid == f['userId'])
-    except StopIteration as e:
-        return 'Customer ID not valid.', 400
-    subscriptions = stripe.Subscription.list(customer=subscription_user['custId'], limit=100)
+    resp = client.get_item(
+        TableName=SUBHUB_TABLE,
+        Key={
+            'userId': {'S': uid}
+        }
+    )
+    items = resp.get('Item')
+    if items is None:
+        return 'Customer does not exist.', 404
+    subscriptions = stripe.Subscription.list(customer=items['custId']['S'], limit=100, status='all')
     if subscriptions is None:
         return 'No subscriptions for this customer.', 404
-    user_subscriptions = []
-    for sub in subscriptions["data"]:
-        products = []
-        for prod in sub["items"]["data"]:
-            products.append(prod["plan"]["product"])
-        user_subscriptions.append({"subscription_id": sub["id"], "plan_id": sub["plan"]["id"], "product_id": products,
-                                   "current_period_end": sub["current_period_end"], "end_at": sub["ended_at"]})
-    return user_subscriptions, 201
+    updated_subscriptions = []
+    return_data = {}
+    return_data['subscriptions'] = []
+    for subscription in subscriptions["data"]:
+        endedVal = 'None'
+        if subscription['ended_at']:
+            endedVal = str(subscription['ended_at'])
+        item = {'M': {'subscription_id': {'S': subscription['id']},
+                      'current_period_end': {'S': str(subscription['current_period_end'])},
+                      'current_period_start': {'S': str(subscription['current_period_start'])},
+                      'plan_id': {'S': subscription['plan']['id']},
+                      'ended_at': {'S': endedVal},
+                      'status': {'S': subscription['status']},
+                      'nickname': {'S': subscription['plan']['nickname']}}}
+        updated_subscriptions.append(item)
+        return_data['subscriptions'].append({
+            'current_period_end': subscription['current_period_end'],
+            'current_period_start': subscription['current_period_start'],
+            'ended_at': subscription['ended_at'],
+            'nickname': subscription['plan']['nickname'],
+            'plan_id': subscription['plan']['id'],
+            'status': subscription['status'],
+            'subscription_id': subscription['id']})
+    items['subscriptions'] = {'L': updated_subscriptions}
+    client.put_item(TableName=SUBHUB_TABLE, Item=items)
+    return return_data, 201
 
 
 
@@ -286,10 +318,18 @@ def fxa_customer_update(uid):
     return {"customer": uid}, 200
 
 
-def api_validation(api_token):
-    if api_token is None:
-        return False
-    elif isinstance(api_token, int):
-        return False
-    else:
-        return True
+def remove_from_db(uid):
+    resp = client.delete_item(
+        TableName=SUBHUB_TABLE,
+        Key={
+            'userId': {'S': uid}
+        }
+    )
+    print(f'remove from db {resp}')
+
+    # create a response
+    response = {
+        "statusCode": 200
+    }
+    return response
+

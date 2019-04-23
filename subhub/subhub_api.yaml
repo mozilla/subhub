@@ -224,10 +224,14 @@ definitions:
         plan_id:
           type: string
           example: firefox_pro_basic_823
-        product_id:
+        nickname:
           type: string
           example: "firefox_pro_basic"
         current_period_end:
+          type: number
+          description: Seconds since UNIX epoch.
+          example: 1557361022
+        current_period_start:
           type: number
           description: Seconds since UNIX epoch.
           example: 1557361022
@@ -235,6 +239,10 @@ definitions:
           type: number
           description: Non-null if the subscription is ending at a period in time.
           example: 1557361022
+        status:
+          type: string
+          description: Subscription status
+          example: active
   Errormessage:
     type: object
     properties:
