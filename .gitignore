@@ -114,8 +114,5 @@ node_modules/
 .idea/
 
 
-
 # dynamodb local
 .dynamodb/
-
-
