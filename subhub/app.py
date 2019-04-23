@@ -8,7 +8,6 @@ import os
 
 def create_app(config=None):
     IS_DEPLOYED = os.environ.get("AWS_EXECUTION_ENV")
-    print(f'deployed {IS_DEPLOYED}')
     if IS_DEPLOYED is None:
         print(f'offline yes')
         options = {"swagger_ui": True}

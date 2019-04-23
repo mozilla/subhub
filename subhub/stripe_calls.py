@@ -9,6 +9,7 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+
 SUBHUB_TABLE = os.environ.get('SUBHUB_TABLE')
 IS_DEPLOYED = os.environ.get("AWS_EXECUTION_ENV")
 if IS_DEPLOYED is None:
