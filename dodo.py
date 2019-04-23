@@ -160,7 +160,7 @@ def task_setup():
         custom uptodate to check for outdated npm pkgs
         '''
         try:
-            sh.npm('outdated').strip()
+            sh.npm('outdated')
             return False
         except sh.ErrorReturnCode_1:
             return True
@@ -169,7 +169,8 @@ def task_setup():
             'noroot',
         ],
         'actions': [
-            'npm install',
+            'npm audit',
+            'npm ci',
         ],
         'uptodate': [
             uptodate,
