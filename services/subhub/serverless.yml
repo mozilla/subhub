@@ -94,7 +94,6 @@ functions:
           cors: true
     environment:
       STAGE: ${self:provider.stage}
-      TEST_TOKEN: ${ssm:testToken}
       SUBHUB_TABLE: ${self:provider.tableName}
 
 resources:

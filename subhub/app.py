@@ -3,11 +3,12 @@ from flask_cors import CORS
 # from flask.views import MethodView
 import connexion
 import os
+from subhub.cfg import CFG
 
 
 
 def create_app(config=None):
-    IS_DEPLOYED = os.environ.get("AWS_EXECUTION_ENV")
+    IS_DEPLOYED = CFG.AWS_EXECUTION_ENV
     print(f'deployed {IS_DEPLOYED}')
     if IS_DEPLOYED is None:
         print(f'offline yes')

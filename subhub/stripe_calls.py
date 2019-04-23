@@ -1,6 +1,5 @@
 import stripe
 from subhub.cfg import CFG
-import os
 import boto3
 from subhub.secrets import get_secret
 import logging
@@ -9,10 +8,8 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-SUBHUB_TABLE = os.environ.get('SUBHUB_TABLE')
-IS_DEPLOYED = os.environ.get("AWS_EXECUTION_ENV")
-if IS_DEPLOYED is None:
-    logger.info(f'table {SUBHUB_TABLE}')
+if CFG.AWS_EXECUTION_ENV is None:
+    logger.info(f'table {CFG.SUBHUB_TABLE}')
     stripe.api_key = CFG.STRIPE_API_KEY
     client = boto3.client(
         'dynamodb',
@@ -69,7 +66,7 @@ def subscribe_to_plan(uid, data):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
     resp = client.get_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
@@ -82,7 +79,7 @@ def subscribe_to_plan(uid, data):
                 return {"message": "User has current subscription.", "code": 400}, 400
     else:
         resp = client.put_item(
-            TableName=SUBHUB_TABLE,
+            TableName=CFG.SUBHUB_TABLE,
             Item={
                 'userId': {'S': uid},
             }
@@ -101,7 +98,7 @@ def subscribe_to_plan(uid, data):
         elif 'No such plan' in subscription:
             return 'Plan not valid', 400
         resp = client.get_item(
-            TableName=SUBHUB_TABLE,
+            TableName=CFG.SUBHUB_TABLE,
             Key={
                 'userId': {'S': uid}
             }
@@ -122,7 +119,7 @@ def subscribe_to_plan(uid, data):
                           'status': {'S': subscription['status']},
                           'nickname': {'S': subscription['plan']['nickname']}}}]}
 
-        client.put_item(TableName=SUBHUB_TABLE, Item=item)
+        client.put_item(TableName=CFG.SUBHUB_TABLE, Item=item)
         products = []
         for prod in subscription["items"]["data"]:
             products.append(prod["plan"]["product"])
@@ -143,7 +140,7 @@ def subscribe_to_plan(uid, data):
         return return_data, 201
     else:
         resp = client.get_item(
-            TableName=SUBHUB_TABLE,
+            TableName=CFG.SUBHUB_TABLE,
             Key={
                 'userId': {'S': uid}
             }
@@ -184,7 +181,7 @@ def subscribe_to_plan(uid, data):
                 'status': subscription['status'],
                 'subscription_id': subscription['id']})
         items['subscriptions'] = {'L': updated_subscriptions}
-        client.put_item(TableName=SUBHUB_TABLE, Item=items)
+        client.put_item(TableName=CFG.SUBHUB_TABLE, Item=items)
         return return_data, 201
 
 
@@ -203,7 +200,7 @@ def cancel_subscription(uid, sub_id):
         return 'Invalid Subscription ', 400
     # TODO Remove payment source on cancel
     resp = client.get_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
@@ -233,7 +230,7 @@ def subscription_status(uid):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
     resp = client.get_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
@@ -268,7 +265,7 @@ def subscription_status(uid):
             'status': subscription['status'],
             'subscription_id': subscription['id']})
     items['subscriptions'] = {'L': updated_subscriptions}
-    client.put_item(TableName=SUBHUB_TABLE, Item=items)
+    client.put_item(TableName=CFG.SUBHUB_TABLE, Item=items)
     return return_data, 201
 
 
@@ -279,7 +276,7 @@ def update_payment_method(uid, data):
     if not isinstance(uid, str):
         return 'Missing or invalid user.', 400
     resp = client.get_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
@@ -306,7 +303,7 @@ def customer_update(uid):
     if not isinstance(uid, str):
         return 'Invalid ID', 400
     resp = client.get_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
@@ -341,7 +338,7 @@ def customer_update(uid):
 
 def remove_from_db(uid):
     client.delete_item(
-        TableName=SUBHUB_TABLE,
+        TableName=CFG.SUBHUB_TABLE,
         Key={
             'userId': {'S': uid}
         }
