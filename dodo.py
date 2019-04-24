@@ -35,10 +35,9 @@ DOIT_CONFIG = {
 SPACE = ' '
 NEWLINE = '\n'
 
-SLS = f'{CFG.APP_REPOROOT}/node_modules/serverless/bin/serverless'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}')]
 
-def envs(sep):
+def envs(sep=' '):
     return sep.join([
         f'APP_PROJNAME={CFG.APP_PROJNAME}',
         f'APP_DEPENV={CFG.APP_DEPENV}',
@@ -48,6 +47,7 @@ def envs(sep):
         f'APP_REVISION={CFG.APP_REVISION}',
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
         f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
+        'SLS_DEBUG=*',
     ])
 
 @contextlib.contextmanager
@@ -207,7 +207,7 @@ def task_package():
                 f'setup:{svc}',
             ],
             'actions': [
-                f'cd services/{svc} && {sls} package -v',
+                f'cd services/{svc} && env {envs()} {sls} package -v',
             ],
         }
 
@@ -226,7 +226,25 @@ def task_deploy():
                 f'setup:{svc}',
             ],
             'actions': [
-                f'cd {servicepath} && {sls} deploy -v',
+                f'cd {servicepath} && env {envs()} {sls} deploy -v',
+            ],
+        }
+
+def task_remove():
+    '''
+    run serverless remove -v for every service
+    '''
+    for svc in SVCS:
+        servicepath = f'services/{svc}'
+        sls = 'node_modules/serverless/bin/serverless'
+        yield {
+            'name': svc,
+            'task_dep': [
+                'noroot',
+                f'setup:{svc}',
+            ],
+            'actions': [
+                f'cd {servicepath} && env {envs()} {sls} remove -v',
             ],
         }
 

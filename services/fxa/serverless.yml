@@ -64,6 +64,8 @@ package:
     - 'subhub/**'
 
 custom:
+  prefix: ${self:provider.stage}-${self:service.name}
+  subdomain: ${self:provider.stage}.${self:service.name}
   awsAccountId: 177680776199
   defaultStage: dev
   pythonRequirements:
@@ -74,8 +76,8 @@ custom:
     start:
       migrate: true
   customDomain:
-    domainName: ${self:provider.stage}.${self:service.name}.mozilla-subhub.app
-    certificateName: ${self:provider.stage}.${self:service.name}.mozilla-subhub.app
+    domainName: ${self:custom.subdomain}.mozilla-subhub.app
+    certificateName: ${self:custom.subdomain}.mozilla-subhub.app
     basePath: 'v1'
     stage: ${self:provider.stage}
     createRoute53Record: true
@@ -84,7 +86,7 @@ custom:
 
 functions:
   subhub:
-    name: ${self:service.name}-${self:provider.stage}-function
+    name: ${self:custom.prefix}-function
     description: >
       subhub service for handling subscription services interactions
     handler: handler.handle
