@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template, url_for, logging, g
+from flask import Flask, request, jsonify, render_template, url_for, logging, g, current_app
 from flask_cors import CORS
 # from flask.views import MethodView
 import connexion
@@ -17,16 +17,22 @@ def create_app(config=None):
     else:
         options = {"swagger_ui": False}
         region = 'us-west-2'
+        host = None
     
-    print(f'options {options}')
     app = connexion.FlaskApp(__name__, specification_dir='./', options=options)
     app.add_api('subhub_api.yaml', pass_context_arg_name='request',
                 strict_validation=True)
+
+    if host:
+        app.app.subhub_account = SubHubAccount(table_name=CFG.USER_TABLE, region=region, host=host)
+    else:
+        app.app.subhub_account = SubHubAccount(table_name=CFG.USER_TABLE, region=region)
+    if not app.app.subhub_account.model.exists():
+        app.app.subhub_account.model.create_table(read_capacity_units=1, write_capacity_units=1, wait=True)
+
     @app.app.before_request
     def before_request():
-        g.subhub_account = SubHubAccount(table_name = CFG.SUBHUB_TABLE, region=region, host=host)
-        if not g.subhub_account.model.exists():
-            g.subhub_account.model.create_table(read_capacity_units=1, write_capacity_units=1, wait=True)
+        g.subhub_account = current_app.subhub_account
     CORS(app.app)
     return app
 

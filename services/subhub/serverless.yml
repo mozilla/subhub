@@ -13,7 +13,6 @@ provider:
   runtime: python3.7
   region: us-west-2
   stage: ${opt:stage, self:custom.defaultStage}
-  tableName: ${self:custom.tableName}
   memorySize: 256
   timeout: 10
   tracing: true
@@ -28,6 +27,8 @@ provider:
         - "dynamodb:PutItem"
         - "dynamodb:UpdateItem"
         - "dynamodb:DeleteItem"
+        - "dynamodb:DescribeTable"
+        - "dynamodb:CreateTable"
       Resource:
         - { "Fn::GetAtt": ["SubhubDynamoDBTable", "Arn" ] }
     - Effect: Allow
@@ -54,8 +55,6 @@ provider:
         - "xray:PutTelemetryRecords"
       Resource:
         - "*"
-  environment:
-    SUBHUB_ACCT: ${self:custom.tableName}
 
 package:
   exclude:
@@ -71,7 +70,6 @@ custom:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt
   git-repo: https://github.com/mozilla/subhub
-  tableName: 'subhub-acct-table-${self:provider.stage}'
   dynamodb:
     start:
       migrate: true
@@ -94,7 +92,8 @@ functions:
           cors: true
     environment:
       STAGE: ${self:provider.stage}
-      SUBHUB_TABLE: ${self:provider.tableName}
+      USER_TABLE:
+        Ref: "SubhubDynamoDBTable"
 
 resources:
   Resources:
@@ -110,4 +109,3 @@ resources:
             AttributeName: userId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
-        TableName: ${self:custom.tableName}

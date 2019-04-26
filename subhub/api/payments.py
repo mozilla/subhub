@@ -3,7 +3,7 @@ from typing import Optional
 
 import stripe
 from flask import g, app
-from stripe.error import InvalidRequestError as StripeInvalidRequest
+from stripe.error import InvalidRequestError as StripeInvalidRequest, APIConnectionError, APIError, AuthenticationError, CardError
 
 from subhub.cfg import CFG
 from subhub.secrets import get_secret
@@ -27,6 +27,7 @@ def create_customer(source_token, userid, email):
     :param email: user's email
     :return: Stripe Customer
     """
+    # TODO Add error handlers and static typing
     try:
         customer = stripe.Customer.create(
             source=source_token,
@@ -35,6 +36,7 @@ def create_customer(source_token, userid, email):
             metadata={'userid': userid}
         )
         return customer
+    # TODO: Verify that this is the only error we need to worry about
     except stripe.error.InvalidRequestError as e:
         return str(e)
 
@@ -46,6 +48,7 @@ def subscribe_customer(customer, plan):
     :param plan:
     :return: Subscription Object
     """
+    # TODO Add error handlers and static typing
     try:
         subscription = stripe.Subscription.create(
             customer=customer,
@@ -75,8 +78,6 @@ def existing_or_new_subscriber(uid, data):
         else:
             existing_or_new_subscriber(uid, data)
     if not subscription_user.custId:
-        if data['email'] is None:
-            return 'Missing email parameter.', 400
         customer = create_customer(data['pmt_token'], uid, data['email'])
         if 'No such token:' in customer:
             return 'Token not valid', 400
@@ -84,12 +85,12 @@ def existing_or_new_subscriber(uid, data):
         if not update_successful:
             return "Customer not saved successfully.", 400
         updated_user = g.subhub_account.get_user(uid)
-        return updated_user
+        return updated_user, 200
     else:
-        return subscription_user
+        return subscription_user, 200
     
 
-def has_existing_plan(user, data):
+def has_existing_plan(user, data) -> bool:
     """
     Check if user has the existing plan in an active or trialing state.
     :param user:
@@ -103,14 +104,16 @@ def has_existing_plan(user, data):
     return False
 
 
-def subscribe_to_plan(uid, data):
+def subscribe_to_plan(uid, data) -> tuple:
     """
     Subscribe to a plan given a user id, payment token, email, orig_system
     :param uid:
     :param data:
     :return: current subscriptions for user.
     """
-    sub_user = existing_or_new_subscriber(uid, data)
+    sub_user, code = existing_or_new_subscriber(uid, data)
+    if code == 400:
+        return "Customer issue.", 400
     existing_plan = has_existing_plan(sub_user, data)
     if existing_plan:
         return "User already subscribed.", 400
@@ -124,7 +127,7 @@ def subscribe_to_plan(uid, data):
     return return_data, 201
 
 
-def list_all_plans():
+def list_all_plans() -> tuple:
     """
     List all available plans for a user to purchase.
     :return:
@@ -137,17 +140,13 @@ def list_all_plans():
     return stripe_plans, 200
 
 
-def cancel_subscription(uid, sub_id):
+def cancel_subscription(uid, sub_id) -> tuple:
     """
     Cancel an existing subscription for a user.
     :param uid:
     :param sub_id:
     :return: Success or failure message for the cancellation.
     """
-    if not isinstance(uid, str):
-        return 'Invalid ID', 400
-    if not isinstance(sub_id, str):
-        return 'Invalid Subscription ', 400
     # TODO Remove payment source on cancel
     subscription_user = g.subhub_account.get_user(uid)
     if not subscription_user:
@@ -158,6 +157,7 @@ def cancel_subscription(uid, sub_id):
             try:
                 tocancel = stripe.Subscription.retrieve(sub_id)
             except StripeInvalidRequest as e:
+                # TODO handle other errors: APIConnectionError, APIError, AuthenticationError, CardError
                 return {"message": e}, 400
             if 'No such subscription:' in tocancel:
                 return 'Invalid subscription.', 400
@@ -170,14 +170,12 @@ def cancel_subscription(uid, sub_id):
         return {"message": 'Subscription not available.'}, 400
 
 
-def subscription_status(uid):
+def subscription_status(uid) -> tuple:
     """
     Given a user id return the current subscription status
     :param uid:
     :return: Current subscriptions
     """
-    if not isinstance(uid, str):
-        return 'Invalid ID', 400
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
         return 'Customer does not exist.', 404
@@ -188,7 +186,7 @@ def subscription_status(uid):
     return return_data, 201
 
 
-def create_return_data(subscriptions):
+def create_return_data(subscriptions) -> dict:
     """
     Create json object subscriptions object
     :param subscriptions:
@@ -197,16 +195,6 @@ def create_return_data(subscriptions):
     return_data = dict()
     return_data['subscriptions'] = []
     for subscription in subscriptions["data"]:
-        ended_val = 'None'
-        if subscription['ended_at']:
-            ended_val = str(subscription['ended_at'])
-        item = {'subscription_id': subscription['id'],
-                'current_period_end': str(subscription['current_period_end']),
-                'current_period_start': str(subscription['current_period_start']),
-                'plan_id': subscription['plan']['id'],
-                'ended_at': ended_val,
-                'status': subscription['status'],
-                'nickname': subscription['plan']['nickname']}
         return_data['subscriptions'].append({
             'current_period_end': subscription['current_period_end'],
             'current_period_start': subscription['current_period_start'],
@@ -218,17 +206,13 @@ def create_return_data(subscriptions):
     return return_data
 
 
-def update_payment_method(uid, data):
+def update_payment_method(uid, data) -> tuple:
     """
     Given a user id and a payment token, update user's payment method
     :param uid:
     :param data:
     :return: Success or failure message.
     """
-    if not isinstance(data['pmt_token'], str):
-        return 'Missing token', 400
-    if not isinstance(uid, str):
-        return 'Missing or invalid user.', 400
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
         return 'Customer does not exist.', 404
@@ -239,6 +223,7 @@ def update_payment_method(uid, data):
                 customer.modify(items.custId, source=data['pmt_token'])
                 return 'Payment method updated successfully.', 201
             except StripeInvalidRequest as e:
+                # TODO handle other errors: APIConnectionError, APIError, AuthenticationError, CardError
                 return str(e), 400
         else:
             return 'Customer mismatch.', 400
@@ -246,14 +231,12 @@ def update_payment_method(uid, data):
         return f'Customer does not exist: missing {e}', 404
 
 
-def customer_update(uid):
+def customer_update(uid) -> tuple:
     """
     Provide latest data for a given user
     :param uid:
     :return: return_data dict with credit card info and subscriptions
     """
-    if not isinstance(uid, str):
-        return 'Invalid ID', 400
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
         return 'Customer does not exist.', 404
@@ -268,7 +251,7 @@ def customer_update(uid):
         return f'Customer does not exist: missing {e}', 404
 
 
-def create_update_data(customer):
+def create_update_data(customer) -> dict:
     """
     Provide readable data for customer update to display
     :param customer:

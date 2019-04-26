@@ -18,7 +18,7 @@ jsonschema==2.6.0
 MarkupSafe==1.1.1
 openapi-spec-validator==0.2.6
 pathlib==1.0.1
-pynamodb=3.3.3
+pynamodb==3.3.3
 python-dateutil==2.8.0
 python-decouple==3.1
 PyYAML==5.1

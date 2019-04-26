@@ -82,6 +82,7 @@ paths:
               - pmt_token
               - plan_id
               - email
+              - orig_system
             properties:
               pmt_token:
                 type: string

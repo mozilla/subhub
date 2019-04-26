@@ -31,7 +31,7 @@ class SubHubAccount():
             orig_system = UnicodeAttribute()
         self.model = SubHubAccountModel
 
-    def get_user(self, uid):
+    def get_user(self, uid) -> SubHubAccountModel:
         try:
             subscription_user = self.model.get(uid, consistent_read=True)
             return subscription_user
@@ -46,7 +46,7 @@ class SubHubAccount():
         except PutError:
             return False
 
-    def append_custid(self, uid, custId):
+    def append_custid(self, uid, custId) -> bool:
         try:
             update_user = self.model.get(uid, consistent_read=True)
             update_user.custId = custId
@@ -55,9 +55,9 @@ class SubHubAccount():
         except DoesNotExist:
             return False
 
-    def remove_from_db(self, uid):
+    def remove_from_db(self, uid) -> bool:
         try:
             self.model.get(uid, consistent_read=True).delete()
-            return 'User deleted', 200
+            return True
         except DoesNotExist as e:
-            return e, 404
+            False
