@@ -7,6 +7,7 @@ import sh
 import pwd
 import sys
 import glob
+import contextlib
 
 from doit import get_var
 from pathlib import Path
@@ -48,6 +49,15 @@ def envs(sep):
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
         f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
     ])
+
+@contextlib.contextmanager
+def cd(path):
+    old_path = os.getcwd()
+    os.chdir(path)
+    try:
+        yield
+    finally:
+        os.chdir(old_path)
 
 def docstr_format(*args, **kwargs):
     def wrapper(func):
@@ -155,41 +165,49 @@ def task_setup():
     '''
     run all of the setup steps
     '''
-    def uptodate():
-        '''
-        custom uptodate to check for outdated npm pkgs
-        '''
-        try:
-            sh.npm('outdated')
-            return False
-        except sh.ErrorReturnCode_1:
-            return True
-    return {
-        'task_dep': [
-            'noroot',
-        ],
-        'actions': [
-            'npm audit',
-            'npm ci',
-        ],
-        'uptodate': [
-            uptodate,
-        ],
-    }
+    def create_uptodate(path):
+        def uptodate():
+            '''
+            custom uptodate to check for outdated npm pkgs
+            '''
+            try:
+                with cd(path):
+                    sh.npm('outdated')
+                return False
+            except sh.ErrorReturnCode_1:
+                return True
+        return uptodate
+    for svc in SVCS:
+        servicepath = f'services/{svc}'
+        yield {
+            'name': svc,
+            'task_dep': [
+                'noroot',
+            ],
+            'actions': [
+                #f'cd {servicepath} && [[ -f package-lock.json ]] && npm audit',
+                f'cd {servicepath} && npm install',
+                f'cd {servicepath} && npm audit fix -f',
+            ],
+            'uptodate': [
+                create_uptodate(servicepath),
+            ],
+        }
 
 def task_package():
     '''
     run serverless package -v for every service
     '''
     for svc in SVCS:
+        sls = 'node_modules/serverless/bin/serverless'
         yield {
             'name': svc,
             'task_dep': [
                 'noroot',
-                'setup',
+                f'setup:{svc}',
             ],
             'actions': [
-                f'cd services/{svc} && {SLS} package -v',
+                f'cd services/{svc} && {sls} package -v',
             ],
         }
 
@@ -199,15 +217,16 @@ def task_deploy():
     run serverless deploy -v for every service
     '''
     for svc in SVCS:
+        servicepath = f'services/{svc}'
+        sls = 'node_modules/serverless/bin/serverless'
         yield {
             'name': svc,
             'task_dep': [
                 'noroot',
-                'setup',
-                f'package:{svc}',
+                f'setup:{svc}',
             ],
             'actions': [
-                f'cd services/{svc} && {SLS} deploy -v',
+                f'cd {servicepath} && {sls} deploy -v',
             ],
         }
 

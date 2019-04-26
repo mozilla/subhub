@@ -1,13 +1,13 @@
 ---
 service:
-  name: subhub
+  name: fxa
 
 plugins:
   - serverless-python-requirements
+  - serverless-domain-manager
   - serverless-plugin-tracing
   - serverless-dynamodb-local
   - serverless-offline
-
 provider:
   name: aws
   runtime: python3.7
@@ -73,6 +73,14 @@ custom:
   dynamodb:
     start:
       migrate: true
+  customDomain:
+    domainName: ${self:provider.stage}.${self:service.name}.mozilla-subhub.app
+    certificateName: ${self:provider.stage}.${self:service.name}.mozilla-subhub.app
+    basePath: 'v1'
+    stage: ${self:provider.stage}
+    createRoute53Record: true
+    hostedZoneId: Z2KY0AWCLX3H6L
+    endpointType: regional
 
 functions:
   subhub:
