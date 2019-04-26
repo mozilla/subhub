@@ -37,7 +37,7 @@ parameters:
 paths:
   /customer/{uid}/subscriptions:
     get:
-      operationId: subhub.stripe_calls.subscription_status
+      operationId: subhub.api.payments.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
@@ -56,7 +56,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.stripe_calls.subscribe_to_plan
+      operationId: subhub.api.payments.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
@@ -101,7 +101,7 @@ paths:
                 example: Firefox
   /plans:
     get:
-      operationId: subhub.stripe_calls.list_all_plans
+      operationId: subhub.api.payments.list_all_plans
       tags:
         - Subscriptions
       summary: List all Stripe Plans
@@ -117,7 +117,7 @@ paths:
           description: Error missing parameter
   /customer/{uid}/subscriptions/{sub_id}:
     delete:
-      operationId: subhub.stripe_calls.cancel_subscription
+      operationId: subhub.api.payments.cancel_subscription
       tags:
         - Subscriptions
       summary: Cancel a Subscription
@@ -125,21 +125,36 @@ paths:
       produces:
         - application/json;
       responses:
-        201:
-          description: Subscription cancelation successful.
-        400:
+        '201':
+          description: Subscription cancellation successful.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '400':
           description: Error - missing paramenter.
-        404:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '404':
           description: User does not exist.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: subhub.stripe_calls.customer_update
+      operationId: subhub.api.payments.customer_update
       tags:
         - Subscriptions
-      summary: Firefox Customer Update
+      summary: Customer Update
       description: Get updated customer subscription data
       produces:
         - application/json
@@ -173,7 +188,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.stripe_calls.update_payment_method
+      operationId: subhub.api.payments.update_payment_method
       tags:
         - Subscriptions
       summary: Update Payment Method
@@ -208,10 +223,10 @@ definitions:
       properties:
         plan_id:
           type: string
-          example: firefox_pro_basic_823
+          example: pro_basic_823
         product_id:
           type: string
-          example: firefox_pro_basic
+          example: pro_basic
         interval:
           type: string
           example: month
@@ -237,10 +252,10 @@ definitions:
           example: sub_abc123
         plan_id:
           type: string
-          example: firefox_pro_basic_823
+          example: pro_basic_823
         nickname:
           type: string
-          example: "firefox_pro_basic"
+          example: "pro_basic"
         current_period_end:
           type: number
           description: Seconds since UNIX epoch.
