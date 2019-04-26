@@ -20,6 +20,7 @@ requirements = [
     'urlpath',
     'pathlib2',
     'packaging',
+    'pynamodb',
     'virtualenv',
     'Werkzeug',
     'sh',

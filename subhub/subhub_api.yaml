@@ -37,15 +37,13 @@ parameters:
 paths:
   /customer/{uid}/subscriptions:
     get:
-      operationId: subhub.stripe_calls.subscription_status
+      operationId: subhub.api.payments.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
       description: Get list of subscriptions for a premium payments customer
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
@@ -58,15 +56,13 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.stripe_calls.subscribe_to_plan
+      operationId: subhub.api.payments.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
       description: Subscribe to a Mozilla Plan
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         201:
           description: Subscription successful
@@ -86,6 +82,7 @@ paths:
               - pmt_token
               - plan_id
               - email
+              - orig_system
             properties:
               pmt_token:
                 type: string
@@ -99,17 +96,19 @@ paths:
                 type: string
                 description: Email address.
                 example: user@gmail.com
+              orig_system:
+                type: string
+                description: Originating System
+                example: Firefox
   /plans:
     get:
-      operationId: subhub.stripe_calls.list_all_plans
+      operationId: subhub.api.payments.list_all_plans
       tags:
         - Subscriptions
       summary: List all Stripe Plans
       description: List all plans available from subscription provider
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
@@ -119,71 +118,104 @@ paths:
           description: Error missing parameter
   /customer/{uid}/subscriptions/{sub_id}:
     delete:
-      operationId: subhub.stripe_calls.cancel_subscription
+      operationId: subhub.api.payments.cancel_subscription
       tags:
         - Subscriptions
       summary: Cancel a Subscription
       description: Cancel a Customers Subscription
       produces:
         - application/json;
-      security:
-        - AuthApiKey: []
       responses:
-        201:
-          description: Subscription cancelation successful.
-        400:
+        '201':
+          description: Subscription cancellation successful.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '400':
           description: Error - missing paramenter.
-        404:
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '404':
           description: User does not exist.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: subhub.stripe_calls.fxa_customer_update
+      operationId: subhub.api.payments.customer_update
       tags:
         - Subscriptions
-      summary: Firefox Customer Update
+      summary: Customer Update
       description: Get updated customer subscription data
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         200:
           description: Success
+          schema:
+            type: object
+            properties:
+              payment_type:
+                type: string
+                enum:
+                  - card
+              last4:
+                type: integer
+                example: 4242
+              exp_month:
+                type: integer
+                example: 8
+              exp_year:
+                type: integer
+                example: 2020
+              subscriptions:
+                description: |
+                  Optionally included subscriptions.
+                type: array
+                items:
+                  $ref: '#/definitions/Subscriptions'
         400:
           description: Error missing paremeter
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.stripe_calls.update_payment_method
+      operationId: subhub.api.payments.update_payment_method
       tags:
         - Subscriptions
       summary: Update Payment Method
       description: Update the credit card on file for a user's account
       produces:
         - application/json
-      security:
-        - AuthApiKey: []
       responses:
         201:
-          description: Update successful
+          description: Update successful.
         400:
-          description: Error - missing parementer
+          description: Error - unable to update payment method.
+        404:
+          description: Customer does not exist.
       parameters:
         - $ref: '#/parameters/uidParam'
-        - name: pmt_token
-          in: body
+        - in: body
+          name: data
           schema:
             type: object
             required:
               - pmt_token
             properties:
               pmt_token:
-                description: Pay Token.
                 type: string
-                example: 'tok_KPte7942xySKBKyrBu11yEpf'
+                description: Pay Token.
+                example: tok_KPte7942xySKBKyrBu11yEpf
 definitions:
   Plans:
     type: array
@@ -192,10 +224,10 @@ definitions:
       properties:
         plan_id:
           type: string
-          example: firefox_pro_basic_823
+          example: pro_basic_823
         product_id:
           type: string
-          example: firefox_pro_basic
+          example: pro_basic
         interval:
           type: string
           example: month
@@ -221,11 +253,15 @@ definitions:
           example: sub_abc123
         plan_id:
           type: string
-          example: firefox_pro_basic_823
-        product_id:
-          type: array
-          example: ["firefox_pro_basic"]
+          example: pro_basic_823
+        nickname:
+          type: string
+          example: "pro_basic"
         current_period_end:
+          type: number
+          description: Seconds since UNIX epoch.
+          example: 1557361022
+        current_period_start:
           type: number
           description: Seconds since UNIX epoch.
           example: 1557361022
@@ -233,6 +269,10 @@ definitions:
           type: number
           description: Non-null if the subscription is ending at a period in time.
           example: 1557361022
+        status:
+          type: string
+          description: Subscription status
+          example: active
   Errormessage:
     type: object
     properties:

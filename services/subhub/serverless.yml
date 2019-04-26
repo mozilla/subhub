@@ -27,6 +27,8 @@ provider:
         - "dynamodb:PutItem"
         - "dynamodb:UpdateItem"
         - "dynamodb:DeleteItem"
+        - "dynamodb:DescribeTable"
+        - "dynamodb:CreateTable"
       Resource:
         - { "Fn::GetAtt": ["SubhubDynamoDBTable", "Arn" ] }
     - Effect: Allow
@@ -53,9 +55,6 @@ provider:
         - "xray:PutTelemetryRecords"
       Resource:
         - "*"
-  environment:
-    SUBHUB_TABLE: ${self:custom.tableName}
-
 
 package:
   exclude:
@@ -71,7 +70,6 @@ custom:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt
   git-repo: https://github.com/mozilla/subhub
-  tableName: 'it-mozilla-subhub-table-${self:provider.stage}'
   dynamodb:
     start:
       migrate: true
@@ -94,7 +92,8 @@ functions:
           cors: true
     environment:
       STAGE: ${self:provider.stage}
-      TEST_TOKEN: ${ssm:testToken}
+      USER_TABLE:
+        Ref: "SubhubDynamoDBTable"
 
 resources:
   Resources:
@@ -102,9 +101,11 @@ resources:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
-          - AttributeName: fxaId
+          -
+            AttributeName: userId
             AttributeType: S
         KeySchema:
-          - AttributeName: fxaId
+          -
+            AttributeName: userId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
