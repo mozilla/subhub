@@ -6,8 +6,8 @@
   "license": "MPL-2.0",
   "devDependencies": {
     "serverless": "^1.27.3",
-    "serverless-dynamodb-local": "^0.2.37",
     "serverless-offline": "^4.9.4",
+    "serverless-dynamodb-local": "^1.0.2",
     "serverless-plugin-tracing": "^2.0.0",
     "serverless-python-requirements": "^3.3.1"
   }
