@@ -35,7 +35,7 @@ DOIT_CONFIG = {
 SPACE = ' '
 NEWLINE = '\n'
 
-SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}')]
+SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
 def envs(sep=' '):
     return sep.join([
@@ -47,7 +47,6 @@ def envs(sep=' '):
         f'APP_REVISION={CFG.APP_REVISION}',
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
         f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
-        'SLS_DEBUG=*',
     ])
 
 @contextlib.contextmanager
