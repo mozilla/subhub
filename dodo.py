@@ -38,15 +38,6 @@ NEWLINE = '\n'
 
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
-def aws_account_id():
-    try:
-        output = str(sh.aws('sts', 'get-caller-identity'))
-        identity = json.loads(output)
-        return identity['Account']
-    except sh.ErrorReturnCode_255:
-        print('expired aws token')
-        sys.exit(255)
-
 def envs(sep=' '):
     return sep.join([
         f'APP_PROJNAME={CFG.APP_PROJNAME}',
@@ -57,7 +48,6 @@ def envs(sep=' '):
         f'APP_REVISION={CFG.APP_REVISION}',
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
         f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
-        f'AWS_ACCOUNT_ID={aws_account_id()}',
     ])
 
 @contextlib.contextmanager
@@ -204,6 +194,26 @@ def task_setup():
             ],
         }
 
+def task_aws_account_id():
+    '''
+    run aws sts get-caller-identity and extract Account value
+    '''
+    def aws_account_id():
+        try:
+            output = str(sh.aws('sts', 'get-caller-identity'))
+            identity = json.loads(output)
+            aws_account_id = identity['Account']
+            return dict(AWS_ACCOUNT_ID=aws_account_id)
+        except sh.ErrorReturnCode_255:
+            print('expired aws token')
+            sys.exit(255)
+
+    return {
+        'actions': [
+            aws_account_id,
+        ],
+    }
+
 def task_package():
     '''
     run serverless package -v for every service
@@ -216,8 +226,11 @@ def task_package():
                 'noroot',
                 f'setup:{svc}',
             ],
+            'getargs': {
+                'AWS_ACCOUNT_ID': ('aws_account_id', 'AWS_ACCOUNT_ID'),
+            },
             'actions': [
-                f'cd services/{svc} && env {envs()} {sls} package -v',
+                f'cd services/{svc} && env {envs()} AWS_ACCOUNT_ID=%(AWS_ACCOUNT_ID)s {sls} package -v',
             ],
         }
 
@@ -235,8 +248,11 @@ def task_deploy():
                 'noroot',
                 f'setup:{svc}',
             ],
+            'getargs': {
+                'AWS_ACCOUNT_ID': ('aws_account_id', 'AWS_ACCOUNT_ID'),
+            },
             'actions': [
-                f'cd {servicepath} && env {envs()} {sls} deploy -v',
+                f'cd {servicepath} && env {envs()} AWS_ACCOUNT_ID=%(AWS_ACCOUNT_ID)s {sls} deploy -v',
             ],
         }
 
