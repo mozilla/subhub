@@ -49,10 +49,14 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Subscriptions'
-        400:
-          description: Error missing parameter
+        403:
+          description: No subscriptions exist.
+          schema:
+            $ref: '#/definitions/Errormessage'
         404:
-          description: No subscriptions for this customer.
+          description: Customer not found.
+          schema:
+            $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -69,7 +73,15 @@ paths:
           schema:
             $ref: '#/definitions/Subscriptions'
         400:
-          description: Error - missing paramenter
+          description: Error - missing paramenter or plan not valid
+          schema:
+            $ref: '#/definitions/Errormessage'
+        402:
+          description: Token not valid
+          schema:
+            $ref: '#/definitions/Errormessage'
+        409:
+          description: Already subscribed
           schema:
             $ref: '#/definitions/Errormessage'
       parameters:
@@ -114,8 +126,6 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Plans'
-        400:
-          description: Error missing parameter
   /customer/{uid}/subscriptions/{sub_id}:
     delete:
       operationId: subhub.api.payments.cancel_subscription
@@ -136,17 +146,11 @@ paths:
         '400':
           description: Error - missing paramenter.
           schema:
-            type: object
-            properties:
-              message:
-                type: string
+            $ref: '#/definitions/Errormessage'
         '404':
-          description: User does not exist.
+          description: Customer does not exist or Subscription not valid.
           schema:
-            type: object
-            properties:
-              message:
-                type: string
+            $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
@@ -185,7 +189,13 @@ paths:
                 items:
                   $ref: '#/definitions/Subscriptions'
         400:
-          description: Error missing paremeter
+          description: Customer user ID does not match
+          schema:
+            $ref: '#/definitions/Errormessage'
+        404:
+          description:  Customer does not exist.
+          schema:
+            $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -199,10 +209,19 @@ paths:
       responses:
         201:
           description: Update successful.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
         400:
           description: Error - unable to update payment method.
+          schema:
+            $ref: '#/definitions/Errormessage'
         404:
           description: Customer does not exist.
+          schema:
+            $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -243,6 +262,9 @@ definitions:
         currency:
           type: string
           example: usd
+        nickname:
+          type: string
+          example: Monthy Rocket Launches
   Subscriptions:
     type: array
     items:
@@ -281,5 +303,5 @@ definitions:
         example: The resource is not available
       code:
         type: number
-        example: 5
+        example: 404
 

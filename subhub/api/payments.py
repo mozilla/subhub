@@ -80,7 +80,7 @@ def existing_or_new_subscriber(uid, data):
     if not subscription_user.custId:
         customer = create_customer(data['pmt_token'], uid, data['email'])
         if 'No such token:' in customer:
-            return 'Token not valid', 400
+            return 'Token not valid', 402
         update_successful = g.subhub_account.append_custid(uid, customer['id'])
         if not update_successful:
             return "Customer not saved successfully.", 400
@@ -114,9 +114,11 @@ def subscribe_to_plan(uid, data) -> tuple:
     sub_user, code = existing_or_new_subscriber(uid, data)
     if code == 400:
         return "Customer issue.", 400
+    if code == 402:
+        return "Token not valid", 402
     existing_plan = has_existing_plan(sub_user, data)
     if existing_plan:
-        return "User already subscribed.", 400
+        return "User already subscribed.", 409
     subscription = subscribe_customer(sub_user.custId, data['plan_id'])
     if 'Missing required param' in subscription:
         return 'Missing parameter ', 400
@@ -160,7 +162,7 @@ def cancel_subscription(uid, sub_id) -> tuple:
                 # TODO handle other errors: APIConnectionError, APIError, AuthenticationError, CardError
                 return {"message": e}, 400
             if 'No such subscription:' in tocancel:
-                return 'Invalid subscription.', 400
+                return {"message": 'Invalid subscription.'}, 404
             if tocancel['status'] in ['active', 'trialing']:
                 tocancel.delete()
                 return {"message": 'Subscription cancellation successful'}, 201
@@ -178,10 +180,10 @@ def subscription_status(uid) -> tuple:
     """
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
-        return 'Customer does not exist.', 404
+        return {"message": 'Customer does not exist.'}, 404
     subscriptions = stripe.Subscription.list(customer=items.custId, limit=100, status='all')
     if subscriptions is None:
-        return 'No subscriptions for this customer.', 404
+        return {"message": 'No subscriptions for this customer.'}, 403
     return_data = create_return_data(subscriptions)
     return return_data, 201
 
@@ -215,16 +217,16 @@ def update_payment_method(uid, data) -> tuple:
     """
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
-        return 'Customer does not exist.', 404
+        return {"message": 'Customer does not exist.'}, 404
     try:
         customer = stripe.Customer.retrieve(items.custId)
         if customer['metadata']['userid'] == uid:
             try:
                 customer.modify(items.custId, source=data['pmt_token'])
-                return 'Payment method updated successfully.', 201
+                return {"message": 'Payment method updated successfully.'}, 201
             except StripeInvalidRequest as e:
                 # TODO handle other errors: APIConnectionError, APIError, AuthenticationError, CardError
-                return str(e), 400
+                return {"message": f"{e}"}, 400
         else:
             return 'Customer mismatch.', 400
     except KeyError as e:
@@ -248,7 +250,7 @@ def customer_update(uid) -> tuple:
         else:
             return 'Customer mismatch.', 400
     except KeyError as e:
-        return f'Customer does not exist: missing {e}', 404
+        return {"message": f'Customer does not exist: missing {e}'}, 404
 
 
 def create_update_data(customer) -> dict:
