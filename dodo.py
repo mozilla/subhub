@@ -7,6 +7,7 @@ import sh
 import pwd
 import sys
 import glob
+import json
 import contextlib
 
 from doit import get_var
@@ -37,6 +38,15 @@ NEWLINE = '\n'
 
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
+def aws_account_id():
+    try:
+        output = str(sh.aws('sts', 'get-caller-identity'))
+        identity = json.loads(output)
+        return identity['Account']
+    except sh.ErrorReturnCode_255:
+        print('expired aws token')
+        sys.exit(255)
+
 def envs(sep=' '):
     return sep.join([
         f'APP_PROJNAME={CFG.APP_PROJNAME}',
@@ -47,6 +57,7 @@ def envs(sep=' '):
         f'APP_REVISION={CFG.APP_REVISION}',
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
         f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
+        f'AWS_ACCOUNT_ID={aws_account_id()}',
     ])
 
 @contextlib.contextmanager
