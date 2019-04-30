@@ -264,7 +264,7 @@ definitions:
           example: usd
         nickname:
           type: string
-          example: Monthy Rocket Launches
+          example: Monthly Rocket Launches
   Subscriptions:
     type: array
     items:
