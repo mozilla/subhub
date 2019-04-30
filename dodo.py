@@ -194,26 +194,6 @@ def task_setup():
             ],
         }
 
-def task_aws_account_id():
-    '''
-    run aws sts get-caller-identity and extract Account value
-    '''
-    def aws_account_id():
-        try:
-            output = str(sh.aws('sts', 'get-caller-identity'))
-            identity = json.loads(output)
-            aws_account_id = identity['Account']
-            return dict(AWS_ACCOUNT_ID=aws_account_id)
-        except sh.ErrorReturnCode_255:
-            print('expired aws token')
-            sys.exit(255)
-
-    return {
-        'actions': [
-            aws_account_id,
-        ],
-    }
-
 def task_package():
     '''
     run serverless package -v for every service
@@ -226,11 +206,8 @@ def task_package():
                 'noroot',
                 f'setup:{svc}',
             ],
-            'getargs': {
-                'AWS_ACCOUNT_ID': ('aws_account_id', 'AWS_ACCOUNT_ID'),
-            },
             'actions': [
-                f'cd services/{svc} && env {envs()} AWS_ACCOUNT_ID=%(AWS_ACCOUNT_ID)s {sls} package -v',
+                f'cd services/{svc} && env {envs()} {sls} package -v',
             ],
         }
 
@@ -248,11 +225,8 @@ def task_deploy():
                 'noroot',
                 f'setup:{svc}',
             ],
-            'getargs': {
-                'AWS_ACCOUNT_ID': ('aws_account_id', 'AWS_ACCOUNT_ID'),
-            },
             'actions': [
-                f'cd {servicepath} && env {envs()} AWS_ACCOUNT_ID=%(AWS_ACCOUNT_ID)s {sls} deploy -v',
+                f'cd {servicepath} && env {envs()} {sls} deploy -v',
             ],
         }
 

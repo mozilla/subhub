@@ -35,20 +35,20 @@ provider:
       Action:
         - "secretsmanager:GetSecretValue"
       Resource:
-        - "arn:aws:secretsmanager:us-west-2:903937621340:secret:${self:provider.stage}/*"
+        - 'Fn::Join': [':', ['arn:aws:secretsmanager', Ref: AWS::Region, Ref: AWS::AccountId, 'secret:${self:provider.stage}/*']]
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
         - logs:CreateLogStream
         - logs:PutLogEvents
       Resource:
-        - 'Fn::Join': [':', ['arn:aws:logs', Ref: 'AWS::Region', Ref: AWS::AccountId, 'log-group:/aws/lambda/*:*:*']]
+        - 'Fn::Join': [':', ['arn:aws:logs', Ref: AWS::Region, Ref: AWS::AccountId, 'log-group:/aws/lambda/*:*:*']]
     - Effect: Allow
       Action:
         - kms:Decrypt
       Resource:
-        - "arn:aws:kms:us-west-2:${self:custom.awsAccountId}:alias/*"
-        - "arn:aws:kms:us-west-2:${self:custom.awsAccountId}:key/*"
+        - 'Fn::Join': [':', ['arn:aws:kms', Ref: AWS::Region, Ref: AWS::AccountId, 'alias/*']]
+        - 'Fn::Join': [':', ['arn:aws:kms', Ref: AWS::Region, Ref: AWS::AccountId, 'key/*']]
     - Effect: Allow
       Action:
         - "xray:PutTraceSegments"
@@ -66,7 +66,6 @@ package:
 custom:
   prefix: ${self:provider.stage}-${self:service.name}
   subdomain: ${self:provider.stage}.${self:service.name}
-  awsAccountId: ${env:AWS_ACCOUNT_ID}
   defaultStage: dev
   pythonRequirements:
     dockerizePip: 'non-linux'
