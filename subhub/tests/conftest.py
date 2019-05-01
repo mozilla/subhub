@@ -3,10 +3,23 @@ from flask import g
 
 from subhub.api import payments
 from subhub.app import create_app
+from subhub.tests import setUp, tearDown
+
+
+
+def pytest_configure():
+    """Called before testing begins"""
+    setUp()
+
+
+def pytest_unconfigure():
+    """Called after all tests run and warnings displayed"""
+    tearDown()
 
 
 @pytest.fixture(scope="module")
 def app():
+    print(f'test app')
     app = create_app()
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
