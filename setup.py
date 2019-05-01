@@ -42,6 +42,7 @@ test_requirements = [
     'moto',
     'stripe',
     'connexion',
+    'psutil',
 ]
 
 extras = {'test': test_requirements}

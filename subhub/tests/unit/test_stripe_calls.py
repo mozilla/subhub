@@ -95,7 +95,9 @@ def test_create_subscription_with_invalid_payment_token(app):
     THEN validate subscription is created
     """
     subscription, code = payments.subscribe_to_plan('invalid_test', {"pmt_token": 'tok_invalid', "plan_id": 'plan_EtMcOlFMNWW4nd', "email": 'invalid_test@test.com', "orig_system": "Test_system"})
-    assert 400 == code
+    print(f'create sub {subscription}')
+    print(f'create code {code}')
+    assert 402 == code
     g.subhub_account.remove_from_db('invalid_test')
 
 
@@ -170,5 +172,5 @@ def test_update_payment_method_invalid_payment_token(app, create_subscription_fo
     """
     (updated_pmt, code) = payments.update_payment_method('process_test', {"pmt_token": 'tok_invalid'})
     assert 400 == code
-    assert 'No such token:' in updated_pmt
+    assert 'No such token:' in updated_pmt['message']
     g.subhub_account.remove_from_db('process_test')
