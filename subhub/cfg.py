@@ -175,7 +175,7 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
             return 'prod'
         elif branch.startswith('stage/'):
             return 'stage'
-        elif branch.startswithc('qa/'):
+        elif branch.startswith('qa/'):
             return 'qa'
         return 'dev'
 
