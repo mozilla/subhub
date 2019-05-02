@@ -171,7 +171,7 @@ def task_setup():
                 'noroot',
             ],
             'actions': [
-                #f'cd {servicepath} && [[ -f package-lock.json ]] && npm audit',
+                f'[[ -d {servicepath}/node_modules/ ]] && rm -rf {servicepath}/node_modules/',
                 f'cd {servicepath} && npm install',
                 f'cd {servicepath} && npm audit fix -f',
             ],
