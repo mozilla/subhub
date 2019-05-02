@@ -147,19 +147,6 @@ def task_pull():
             ],
         }
 
-def task_test():
-    '''
-    run tox in tests/
-    '''
-    return {
-        'task_dep': [
-            'noroot',
-        ],
-        'actions': [
-            f'cd {CFG.APP_REPOROOT} && tox',
-        ],
-    }
-
 def task_setup():
     '''
     run all of the setup steps
@@ -192,6 +179,20 @@ def task_setup():
                 create_uptodate(servicepath),
             ],
         }
+
+def task_test():
+    '''
+    run tox in tests/
+    '''
+    return {
+        'task_dep': [
+            'noroot',
+            'setup',
+        ],
+        'actions': [
+            f'cd {CFG.APP_REPOROOT} && tox',
+        ],
+    }
 
 def task_package():
     '''
