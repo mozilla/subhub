@@ -226,7 +226,7 @@ def task_deploy():
                 f'setup:{svc}',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {sls} deploy -v',
+                f'cd {servicepath} && env {envs()} {sls} deploy --stage {CFG.DEPENV} -v',
             ],
         }
 
