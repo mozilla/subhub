@@ -34,38 +34,31 @@ class NotGitRepoError(Exception):
     '''
     NotGitRepoError
     '''
-    def __init__(self):
+    def __init__(self, cwd=os.getcwd()):
         '''
         init
         '''
-        msg = 'not a git repository error'
+        msg = f'not a git repository error cwd={cwd}'
         super(NotGitRepoError, self).__init__(msg)
-
-class NoGitRepoOrEnvError(Exception):
-    '''
-    NoGitRepoOrEnvError
-    '''
-    def __init__(self):
-        '''
-        init
-        '''
-        msg = 'no git repo or env found error'
-        super(NoGitRepoOrEnvError, self).__init__(msg)
 
 def git(*args, strip=True, **kwargs):
     '''
     git
     '''
     try:
-        result = str(sh.contrib.git(*args, **kwargs)) #pylint: disable=no-member
-        if strip:
-            result = result.strip()
-        return result
+        sh.contrib.git('rev-parse', '--is-inside-work-tree')
     except sh.ErrorReturnCode as e:
         stderr = e.stderr.decode('utf-8')
         if 'not a git repository' in stderr.lower():
             raise NotGitRepoError
+    try:
+        result = str(sh.contrib.git(*args, **kwargs)) #pylint: disable=no-member
+        if result:
+            result = result.strip()
+        return result
+    except sh.ErrorReturnCode as e:
         log.error(e)
+        raise e
 
 class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
     '''
@@ -106,9 +99,10 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
         jobs
         '''
         try:
-            return call('nproc')[1].strip()
-        except: #pylint: disable=bare-except
-            return 1
+            result = sh.nproc()
+        except:
+            result = 1
+        return int(result)
 
     @property
     def APP_TIMEOUT(self):
@@ -137,13 +131,6 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
         reporoot
         '''
         return git('rev-parse', '--show-toplevel')
-
-    @property
-    def APP_INSTALLPATH(self):
-        '''
-        install path
-        '''
-        return self('APP_INSTALLPATH', '/usr/src/app')
 
     @property
     def APP_VERSION(self):
@@ -178,16 +165,6 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
         elif branch.startswith('qa/'):
             return 'qa'
         return 'dev'
-
-    @property
-    def APP_SRCTAR(self):
-        '''
-        srctar
-        '''
-        try:
-            return self('APP_SRCTAR')
-        except UndefinedValueError:
-            return '.src.tar.gz'
 
     @property
     def APP_REVISION(self):
@@ -233,35 +210,13 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
         return os.path.join(self.APP_REPOROOT, self.APP_PROJNAME)
 
     @property
-    def APP_BOTPATH(self):
-        '''
-        botpath
-        '''
-        return os.path.join(self.APP_PROJPATH, 'bot')
-
-    @property
-    def APP_DBPATH(self):
-        '''
-        dbpath
-        '''
-        return os.path.join(self.APP_PROJPATH, 'db')
-
-    @property
-    def APP_TESTPATH(self):
-        '''
-        testpath
-        '''
-        return os.path.join(self.APP_PROJPATH, 'tests')
-
-    @property
     def APP_LS_REMOTE(self):
         '''
         ls-remote
         '''
-        try:
-            result = git('ls-remote', f'https://github.com/{self.APP_REPONAME}')
-        except NotGitRepoError:
-            result = self('APP_LS_REMOTE')
+        reponame = self.APP_REPONAME
+        log.info(f'reponame={reponame}')
+        result = git('ls-remote', f'https://github.com/{reponame}')
         return {
             refname: revision for revision, refname in [line.split() for line in result.split('\n')]
         }
@@ -271,10 +226,7 @@ class AutoConfigPlus(AutoConfig): #pylint: disable=too-many-public-methods
         '''
         gsm status
         '''
-        try:
-            result = git('submodule', 'status', strip=False)
-        except NotGitRepoError:
-            result = self('APP_GSM_STATUS')
+        result = git('submodule', 'status', strip=False)
         pattern = r'([ +-])([a-f0-9]{40}) ([A-Za-z0-9\/\-_.]+)( .*)?'
         matches = re.findall(pattern, result)
         states = {
