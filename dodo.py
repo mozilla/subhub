@@ -41,7 +41,6 @@ SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}'
 def envs(sep=' '):
     return sep.join([
         f'APP_PROJNAME={CFG.APP_PROJNAME}',
-        f'APP_DEPENV={CFG.APP_DEPENV}',
         f'APP_VERSION={CFG.APP_VERSION}',
         f'APP_BRANCH={CFG.APP_BRANCH}',
         f'APP_DEPENV={CFG.APP_DEPENV}',
@@ -226,7 +225,7 @@ def task_deploy():
                 f'setup:{svc}',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {sls} deploy --stage {CFG.DEPENV} -v',
+                f'cd {servicepath} && env {envs()} {sls} deploy --stage {CFG.APP_DEPENV} -v',
             ],
         }
 
