@@ -30,7 +30,7 @@ provider:
         - 'dynamodb:DescribeTable'
         - 'dynamodb:CreateTable'
       Resource:
-        - { 'Fn::GetAtti: ['SubhubDynamoDBTable', 'Arn'] }
+        - { 'Fn::GetAtt': ['SubhubDynamoDBTable', 'Arn'] }
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
