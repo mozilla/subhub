@@ -46,7 +46,6 @@ def envs(sep=' '):
         f'APP_DEPENV={CFG.APP_DEPENV}',
         f'APP_REVISION={CFG.APP_REVISION}',
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
-        f'APP_INSTALLPATH={CFG.APP_INSTALLPATH}',
     ])
 
 @contextlib.contextmanager
