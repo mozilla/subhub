@@ -19,8 +19,14 @@ def setUp():
     for name in ('boto3', 'botocore'):
         logging.getLogger(name).setLevel(logging.CRITICAL)
     global ddb_process, pynamodb_resource
+    if os.getenv("AWS_LOCAL_DYNAMODB") is None:
+        os.environ["AWS_LOCAL_DYNAMODB"] = "http://127.0.0.1:8000"
 
-    cmd = " ".join(["dynalite --port 8000"])
+    # Latest boto3 now wants fake credentials around, so here we are.
+    os.environ["AWS_ACCESS_KEY_ID"] = "fake"
+    os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
+
+    cmd = " ".join(["./services/fxa/node_modules/.bin/dynalite --port 8000"])
     ddb_process = subprocess.Popen(cmd, shell=True, env=os.environ)
 
 
