@@ -14,20 +14,20 @@ before_install:
 - pip install -r requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
-- mkdir -p ~/.aws
+script:
+- mkdir -p ~/.aws/
 - |
-  cat <(cat <<-EOF
+  cat >~/.aws/credentials <<-EOF
   [default]
   aws_access_key_id=ABCDEFG
   aws_secret_access_key=ABCDEFG
-  EOF) >~/.aws/credentials
+  EOF
 - |
-  cat <(cat <<-EOF
+  cat >~/.aws/config <<-EOF
   [default]
   output=json
   region=us-west-2
-  EOF) >~/.aws/config
-script:
+  EOF
 - cat -A ~/.aws/credentials
 - cat -A ~/.aws/config
 - doit test
