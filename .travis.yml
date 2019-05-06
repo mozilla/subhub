@@ -9,7 +9,7 @@ env:
 - USER_TABLE=testing
 before_install:
 - sudo rm -f /etc/boto.cfg
-- pip isntall -r requirements.txt
+- pip install -r requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
 script:
