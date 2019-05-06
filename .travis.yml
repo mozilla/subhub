@@ -17,15 +17,15 @@ before_install:
 - mkdir -p ~/.aws
 - |
   cat <<EOF >~/.aws/credentials
-  [default]
-  aws_access_key_id=ABCDEFG
-  aws_secret_access_key=ABCDEFG
+    [default]
+    aws_access_key_id=ABCDEFG
+    aws_secret_access_key=ABCDEFG
   EOF
 - |
   cat <<EOF >~/.aws/config
-  [default]
-  output=json
-  region=us-west-2
+    [default]
+    output=json
+    region=us-west-2
   EOF
 script:
 - cat ~/.aws/credentials
