@@ -1,3 +1,5 @@
 doit
 sh
 python-decouple
+flake8
+tox

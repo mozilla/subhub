@@ -1,0 +1,30 @@
+language: python
+dist: xenial
+python:
+- 3.7
+env:
+- AWS_DEFAULT_REGION=us-west-2
+- BOTO_CONFIG=/dev/null
+- AWS_XRAY_SDK_ENABLED=false
+- USER_TABLE=testing
+before_install:
+- sudo rm -f /etc/boto.cfg
+- pip isntall -r requirements.txt
+- npm install -g dynalite
+- npm install -g kinesalite
+script:
+- export BOTO_CONFIG=/dev/null
+- mkdir ~/.aws
+- |
+  cat << EOF > ~/.aws/credentials
+  [default]
+  aws_access_key_id=ABCDEFG
+  aws_secret_access_key=ABCDEFG
+  EOF
+- |
+  cat << EOF > ~/.aws/config
+  [default]
+  output=json
+  region=us-west-2
+  EOF
+- doit test
