@@ -28,7 +28,7 @@ before_install:
   output=json
   region=us-west-2
   EOF
-  ) >~/.aws/credentials
+  ) >~/.aws/config
 script:
 - cat -A ~/.aws/credentials
 - cat -A ~/.aws/config
