@@ -14,7 +14,7 @@ before_install:
 - pip install -r requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
-- mkdir ~/.aws
+- mkdir -p ~/.aws
 - |
   cat << EOF > ~/.aws/credentials
   [default]
@@ -30,4 +30,6 @@ before_install:
 script:
 - env | grep USER_TABLE
 - env | grep STRIPE_API_KEY
+- cat ~/.aws/credentials
+- cat ~/.aws/config
 - doit test
