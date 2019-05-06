@@ -20,15 +20,13 @@ before_install:
   [default]
   aws_access_key_id=ABCDEFG
   aws_secret_access_key=ABCDEFG
-  EOF
-  ) >~/.aws/credentials
+  EOF) >~/.aws/credentials
 - |
   cat <(cat <<-EOF
   [default]
   output=json
   region=us-west-2
-  EOF
-  ) >~/.aws/config
+  EOF) >~/.aws/config
 script:
 - cat -A ~/.aws/credentials
 - cat -A ~/.aws/config
