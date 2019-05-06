@@ -3,7 +3,11 @@ dist: xenial
 python:
 - 3.7
 env:
-- AWS_DEFAULT_REGION=us-west-2 BOTO_CONFIG=/dev/null AWS_XRAY_SDK_ENABLED=false USER_TABLE=testing
+  matrix:
+  - AWS_DEFAULT_REGION=us-west-2 BOTO_CONFIG=/dev/null AWS_XRAY_SDK_ENABLED=false
+    USER_TABLE=testing
+  STRIPE_API_KEY:
+    secure: X0FRN20rk1euH3pL2NyhVpPXnswxz+ft+mpzIGK5lMH5pcVx+ApShJ0lBNzKl2gL9Kd4HpudQZ+Y0BQF8GeOupAct1LQfHsCOfPpPlJYfTFPsljVZwPwSJz9U2OQ30nfUyyaFF2ZY/x/7YoMw8bZpeMzglfkmCMUWJ62jHjvktPlHKlnU484E3NAP/Z06oSuAZPvoDkPU/Mzkt8PtC9YiBg0tBem7irW3DHa64xAtvTlv9yV5vu06kaAPCRisNHgxHTnvQZ5t1b2RoeLKAKEr9AKX7R1La67g7AYfyAQGqQHAUo6XHY20azNaMywkkbSMwKbWnM6z5jZG8HJZN1JtdDz+MWCISRajQhMkBZms6VB/W4FR3RsHrYXum6ikRqULI75zZEbBR+BEYnwEG6LCz/ccmIPD361m8P8bSZA4c6AH9DjBZbeqdo63NvotAtUyGe58ub1yYE5tZOutp/EaAFDRi3NM8ekz765zHesJ8uMrc6MoFeDSJp21uCg4y35aaNQ6TY9wO7Yb7BCfKWvAZeO1WeX18biM2whybNlyG/eHN6iqbP1QQkP3gfMyPgtCtTG8R2l/VydlxUyM+jBgS/N/CvPHnDLxuJKOcnPC/MS9JGX1XqlO/iXZGoiU83Hn09b27+1VqWSuIKAoabVEmnwMzhFYiK4aS+RerCxMGA=
 before_install:
 - sudo rm -f /etc/boto.cfg
 - pip install -r requirements.txt
