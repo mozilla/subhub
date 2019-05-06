@@ -4,18 +4,16 @@ python:
 - 3.7
 env:
   global:
-    AWS_DEFAULT_REGION: us-west-2
-    BOTO_CONFIG: /dev/null
-    AWS_XRAY_SDK_ENABLED: false
-    USER_TABLE: testing
-    secure: "Mv8HcQ/SUWy6SgJ163k9J+0W6JjzzFmXVhOjr1iFvTuCEapKH42HR5t9eJeDvyd10x0t6ejNlKHPkK2fVynaF8A66f8TPWZw4TypwqlOssaIBRWM2c91Y2h/zcgJnZFT7eatP+8G9rb1rjlxs8R0Eu3xKnX6swjO7jcp0hLJFh2dBz682Qqp8A/QLtdnZGOorTcXEsxa5n5xpd1nz3y5LbaftsfW3dqFSD3n1aFrv7cMcSZGIAmusIkO1DIL9JuXG4ON4lF8d+5vibfWO2WkuCpqF/e1x1Lnz/5jddeGfuFs4hs3ZE8HPLskUaEYEil59nFywI4v5GjhgHj00LEpNnIMBfqewP3tlWRrh0/ZM1tXZQO3pJBeFevnjlydkfVbPKGoJaaQYtaHevIJVycyW8Pns7B4hh1Y77c2FmQyd8jF/aBVUjHlYxHsGyrscHWUjI/Jlva60nG0lQbx10RQjLtgvUr01vK274XaNU3SVoAWHmi0FxSBKPXiBtPDPz9R7o2pDt2gj0VHzbkaWRwmfsjWHQ5dWgrnU8g/ulII621+fhCuP60XI2rNXX7Pe2hl08WUi1sicHNlHhv3k60vKqdnrK/4OyN+OrIR4VGXXc+ehXSHiYWOlv2qr0vn0njwQyNb4vcGaRDmTeryvalMnMfRkBEO7mZG4jeAKCshxMg="
+  - AWS_DEFAULT_REGION: us-west-2
+  - BOTO_CONFIG: "/dev/null"
+  - AWS_XRAY_SDK_ENABLED: false
+  - USER_TABLE: testing
+  - secure: ldfVKFlO/kQLAmXFTf+UIsj1OzGV+EtfF1mEqp9ArD9eZg0EiM6mr2LTWMAKUyUlD3uCXSkF0xmIUIxNSUB+FwDxSNZdtO+Fx3hmF6I6ofX2NGEDdz2l/F7LeC3MfyPU7qwL9IL15gX2w6got78eDtdGMlhmt2s8dNsWDbLlAMjGZtCvfcXjY5GJS96Pe4lNHbCNlAi+x8E2UsyOBAEAySXfCfbS1JLW9XqiBKk1hinE+f2j47Wb6DJVX3JKfYLgdRdO+4JVa5dJvBIGhmO3lTi+vwDpTx+QbI+/oaoLpqSBpPwcpycZSPCJ0Oo+HfR8DCQRmT8NB6uc/wD44hrYlOXfXudaUH1TzQ2eT+ZT6BY5ikCArHpRDFHzlu2XmbTRq+phzArlV54H8xd46sIrMkLlVP4UHQ1GVOnXWTlG6wkrXxyPUFPAFeSKOiiK2UoHgz6j7yOTwKkuYH3/96GzH+YmoNZPFaDCh31YDFW4+ynlHFWA96U9+GKVS66f52aNMf7El6SwYSeuOzfOnKo5h5opKkkjO83KVrfzwBwpYkXHtyMG2o8hhJUDBF6VozPusJllkZfdyapdQgdTtH5R4Es1QNkzLAfX/iNGfr1yMc+I6O7VLEoB30202m1GDaocqnUwCHnMhnPdkw8E1x0DXoqSBHlCr/GJMjNiRsPjZ0k=
 before_install:
 - sudo rm -f /etc/boto.cfg
 - pip install -r requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
-script:
-- export BOTO_CONFIG=/dev/null
 - mkdir ~/.aws
 - |
   cat << EOF > ~/.aws/credentials
@@ -29,5 +27,7 @@ script:
   output=json
   region=us-west-2
   EOF
-- env | grep STRIPE_API_KEY | head -c 22
+script:
+- env | grep USER_TABLE
+- env | grep STRIPE_API_KEY
 - doit test
