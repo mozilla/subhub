@@ -16,14 +16,14 @@ before_install:
 - npm install -g kinesalite
 - mkdir -p ~/.aws
 - |
-  echo <(cat <<-EOF
+  cat <(cat <<-EOF
   [default]
   aws_access_key_id=ABCDEFG
   aws_secret_access_key=ABCDEFG
   EOF
   ) >~/.aws/credentials
 - |
-  echo <(cat <<-EOF
+  cat <(cat <<-EOF
   [default]
   output=json
   region=us-west-2
