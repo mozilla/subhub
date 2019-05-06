@@ -171,7 +171,7 @@ def task_setup():
                 'noroot',
             ],
             'actions': [
-                f'[[ -d {servicepath}/node_modules/ ]] && rm -rf {servicepath}/node_modules/',
+                f'[ -d {servicepath}/node_modules/ ] && rm -rf {servicepath}/node_modules/ || true',
                 f'cd {servicepath} && npm install',
                 f'cd {servicepath} && npm audit fix -f',
             ],
