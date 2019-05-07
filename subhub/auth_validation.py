@@ -1,13 +1,11 @@
-import json
-
 from subhub.cfg import CFG
 from subhub.secrets import get_secret
 
 
 def payment_auth(api_token, required_scopes=None):
-    secrets = json.loads(get_secret_values())
+    secrets = get_secret_values()
     if api_token in secrets:
-        return True
+        return {"value": True}
     return None
 
 
@@ -21,9 +19,9 @@ def get_secret_values():
 
 
 def support_auth(api_token, required_scopes=None):
-    secrets = json.loads(get_support_values())
+    secrets = get_support_values()
     if api_token in secrets:
-        return True
+        return {"value": True}
     return None
 
 
