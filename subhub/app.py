@@ -33,6 +33,7 @@ def create_app(config=None):
     @app.app.before_request
     def before_request():
         g.subhub_account = current_app.subhub_account
+        g.app_system_id = None
     CORS(app.app)
     return app
 
