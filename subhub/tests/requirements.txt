@@ -1,7 +1,5 @@
 pytest
 pytest-cov
-Quart
-Hypercorn
 Flask
 gunicorn
 attrdict

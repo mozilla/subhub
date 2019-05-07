@@ -12,7 +12,7 @@ produces:
 basePath: /v1
 
 securityDefinitions:
-  AuthApiKey:
+  PayApiKey:
     type: apiKey
     in: header
     name: Authorization
@@ -20,7 +20,14 @@ securityDefinitions:
       Ops issued token.
       An example of the Authorization header would be:
       ```Authorization: Bearer 00secret00```
-    x-apikeyInfoFunc: subhub.auth_validation.basic_auth
+    x-apikeyInfoFunc: subhub.auth_validation.payment_auth
+  SupportApiKey:
+    type: apiKey
+    in: header
+    name: X-APP-ID
+    description: |
+      Sending application identifier
+    x-apikeyInfoFunc: subhub.auth_validation.support_auth
 parameters:
   uidParam:
     in: path
@@ -42,6 +49,8 @@ paths:
         - Subscriptions
       summary: List of Subscriptions
       description: Get list of subscriptions for a premium payments customer
+      security:
+        - PayApiKey: []
       produces:
         - application/json
       responses:
@@ -65,6 +74,8 @@ paths:
         - Subscriptions
       summary: Subscribe to Plan
       description: Subscribe to a Mozilla Plan
+      security:
+        - PayApiKey: []
       produces:
         - application/json
       responses:
@@ -119,6 +130,8 @@ paths:
         - Subscriptions
       summary: List all Stripe Plans
       description: List all plans available from subscription provider
+      security:
+        - PayApiKey: []
       produces:
         - application/json
       responses:
@@ -133,6 +146,8 @@ paths:
         - Subscriptions
       summary: Cancel a Subscription
       description: Cancel a Customers Subscription
+      security:
+        - PayApiKey: []
       produces:
         - application/json;
       responses:
@@ -161,6 +176,8 @@ paths:
         - Subscriptions
       summary: Customer Update
       description: Get updated customer subscription data
+      security:
+        - PayApiKey: []
       produces:
         - application/json
       responses:
@@ -204,6 +221,8 @@ paths:
         - Subscriptions
       summary: Update Payment Method
       description: Update the credit card on file for a user's account
+      security:
+        - PayApiKey: []
       produces:
         - application/json
       responses:
