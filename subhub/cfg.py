@@ -277,7 +277,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         default value for USER_TABLE
         """
-        return self("USER_TABLE", "testing")
+        return self("USER_TABLE", "users-testing")
+
+    @property
+    def EVENT_TABLE(self):
+        """
+        default value for EVENT_TABLE
+        """
+        return self("EVENT_TABLE", "events-testing")
 
     @property
     def LOCAL_FLASK_PORT(self):
@@ -301,6 +308,27 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("DYNALITE_FILE", "dynalite.out")
 
     @property
+    def SALESFORCE_BASKET_URI(self):
+        """
+        basket uri
+        """
+        return self("SALESFORCE_BASKET_URI", "https://google.com")
+
+    @property
+    def FXA_SQS_URI(self):
+        """
+        fxa sqs uri
+        """
+        return self("FXA_SQS_URI", "https://google.com")
+
+    @property
+    def AWS_REGION(self):
+        """
+        aws region
+        """
+        return self("AWS_REGION", "us-west-2")
+
+    @property
     def PAYMENT_API_KEY(self):
         """
         payment api key
@@ -313,6 +341,27 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         support api key
         """
         return self("SUPPORT_API_KEY", "fake_support_api_key")
+
+    @property
+    def WEBHOOK_API_KEY(self):
+        """
+        webhook api key
+        """
+        return self("WEBHOOK_API_KEY", "fake_webhook_api_key")
+
+    @property
+    def AWS_ACCESS_KEY_ID(self):
+        """
+        aws access key id
+        """
+        return self("AWS_ACCESS_KEY_ID", "fake_key")
+
+    @property
+    def AWS_SECRET_ACCESS_KEY(self):
+        """
+        aws secret access key
+        """
+        return self("AWS_SECRET_ACCESS_KEY", "fake_access")
 
     @property
     def AWS_EXECUTION_ENV(self):

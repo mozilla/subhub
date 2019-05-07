@@ -1,10 +1,4 @@
 pytest
 pytest-cov
-pytest-watch
-patch
-mock
-flake8
-moto
-stripe
-connexion
-psutil
+pytest-mock
+mockito
