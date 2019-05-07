@@ -28,7 +28,8 @@ def pytest_configure():
     # Latest boto3 now wants fake credentials around, so here we are.
     os.environ["AWS_ACCESS_KEY_ID"] = "fake"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
-    os.environ["USER_TABLE"] = "subhub-acct-table-dev"
+    os.environ["USER_TABLE"] = "users-testing"
+    os.environ["EVENT_TABLE"] = "events-testing"
 
     # Set stripe api key
     stripe.api_key = CFG.STRIPE_API_KEY
@@ -61,6 +62,7 @@ def app():
     app = create_app()
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
+        g.webhook_table = app.app.webhook_table
         yield app
 
 

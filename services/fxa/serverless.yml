@@ -30,7 +30,8 @@ provider:
         - 'dynamodb:DescribeTable'
         - 'dynamodb:CreateTable'
       Resource:
-        - { 'Fn::GetAtt': ['SubhubDynamoDBTable', 'Arn'] }
+        - { 'Fn::GetAtt': ['Users', 'Arn'] }
+        - { 'Fn::GetAtt': ['Events', 'Arn'] }
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
@@ -107,11 +108,13 @@ functions:
       APP_REMOTE_ORIGIN_URL: ${env:APP_REMOTE_ORIGIN_URL}
       STAGE: ${self:provider.stage}
       USER_TABLE:
-        Ref: 'SubhubDynamoDBTable'
+        Ref: 'Users'
+      EVENT_TABLE:
+        Ref: 'Events'
 
 resources:
   Resources:
-    SubhubDynamoDBTable:
+    Users:
       Type: 'AWS::DynamoDB::Table'
       Properties:
         AttributeDefinitions:
@@ -121,5 +124,17 @@ resources:
         KeySchema:
           -
             AttributeName: userId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+    Events:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          -
+            AttributeName: eventId
+            AttributeType: S
+        KeySchema:
+          -
+            AttributeName: eventId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST

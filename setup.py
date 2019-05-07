@@ -43,6 +43,8 @@ test_requirements = [
     'stripe',
     'connexion',
     'psutil',
+    'mockito',
+    'pytest-mock',
 ]
 
 extras = {'test': test_requirements}
