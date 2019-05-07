@@ -28,6 +28,4 @@ script:
   output=json
   region=us-west-2
   EOF
-- cat -A ~/.aws/credentials
-- cat -A ~/.aws/config
 - doit test
