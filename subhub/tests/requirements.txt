@@ -1,6 +1,10 @@
 pytest
 pytest-cov
-Flask
-gunicorn
-attrdict
-ruamel.yaml
+pytest-watch
+patch
+mock
+flake8
+moto
+stripe
+connexion
+psutil
