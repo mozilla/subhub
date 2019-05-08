@@ -2,13 +2,17 @@ import logging
 import os
 import signal
 import subprocess
+import uuid
 
 import psutil
 import pytest
+import stripe
 from flask import g
 
 from subhub.api import payments
 from subhub.app import create_app
+from subhub.cfg import CFG
+from subhub.customer import create_customer
 
 ddb_process = None
 
@@ -24,8 +28,17 @@ def pytest_configure():
     # Latest boto3 now wants fake credentials around, so here we are.
     os.environ["AWS_ACCESS_KEY_ID"] = "fake"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
+    os.environ["USER_TABLE"] = "subhub-acct-table-dev"
 
-    cmd = " ".join(["./services/fxa/node_modules/.bin/dynalite --port 8000"])
+    # Set stripe api key
+    stripe.api_key = CFG.STRIPE_API_KEY
+
+    # Locate absolute path of dynalite
+    here_dir = os.path.abspath(os.path.dirname(__file__))
+    root_dir = os.path.dirname(os.path.dirname(here_dir))
+    dynalite = os.path.join(root_dir, "services/fxa/node_modules/.bin/dynalite")
+
+    cmd = " ".join([f"{dynalite} --port 8000"])
     ddb_process = subprocess.Popen(cmd, shell=True, env=os.environ,
                                    stdout=subprocess.PIPE)
     while 1:
@@ -44,25 +57,31 @@ def pytest_unconfigure():
     ddb_process.wait()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(autouse=True, scope="module")
 def app():
-    print(f'test app')
     app = create_app()
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
         yield app
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture()
 def create_customer_for_processing():
-    customer = payments.create_customer('tok_visa', 'process_customer', 'test_fixture@tester.com')
+    uid = uuid.uuid4()
+    customer = create_customer(g.subhub_account, user_id='process_customer',
+                               source_token='tok_visa',
+                               email='test_fixture@{}tester.com'.format(
+                                   uid.hex),
+                               origin_system='Test_system')
     yield customer
 
 
 @pytest.fixture(scope="function")
 def create_subscription_for_processing():
-    subscription = payments.subscribe_to_plan('process_test', {"pmt_token": "tok_visa",
-                                                                   "plan_id": "plan_EtMcOlFMNWW4nd",
-                                                                   "orig_system": "Test_system",
-                                                                   "email": "subtest@tester.com"})
+    uid = uuid.uuid4()
+    subscription = payments.subscribe_to_plan(
+        'process_test', {"pmt_token": "tok_visa",
+                         "plan_id": "plan_EtMcOlFMNWW4nd",
+                         "orig_system": "Test_system",
+                         "email": "subtest@{}tester.com".format(uid)})
     yield subscription

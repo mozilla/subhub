@@ -23,11 +23,6 @@ LOG_LEVELS = [
 
 LOG_LEVEL = config('LOG_LEVEL', logging.WARNING, cast=int)
 
-logging.basicConfig(
-    stream=sys.stdout,
-    level=LOG_LEVEL,
-    format='%(asctime)s %(name)s %(message)s')
-logging.Formatter.converter = time.gmtime
 log = logging.getLogger(__name__)
 
 class NotGitRepoError(Exception):
