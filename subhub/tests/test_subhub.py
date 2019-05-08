@@ -5,8 +5,8 @@ from subhub.app import create_app
 
 
 def test_subhub():
-    '''
+    """
     something
-    '''
+    """
     app = create_app()
     assert isinstance(app, connexion.FlaskApp)

@@ -10,11 +10,11 @@ def payment_auth(api_token, required_scopes=None):
 
 
 def get_secret_values():
-    if CFG('AWS_EXECUTION_ENV', None) is None:
+    if CFG("AWS_EXECUTION_ENV", None) is None:
         secret_values = CFG.PAYMENT_API_KEY
     else:  # pragma: no cover
-        subhub_values = get_secret('dev/SUBHUB')
-        secret_values = subhub_values['payment_api_key']
+        subhub_values = get_secret("dev/SUBHUB")
+        secret_values = subhub_values["payment_api_key"]
     return secret_values
 
 
@@ -26,9 +26,9 @@ def support_auth(api_token, required_scopes=None):
 
 
 def get_support_values():
-    if CFG('AWS_EXECUTION_ENV', None) is None:
+    if CFG("AWS_EXECUTION_ENV", None) is None:
         secret_values = CFG.SUPPORT_API_KEY
     else:  # pragma: no cover
-        subhub_values = get_secret('dev/SUBHUB')
-        secret_values = subhub_values['support_api_key']
+        subhub_values = get_secret("dev/SUBHUB")
+        secret_values = subhub_values["support_api_key"]
     return secret_values

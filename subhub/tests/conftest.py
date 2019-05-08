@@ -20,7 +20,7 @@ ddb_process = None
 def pytest_configure():
     """Called before testing begins"""
     global ddb_process
-    for name in ('boto3', 'botocore', 'stripe'):
+    for name in ("boto3", "botocore", "stripe"):
         logging.getLogger(name).setLevel(logging.CRITICAL)
     if os.getenv("AWS_LOCAL_DYNAMODB") is None:
         os.environ["AWS_LOCAL_DYNAMODB"] = "http://127.0.0.1:8000"
@@ -39,8 +39,9 @@ def pytest_configure():
     dynalite = os.path.join(root_dir, "services/fxa/node_modules/.bin/dynalite")
 
     cmd = " ".join([f"{dynalite} --port 8000"])
-    ddb_process = subprocess.Popen(cmd, shell=True, env=os.environ,
-                                   stdout=subprocess.PIPE)
+    ddb_process = subprocess.Popen(
+        cmd, shell=True, env=os.environ, stdout=subprocess.PIPE
+    )
     while 1:
         line = ddb_process.stdout.readline()
         if line.startswith(b"Listening"):
@@ -68,11 +69,13 @@ def app():
 @pytest.fixture()
 def create_customer_for_processing():
     uid = uuid.uuid4()
-    customer = create_customer(g.subhub_account, user_id='process_customer',
-                               source_token='tok_visa',
-                               email='test_fixture@{}tester.com'.format(
-                                   uid.hex),
-                               origin_system='Test_system')
+    customer = create_customer(
+        g.subhub_account,
+        user_id="process_customer",
+        source_token="tok_visa",
+        email="test_fixture@{}tester.com".format(uid.hex),
+        origin_system="Test_system",
+    )
     yield customer
 
 
@@ -80,8 +83,12 @@ def create_customer_for_processing():
 def create_subscription_for_processing():
     uid = uuid.uuid4()
     subscription = payments.subscribe_to_plan(
-        'process_test', {"pmt_token": "tok_visa",
-                         "plan_id": "plan_EtMcOlFMNWW4nd",
-                         "orig_system": "Test_system",
-                         "email": "subtest@{}tester.com".format(uid)})
+        "process_test",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "orig_system": "Test_system",
+            "email": "subtest@{}tester.com".format(uid),
+        },
+    )
     yield subscription
