@@ -18,8 +18,7 @@ class SubHubAccountModel(Model):
 
 
 class SubHubAccount:
-    def __init__(self, table_name: str, region: str,
-                 host: Optional[str] = None):
+    def __init__(self, table_name: str, region: str, host: Optional[str] = None):
         _table = table_name
         _region = region
         _host = host
@@ -30,13 +29,16 @@ class SubHubAccount:
                 region = _region
                 if _host:
                     host = _host
+
             userId = UnicodeAttribute(hash_key=True)
             custId = UnicodeAttribute(null=True)
             orig_system = UnicodeAttribute()
+
         self.model = SubHubAccountModel
 
-    def new_user(self, uid: str, origin_system: str,
-                 custId: Optional[str] = None) -> SubHubAccountModel:
+    def new_user(
+        self, uid: str, origin_system: str, custId: Optional[str] = None
+    ) -> SubHubAccountModel:
         return self.model(userId=uid, custId=custId, orig_system=origin_system)
 
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:

@@ -286,6 +286,16 @@ def task_tidy():
         ],
     }
 
+def task_black():
+    '''
+    run black on subhub/
+    '''
+    return {
+        'actions': [
+            f'black {CFG.APP_PROJPATH}',
+        ],
+    }
+
 if __name__ == '__main__':
     print('should be run with doit installed')
     import doit

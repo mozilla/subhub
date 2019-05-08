@@ -1,5 +1,6 @@
 class SubHubError(Exception):
     """Base SubHub Exception"""
+
     status_code = 500
 
 

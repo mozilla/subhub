@@ -3,8 +3,8 @@ import os
 from subhub import auth_validation
 from subhub.cfg import CFG
 
-os.environ['PAYMENT_API_KEY'] = 'sh_payment_api_key'
-os.environ['SUPPORT_API_KEY'] = 'sh_support_api_key'
+os.environ["PAYMENT_API_KEY"] = "sh_payment_api_key"
+os.environ["SUPPORT_API_KEY"] = "sh_support_api_key"
 
 
 def test_payment_auth():
