@@ -1,7 +1,12 @@
-from flask import g
-from subhub.api import payments
+import uuid
+
 import pytest
-from subhub import app
+import stripe
+import stripe.error
+from flask import g
+
+from subhub.api import payments
+from subhub.customer import create_customer, subscribe_customer
 
 
 def test_create_customer_tok_visa():
@@ -10,9 +15,13 @@ def test_create_customer_tok_visa():
     WHEN provided a test visa token and test fxa
     THEN validate the customer metadata is correct
     """
-    customer = payments.create_customer('tok_visa', 'test_mozilla', 'test_visa@tester.com')
+    customer = create_customer(g.subhub_account,user_id='test_mozilla',
+                               source_token='tok_visa',
+                               email='test_visa@tester.com',
+                               origin_system='Test_system')
     pytest.customer = customer
     assert customer['metadata']['userid'] == 'test_mozilla'
+
 
 def test_create_customer_tok_mastercard():
     """
@@ -20,8 +29,12 @@ def test_create_customer_tok_mastercard():
     WHEN provided a test mastercard token and test userid
     THEN validate the customer metadata is correct
     """
-    customers = payments.create_customer('tok_mastercard', 'test_mozilla', 'test_mastercard@tester.com')
-    assert customers['metadata']['userid'] == 'test_mozilla'
+    customer = create_customer(g.subhub_account,user_id='test_mozilla',
+                               source_token='tok_mastercard',
+                               email='test_mastercard@tester.com',
+                               origin_system='Test_system')
+    assert customer['metadata']['userid'] == 'test_mozilla'
+
 
 def test_create_customer_tok_invalid():
     """
@@ -29,8 +42,12 @@ def test_create_customer_tok_invalid():
     WHEN provided an invalid test token and test userid
     THEN validate the customer metadata is correct
     """
-    customers = payments.create_customer('tok_invalid', 'test_mozilla', 'test_invalid@tester.com')
-    assert 'No such token: tok_invalid' in customers
+    with pytest.raises(stripe.error.InvalidRequestError):
+        customer = create_customer(g.subhub_account,user_id='test_mozilla',
+                                   source_token='tok_invalid',
+                                   email='test_invalid@tester.com',
+                                   origin_system='Test_system')
+
 
 def test_create_customer_tok_avsFail():
     """
@@ -38,8 +55,12 @@ def test_create_customer_tok_avsFail():
     WHEN provided an invalid test token and test userid
     THEN validate the customer metadata is correct
     """
-    customers = payments.create_customer('tok_avsFail', 'test_mozilla', 'test_avsfail@tester.com')
-    assert customers['metadata']['userid'] == 'test_mozilla'
+    customer = create_customer(g.subhub_account, user_id='test_mozilla',
+                               source_token='tok_avsFail',
+                               email='test_avsfail@tester.com',
+                               origin_system='Test_system')
+    assert customer['metadata']['userid'] == 'test_mozilla'
+
 
 def test_create_customer_tok_avsUnchecked():
     """
@@ -47,8 +68,11 @@ def test_create_customer_tok_avsUnchecked():
     WHEN provided an invalid test token and test userid
     THEN validate the customer metadata is correct
     """
-    customers = payments.create_customer('tok_avsUnchecked', 'test_mozilla', 'test_avsunchecked@tester.com')
-    assert customers['metadata']['userid'] == 'test_mozilla'
+    customer = create_customer(g.subhub_account, user_id='test_mozilla',
+                               source_token='tok_avsUnchecked',
+                               email='test_avsunchecked@tester.com',
+                               origin_system='Test_system')
+    assert customer['metadata']['userid'] == 'test_mozilla'
 
 
 def test_subscribe_customer(create_customer_for_processing):
@@ -58,7 +82,7 @@ def test_subscribe_customer(create_customer_for_processing):
     THEN validate subscription is created
     """
     customer = create_customer_for_processing
-    subscription = payments.subscribe_customer(customer, 'plan_EtMcOlFMNWW4nd')
+    subscription = subscribe_customer(customer, 'plan_EtMcOlFMNWW4nd')
     assert subscription['plan']['active']
 
 
@@ -69,36 +93,44 @@ def test_subscribe_customer_invalid_plan(create_customer_for_processing):
     THEN validate subscription is created
     """
     customer = create_customer_for_processing
-    subscription = payments.subscribe_customer(customer, 'plan_notvalid')
-    assert 'No such plan: plan_notvalid' in subscription
+    with pytest.raises(stripe.error.InvalidRequestError) as excinfo:
+        subscribe_customer(customer, 'plan_notvalid')
+    assert 'No such plan: plan_notvalid' in str(excinfo)
 
 
-def test_create_subscription_with_valid_data(app):
+def test_create_subscription_with_valid_data():
     """
     GIVEN create a subscription
     WHEN provided a api_token, userid, pmt_token, plan_id, cust_id
     THEN validate subscription is created
     """
-    subscription, code = payments.subscribe_to_plan('validcustomer', {"pmt_token": 'tok_visa',
-                                                           "plan_id": 'plan_EtMcOlFMNWW4nd',
-                                                           "email": 'valid@customer.com',
-                                                           "orig_system": "Test_system"})
+    uid = uuid.uuid4()
+    subscription, code = payments.subscribe_to_plan(
+        'validcustomer',
+        {"pmt_token": 'tok_visa',
+         "plan_id": 'plan_EtMcOlFMNWW4nd',
+         "email": 'valid@{}customer.com'.format(uid),
+         "orig_system": "Test_system"})
     assert 201 == code
-    payments.cancel_subscription('validcustomer', subscription['subscriptions'][0]["subscription_id"])
+    payments.cancel_subscription('validcustomer', subscription[
+        'subscriptions'][0]["subscription_id"])
     g.subhub_account.remove_from_db('validcustomer')
 
 
-def test_create_subscription_with_invalid_payment_token(app):
+def test_create_subscription_with_invalid_payment_token():
     """
     GIVEN should not create a subscription
     WHEN provided a api_token, userid, invalid pmt_token, plan_id, email
     THEN validate subscription is created
     """
-    subscription, code = payments.subscribe_to_plan('invalid_test', {"pmt_token": 'tok_invalid', "plan_id": 'plan_EtMcOlFMNWW4nd', "email": 'invalid_test@test.com', "orig_system": "Test_system"})
-    print(f'create sub {subscription}')
-    print(f'create code {code}')
-    assert 402 == code
+    with pytest.raises(stripe.error.InvalidRequestError) as excinfo:
+        payments.subscribe_to_plan(
+            'invalid_test',
+            {"pmt_token": 'tok_invalid', "plan_id": 'plan_EtMcOlFMNWW4nd',
+             "email": 'invalid_test@test.com', "orig_system": "Test_system"})
+
     g.subhub_account.remove_from_db('invalid_test')
+    assert 'No such token: tok_invalid' in str(excinfo)
 
 
 def test_create_subscription_with_invalid_plan_id(app):
@@ -107,12 +139,14 @@ def test_create_subscription_with_invalid_plan_id(app):
     WHEN provided a api_token, userid, pmt_token, invalid plan_id, email
     THEN validate subscription is created
     """
-    subscription = payments.subscribe_to_plan('invalid_plan', {"pmt_token": 'tok_visa',
-                                                                   "plan_id": 'plan_abc123',
-                                                                   "email": 'invalid_plan@tester.com',
-                                                                   "orig_system": "Test_system"})
-    assert 400 in subscription
+    with pytest.raises(stripe.error.InvalidRequestError) as excinfo:
+        payments.subscribe_to_plan(
+            'invalid_plan', {"pmt_token": 'tok_visa',
+                             "plan_id": 'plan_abc123',
+                             "email": 'invalid_plan@tester.com',
+                             "orig_system": "Test_system"})
     g.subhub_account.remove_from_db('invalid_plan')
+    assert 'No such plan: plan_abc123' in str(excinfo)
 
 
 def test_list_all_plans_valid():

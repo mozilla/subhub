@@ -2,24 +2,28 @@ import logging
 from typing import Optional
 
 from pynamodb.attributes import UnicodeAttribute
-from pynamodb.models import Model, DoesNotExist, EXISTS as pynamexists
+from pynamodb.models import Model, DoesNotExist
 from pynamodb.exceptions import PutError
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
+# This exists purely for type-checking, the actual model is dynamically
+# created in DbAccount
 class SubHubAccountModel(Model):
     userId = UnicodeAttribute(hash_key=True)
     custId = UnicodeAttribute(null=True)
     orig_system = UnicodeAttribute()
 
 
-class SubHubAccount():
-    def __init__(self, table_name, region, host=None):
+class SubHubAccount:
+    def __init__(self, table_name: str, region: str,
+                 host: Optional[str] = None):
         _table = table_name
         _region = region
         _host = host
+
         class SubHubAccountModel(Model):
             class Meta:
                 table_name = _table
@@ -31,22 +35,26 @@ class SubHubAccount():
             orig_system = UnicodeAttribute()
         self.model = SubHubAccountModel
 
-    def get_user(self, uid) -> SubHubAccountModel:
+    def new_user(self, uid: str, origin_system: str,
+                 custId: Optional[str] = None) -> SubHubAccountModel:
+        return self.model(userId=uid, custId=custId, orig_system=origin_system)
+
+    def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
         try:
             subscription_user = self.model.get(uid, consistent_read=True)
             return subscription_user
         except DoesNotExist:
             return None
 
-    def save_user(self, uid, orig_system) -> bool:
+    @staticmethod
+    def save_user(user: SubHubAccountModel) -> bool:
         try:
-            resp = self.model(userId=uid, custId=None, orig_system=orig_system)
-            resp.save()
+            user.save()
             return True
         except PutError:
             return False
 
-    def append_custid(self, uid, custId) -> bool:
+    def append_custid(self, uid: str, custId: str) -> bool:
         try:
             update_user = self.model.get(uid, consistent_read=True)
             update_user.custId = custId
@@ -55,9 +63,9 @@ class SubHubAccount():
         except DoesNotExist:
             return False
 
-    def remove_from_db(self, uid) -> bool:
+    def remove_from_db(self, uid: str) -> bool:
         try:
             self.model.get(uid, consistent_read=True).delete()
             return True
         except DoesNotExist as e:
-            False
+            return False
