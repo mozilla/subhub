@@ -3,7 +3,7 @@ import os
 import connexion
 import stripe
 import stripe.error
-from flask import current_app, g
+from flask import current_app, g, jsonify
 from flask_cors import CORS
 
 from subhub.cfg import CFG
@@ -47,7 +47,9 @@ def create_app(config=None):
         if e.status_code == 500:
             # TODO: Log this error to Sentry
             pass
-        return {"message": str(e)}, e.status_code
+        response = jsonify(e.to_dict())
+        response.status_code = e.status_code
+        return response
 
     # Setup Stripe Error handlers
     def intermittent_stripe_error(e):
