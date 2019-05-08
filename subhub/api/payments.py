@@ -88,7 +88,7 @@ def existing_or_new_subscriber(uid, data):
         return updated_user, 200
     else:
         return subscription_user, 200
-    
+
 
 def has_existing_plan(user, data) -> bool:
     """

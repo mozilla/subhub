@@ -18,7 +18,7 @@ def create_app(config=None):
         options = {"swagger_ui": False}
         region = 'us-west-2'
         host = None
-    
+
     app = connexion.FlaskApp(__name__, specification_dir='./', options=options)
     app.add_api('subhub_api.yaml', pass_context_arg_name='request',
                 strict_validation=True)
