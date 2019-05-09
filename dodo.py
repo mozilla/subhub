@@ -3,16 +3,17 @@
 
 import os
 import re
-import sh
 import pwd
 import sys
 import glob
 import json
+import difflib
 import contextlib
 
 from doit import get_var
 from pathlib import Path
-from subprocess import check_call, check_output, CalledProcessError, PIPE
+from pkg_resources import parse_version
+from subprocess import Popen, check_call, check_output, CalledProcessError, PIPE
 
 from subhub.cfg import CFG
 
@@ -56,6 +57,23 @@ def cd(path):
         yield
     finally:
         os.chdir(old_path)
+
+def call(cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False):
+    if verbose or nerf:
+        print(cmd)
+    if nerf:
+        return (None, 'nerfed', 'nerfed')
+    process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
+    _stdout, _stderr = [stream.decode('utf-8') for stream in process.communicate()]
+    exitcode = process.poll()
+    if verbose:
+        if _stdout:
+            print(_stdout)
+        if _stderr:
+            print(_stderr)
+    if throw and exitcode:
+        raise CalledProcessError(exitcode, f'cmd={cmd}; stdout={_stdout}; stderr={_stderr}')
+    return exitcode, _stdout, _stderr
 
 def docstr_format(*args, **kwargs):
     def wrapper(func):
@@ -146,6 +164,48 @@ def task_pull():
             ],
         }
 
+def check_requirements():
+    '''
+    check requirements
+    '''
+    installed = call('python3 -m pip freeze')[1].strip().split('\n')
+    installed = [tuple(item.split('==')) for item  in installed if '==' in item]
+    required = open('requirements.txt').read().strip().split('\n')
+    required = [tuple(item.split('==')) if '==' in item else (item, None) for item in required]
+    def uptodate():
+        '''
+        uptodate
+        '''
+        def match_one(iname, iver, rname, rver=None):
+            '''
+            match one
+            '''
+            return (iname == rname and parse_version(iver) >= parse_version(rver or iver))
+        def match_any(installed, rname, rver):
+            '''
+            match any
+            '''
+            return any([match_one(iname, iver, rname, rver) for iname, iver in installed])
+        return all([match_any(installed, rname, rver) for rname, rver in required])
+
+    return {
+        'name': 'reqs',
+        'actions':[
+            'echo "consider installing requirements.txt by running ./dodo.py"',
+            'false',
+        ],
+        'uptodate': [
+            uptodate,
+        ],
+    }
+
+def task_check():
+    '''
+    a series of checks to perform
+    '''
+    yield check_requirements()
+
+
 def task_setup():
     '''
     run all of the setup steps
@@ -157,9 +217,9 @@ def task_setup():
             '''
             try:
                 with cd(path):
-                    sh.npm('outdated')
+                    call('npm outdated')
                 return False
-            except sh.ErrorReturnCode_1:
+            except CalledProcessError:
                 return True
         return uptodate
     for svc in SVCS:
@@ -168,11 +228,11 @@ def task_setup():
             'name': svc,
             'task_dep': [
                 'noroot',
+                'check',
             ],
             'actions': [
                 f'[ -d {servicepath}/node_modules/ ] && rm -rf {servicepath}/node_modules/ || true',
                 f'cd {servicepath} && npm install',
-                f'cd {servicepath} && npm audit fix -f',
             ],
             'uptodate': [
                 create_uptodate(servicepath),
@@ -186,6 +246,7 @@ def task_test():
     return {
         'task_dep': [
             'noroot',
+            'check',
             'setup',
         ],
         'actions': [
@@ -203,6 +264,7 @@ def task_package():
             'name': svc,
             'task_dep': [
                 'noroot',
+                'check',
                 f'setup:{svc}',
             ],
             'actions': [
@@ -222,6 +284,7 @@ def task_deploy():
             'name': svc,
             'task_dep': [
                 'noroot',
+                'check',
                 f'setup:{svc}',
             ],
             'actions': [
@@ -240,6 +303,7 @@ def task_remove():
             'name': svc,
             'task_dep': [
                 'noroot',
+                'check',
                 f'setup:{svc}',
             ],
             'actions': [
@@ -297,6 +361,9 @@ def task_black():
     }
 
 if __name__ == '__main__':
-    print('should be run with doit installed')
-    import doit
-    doit.run(globals())
+    cmd = 'sudo python3 -m pip install -r requirements.txt'
+    answer = input(cmd + '[Y/n] ')
+    if answer in ('', 'Y', 'y', 'Yes', 'YES', 'yes'):
+        os.system(cmd)
+    else:
+        print('requirements.txt NOT installed!')
