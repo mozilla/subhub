@@ -6,9 +6,9 @@ import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 
+from subhub import secrets
 from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
-from subhub.secrets import get_secret
 from subhub.subhub_dynamodb import SubHubAccount
 
 
@@ -22,8 +22,7 @@ def create_app(config=None):
         options = {"swagger_ui": False}
         region = "us-west-2"
         host = None
-        subhub_values = get_secret("dev/SUBHUB")
-        stripe.api_key = subhub_values["stripe_api_key"]
+        stripe.api_key = CFG.STRIPE_API_KEY
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
     app.add_api(
