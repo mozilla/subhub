@@ -20,5 +20,6 @@ def get_secret(secret_id):
         )
         return decoded_binary_secret
 
+
 if CFG("AWS_EXECUTION_ENV", None):
-    os.environ.update(get_secret(f'{CFG.APP_DEPENV}/{CFG.APP_PROJNAME}'))
+    os.environ.update(get_secret(f"{CFG.APP_DEPENV}/{CFG.APP_PROJNAME}"))
