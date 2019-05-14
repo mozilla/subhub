@@ -16,7 +16,7 @@ class IntermittentError(SubHubError):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv["message"] = self.message
         return rv
 
 
@@ -32,7 +32,7 @@ class ClientError(SubHubError):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv["message"] = self.message
         return rv
 
 
@@ -48,5 +48,5 @@ class ServerError(SubHubError):
 
     def to_dict(self):
         rv = dict(self.payload or ())
-        rv['message'] = self.message
+        rv["message"] = self.message
         return rv
