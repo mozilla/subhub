@@ -164,6 +164,17 @@ def task_pull():
             ],
         }
 
+def check_black():
+    '''
+    run black --check in subhub folder
+    '''
+    return {
+        'name': 'black',
+        'actions': [
+            f'black --check {CFG.APP_PROJPATH}',
+        ],
+    }
+
 def check_requirements():
     '''
     check requirements
@@ -203,6 +214,7 @@ def task_check():
     '''
     a series of checks to perform
     '''
+    yield check_black()
     yield check_requirements()
 
 
