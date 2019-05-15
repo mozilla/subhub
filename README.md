@@ -67,6 +67,7 @@ doit deploy
   DBD_HOST=http://localhost:8011 \
   USER_TABLE=subhub-dev \
   PAYMENT_API_KEY=abcde \
+  SUPPORT_API_KEY=sdfsadf \
   STRIPE_API_KEY=sk_test_THIS_IS_NOT_A_REAL_KEY \
   python -m subhub.app
   ```
@@ -77,9 +78,23 @@ doit deploy
   * `PAYMENT_API_KEY` is the API key expected for header authentication
   * `STRIPE_API_KEY` is the secret key to use for calls to the Stripe API (i.e. not the publishable key)
 
+* Run tests
+
+  ```zsh
+  PORT=8012 \
+  DBD_HOST=http://localhost:8011 \
+  USER_TABLE='subhub-dev' \
+  PAYMENT_API_KEY=abcde \
+  SUPPORT_API_KEY=sdfsadf \
+  STRIPE_API_KEY=sk_test_THIS_IS_NOT_A_REAL_KEY \
+  doit test
+  ```
+
+  Same env vars as for running the server.
+
 * Visit the Swagger UI at <http://localhost:8012/v1/ui>
 
-* Try out the API
+* Try out the API with CURL
 
   ```zsh
   ➜  subhub git:(master) ✗ curl -H'Authorization: abcde' 'http://127.0.0.1:8012/v1/plans'
@@ -89,8 +104,8 @@ doit deploy
       "currency": "usd",
       "interval": "month",
       "nickname": "123Done Pro Monthly",
-      "plan_id": "plan_F4bof27uz71Vk7",
-      "product_id": "prod_F4boDmwsxbSyRc"
+      "plan_id": "plan_F12of27uz71Vk7",
+      "product_id": "prod_F12oDmwsxbSyRc"
     }
   ]
   ```
