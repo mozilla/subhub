@@ -16,7 +16,7 @@ def create_app(config=None):
     if not CFG("AWS_EXECUTION_ENV", None):
         options = {"swagger_ui": True}
         region = "localhost"
-        host = "http://localhost:8000"
+        host = CFG("DBD_HOST", "http://localhost:8000")
         stripe.api_key = CFG.STRIPE_API_KEY
     else:
         options = {"swagger_ui": False}
