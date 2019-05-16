@@ -166,13 +166,17 @@ def task_pull():
 
 def check_black():
     '''
-    run black --check in subhub folder
+    run black --check in subhub directory
     '''
+    black_check = f'black --check {CFG.APP_PROJPATH}'
     return {
         'name': 'black',
         'actions': [
-            f'black --check {CFG.APP_PROJPATH}',
+            f'{black_check} || echo "consider running \'doit black\'"; false'
         ],
+        'uptodate': [
+            black_check,
+        ]
     }
 
 def check_requirements():
