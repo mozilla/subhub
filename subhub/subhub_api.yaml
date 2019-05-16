@@ -42,6 +42,32 @@ parameters:
     required: true
     description: Subscription ID
 paths:
+  /support/{uid}/subscriptions:
+    get:
+      operationId: subhub.api.payments.support_status
+      tags:
+        - Support
+      summary: Support view of user Subscriptions
+      description: Get list of subscriptions for a premium payments customer
+      security:
+        - SupportApiKey: []
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Subscriptions'
+        403:
+          description: No subscriptions exist.
+          schema:
+            $ref: '#/definitions/Errormessage'
+        404:
+          description: Customer not found.
+          schema:
+            $ref: '#/definitions/Errormessage'
+      parameters:
+        - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
     get:
       operationId: subhub.api.payments.subscription_status
@@ -314,6 +340,10 @@ definitions:
           type: string
           description: Subscription status
           example: active
+        cancel_at_period_end:
+          type: boolean
+          description: Shows if subscription will be cancelled at the end of the period.
+          example: true
   Errormessage:
     type: object
     properties:

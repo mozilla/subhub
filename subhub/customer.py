@@ -2,6 +2,7 @@
 import stripe
 
 from subhub.exceptions import IntermittentError, ServerError
+from stripe.error import InvalidRequestError
 from subhub.subhub_dynamodb import SubHubAccount
 
 
@@ -31,13 +32,18 @@ def create_customer(
 
     # No existing Stripe customer, create one.
     if not customer:
-        customer = stripe.Customer.create(
-            source=source_token,
-            email=email,
-            description=user_id,
-            metadata={"userid": user_id},
-        )
+        try:
+            customer = stripe.Customer.create(
+                source=source_token,
+                email=email,
+                description=user_id,
+                metadata={"userid": user_id},
+            )
 
+        except InvalidRequestError as e:
+            raise InvalidRequestError(
+                message="Unable to create customer.", param=str(e)
+            )
     # Link the Stripe customer to the origin system id
     db_account = subhub_account.new_user(
         uid=user_id, origin_system=origin_system, custId=customer.id
@@ -62,7 +68,6 @@ def existing_or_new_customer(
         return create_customer(
             subhub_accouunt, user_id, email, source_token, origin_system
         )
-
     customer_id = db_account.custId
     return stripe.Customer.retrieve(customer_id)
 
