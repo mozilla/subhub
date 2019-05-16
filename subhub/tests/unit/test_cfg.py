@@ -215,6 +215,61 @@ def test_APP_GSM_STATUS():
             assert isinstance(ex, NotGitRepoError)
 
 
+def test_USER_TABLE():
+    """
+    user table
+    """
+    try:
+        CFG.USER_TABLE
+        assert True
+    except:
+        assert False
+
+
+def test_LOCAL_FLASK_PORT():
+    """
+    local flask port
+    """
+    try:
+        CFG.LOCAL_FLASK_PORT
+        assert True
+    except:
+        assert False
+
+
+def test_DYNALITE_PORT():
+    """
+    dynalite port
+    """
+    try:
+        CFG.DYNALITE_PORT
+        assert True
+    except:
+        assert False
+
+
+def test_DYNALITE_FILE():
+    """
+    dynalite file
+    """
+    try:
+        CFG.DYNALITE_FILE
+        assert True
+    except:
+        assert False
+
+
+def test_AWS_EXECUTION_ENV():
+    """
+    aws execution env
+    """
+    try:
+        CFG.AWS_EXECUTION_ENV
+        assert True
+    except:
+        assert False
+
+
 def test_default():
     """
     default

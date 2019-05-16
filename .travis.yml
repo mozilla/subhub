@@ -19,8 +19,8 @@ script:
 - |
   cat >~/.aws/credentials <<-EOF
   [default]
-  aws_access_key_id=ABCDEFG
-  aws_secret_access_key=ABCDEFG
+  aws_access_key_id=fake-id
+  aws_secret_access_key=fake-key
   EOF
 - |
   cat >~/.aws/config <<-EOF

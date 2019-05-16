@@ -13,10 +13,10 @@ from subhub.subhub_dynamodb import SubHubAccount
 
 
 def create_app(config=None):
-    if not CFG("AWS_EXECUTION_ENV", None):
+    if not CFG.AWS_EXECUTION_ENV:
         options = {"swagger_ui": True}
         region = "localhost"
-        host = "http://localhost:8000"
+        host = f"http://localhost:{CFG.DYNALITE_PORT}"
         stripe.api_key = CFG.STRIPE_API_KEY
     else:
         options = {"swagger_ui": False}
@@ -87,8 +87,7 @@ def create_app(config=None):
 
 if __name__ == "__main__":
     print("starting app")
-    port = int(os.environ.get("PORT", 5000))
     app = create_app()
     app.debug = True
     app.use_reloader = True
-    app.run(host="0.0.0.0", port=port)
+    app.run(host="0.0.0.0", port=CFG.LOCAL_FLASK_PORT)

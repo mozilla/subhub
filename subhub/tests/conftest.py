@@ -23,7 +23,7 @@ def pytest_configure():
     for name in ("boto3", "botocore", "stripe"):
         logging.getLogger(name).setLevel(logging.CRITICAL)
     if os.getenv("AWS_LOCAL_DYNAMODB") is None:
-        os.environ["AWS_LOCAL_DYNAMODB"] = "http://127.0.0.1:8000"
+        os.environ["AWS_LOCAL_DYNAMODB"] = f"http://127.0.0.1:{CFG.DYNALITE_PORT}"
 
     # Latest boto3 now wants fake credentials around, so here we are.
     os.environ["AWS_ACCESS_KEY_ID"] = "fake"
@@ -34,11 +34,9 @@ def pytest_configure():
     stripe.api_key = CFG.STRIPE_API_KEY
 
     # Locate absolute path of dynalite
-    here_dir = os.path.abspath(os.path.dirname(__file__))
-    root_dir = os.path.dirname(os.path.dirname(here_dir))
-    dynalite = os.path.join(root_dir, "services/fxa/node_modules/.bin/dynalite")
+    dynalite = f"{CFG.APP_REPOROOT}/node_modules/.bin/dynalite"
 
-    cmd = " ".join([f"{dynalite} --port 8000"])
+    cmd = f"{dynalite} --port {CFG.DYNALITE_PORT}"
     ddb_process = subprocess.Popen(
         cmd, shell=True, env=os.environ, stdout=subprocess.PIPE
     )
