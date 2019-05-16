@@ -233,6 +233,41 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             for state, revision, repopath, _ in matches
         }
 
+    @property
+    def USER_TABLE(self):
+        """
+        default value for USER_TABLE
+        """
+        return self("USER_TABLE", "testing")
+
+    @property
+    def LOCAL_FLASK_PORT(self):
+        """
+        local flask port
+        """
+        return self("LOCAL_FLASK_PORT", 5000, cast=int)
+
+    @property
+    def DYNALITE_PORT(self):
+        """
+        dynalite port
+        """
+        return self("DYNALITE_PORT", 8000, cast=int)
+
+    @property
+    def DYNALITE_FILE(self):
+        """
+        dynalite output file
+        """
+        return self("DYNALITE_FILE", "dynalite.out")
+
+    @property
+    def AWS_EXECUTION_ENV(self):
+        """
+        default value for aws execution env
+        """
+        return self("AWS_EXECUTION_ENV", None)
+
     def __getattr__(self, attr):
         """
         getattr

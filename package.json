@@ -1,4 +1,5 @@
 {
+  "description": "automation tools for running locally and deploying to aws",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mozilla/subhub"
@@ -8,7 +9,6 @@
     "dynalite": "^2.2.0",
     "serverless": "^1.27.3",
     "serverless-domain-manager": "^3.2.1",
-    "serverless-dynamodb-local": "0.2.37",
     "serverless-offline": "^4.9.4",
     "serverless-plugin-tracing": "^2.0.0",
     "serverless-python-requirements": "^3.3.1"

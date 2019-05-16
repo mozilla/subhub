@@ -1,27 +1,153 @@
-# subhub
-payment subscription REST api for FxA (Firefox Accounts)
+# SubHub
+payment subscription REST api for customers:
+- FxA (Firefox Accounts)
+
+## Important Environment Variables
+The CFG object is for accessing values either from the `subhub/.env` file and|or superceeded by env vars.
+A value that is known to be set or have a default can be accessed:
+```
+CFG.SOME_VALUE
+```
+Otherwise the value can be accessed and given a default if it doesn't exist:
+```
+CFG("OTHER_VALUE", "SOME_DEFAULT")
+```
+These values can be enabled as an env var or listed in a `.env` in the subhub/ directory.
+
+### STRIPE_API_KEY
+This value is used for producion deployments as well as testing (testing key).
+
+### USER_TABLE
+This is the name of the table to be created in `dynamodb`.  Defaults to `testing` if not specified.
+
+### LOCAL_FLASK_PORT
+This value is used only when running the `subhub` flask app locally.  Defaults to `5000`.
+
+### DYNALITE_PORT
+This value is used only when running `dynalite` locally.  Defaults to `8000`.
+
+### DYNALITE_FILE
+This is the value of the file that will be written to by the `dynalite process`.  Defaults to `dynalite.out`.
+
+## Other Important CFG Properties
+These values are calculated and not to be set by a user.  They are mentioned here for clarity.
+
+### APP_DEPENV
+The deployment environment is determined by the branch name:
+- master: `prod`
+- stage/*: `stage`
+- qa/*: `qa`
+- *: `dev`
+
+### APP_REPOROOT
+This is the path to the root of the checked out `mozilla/subhub` git repo.  This value only makes sense in the git repo, not in the AWS Lambda environment.
+
+### APP_PROJNAME
+This is the project's name, `subhub`, as determined by the second part of the reposlug `mozilla/subhub`.
+
+### APP_PROJPATH
+This is the path to the project code in the git repo.  It is `APP_REPOPATH + APP_PROJNAME`.  It is only valid in the git repo, not in the AWS Lambda environment.
+
+### APP_BRANCH
+This is the branch name of the deployed code.  Should be available locally as well as when deployed to AWS Lambda.
+
+### APP_REVISION
+This is the 40 digit sha1 commit hash for the code.  This is available in the git repo as well as when deployed to AWS Lambda.
+
+### APP_VERSION
+This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the git repo as well as when deployed to AWS Lambda.
 
 ## doit
 http://pydoit.org/
 
-doit comes from the idea of bringing the power of build-tools to execute any kind of task
+`doit` comes from the idea of bringing the power of build-tools to execute any kind of task
 
 ## install requirements to run doit
+Either of the following commands should install the minimum requirements to run `doit` and load the `CFG`
+```
+python3 ./dodo.py
+```
 ```
 pip3 install -r requirements.txt
 ```
 
 ## list tasks available to run
+The list task is a built-in `doit` task that lists any functions in `dodo.py` that start with `task_` (similar to pytest, `test_`).  If this runs, `doit` is installed and working.
 ```
 doit list
 ```
 
-## package
+## run black formatter on subhub code
+This task will run the `black` code formatter on the `subhub/` directory.
+```
+doit black
+```
+
+## install npm packages
+The npm task installs packages defined in the `package.json` file.  These are for use with `serverless` and `dyanlite`.
+```
+doit npm
+```
+
+## run checks
+These are a series of checks which help ensure that the system is in good order to run other `doit` tasks.
+```
+doit check
+```
+
+### black check
+This task runs the `black --check` command.
+```
+doit check:black
+```
+
+### reqs check
+This task compares what is specified in the `requirements.txt` vs what is installed.
+```
+doit check:reqs
+```
+
+## setup the virtualenv (venv)
+This task will create the virtual env and install all of the requirements for use in running code locally.
+```
+doit venv
+```
+
+## dynalite
+The `dynalite` `npm` package is a database webserver.
+
+### start dynalite
+This starts, if not already running, the `dynalite process` on the `DYNALITE_PORT` (default: `8000`)
+```
+doit dynalite:start
+```
+
+### stop dynalite
+This stops, if already running,  the `dynalite` process on the `DYNALITE_PORT` (default: `8000`)
+```
+doit dynalite:stop
+```
+
+## run locally
+This task does all the steps required to get the `subhub` flask server running in a venv.
+```
+doit local
+```
+
+## run tests and coverage
+This runs the `pytests` via `tox` and `setup.py` specifications.  Currently, `STRIPE_API_KEY` must be set for tests to run successfully.
+```
+doit test
+```
+
+## run package
+This runs the `serverless package` command to zip up the `subhub` code and its dependencies.
 ```
 doit package
 ```
 
 ## deploy
+This run the `serverless deploy` command and requires the user to be logged into the AWS Account for `subhub`.
 ```
 doit deploy
 ```

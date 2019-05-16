@@ -10,7 +10,7 @@ import json
 import difflib
 import contextlib
 
-from doit import get_var
+from doit.tools import LongRunning
 from pathlib import Path
 from pkg_resources import parse_version
 from subprocess import Popen, check_call, check_output, CalledProcessError, PIPE
@@ -36,7 +36,8 @@ DOIT_CONFIG = {
 
 SPACE = ' '
 NEWLINE = '\n'
-
+SLS = f'{CFG.APP_REPOROOT}/node_modules/serverless/bin/serverless'
+DYNALITE = f'{CFG.APP_REPOROOT}/node_modules/.bin/dynalite'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
 def envs(sep=' '):
@@ -138,6 +139,102 @@ def task_noroot():
         ],
     }
 
+def task_venv():
+    '''
+    setup virtual env
+    '''
+    venv = f'{CFG.APP_PROJPATH}/.venv'
+    pip3 = f'{venv}/bin/pip3'
+    appreqs = f'{CFG.APP_PROJPATH}/requirements.txt'
+    testreqs = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
+    return {
+        'task_dep': [
+            'noroot',
+        ],
+        'actions': [
+            f'virtualenv --python=$(which python3.7) {venv}',
+            f'{pip3} install --upgrade pip',
+            f'[ -f "{appreqs}" ] && {pip3} install -r "{appreqs}" || true',
+            f'[ -f "{testreqs}" ] && {pip3} install -r "{testreqs}" || true',
+        ]
+    }
+
+def task_dynalite():
+    '''
+    start, stop the dynalite db
+    '''
+    cmd = f'{DYNALITE} --port {CFG.DYNALITE_PORT}'
+    msg = f'dyanlite server started on {CFG.DYNALITE_PORT} logging to {CFG.DYNALITE_FILE}'
+    def running():
+        '''
+        return pid of running dyanlite
+        '''
+        pid = None
+        try:
+            pid = call(f'lsof -i:{CFG.DYNALITE_PORT} -t')[1].strip()
+        except CalledProcessError:
+            return None
+        try:
+            args = call(f'ps -p {pid} -o args=')[1].strip()
+        except CalledProcessError:
+            return None
+        if f'{cmd}' in args:
+            return pid
+        return None
+    pid = running()
+    yield {
+        'name': 'stop',
+        'task_dep': [
+            'noroot',
+            'check',
+            'npm',
+        ],
+        'actions': [
+            f'kill {pid}',
+        ],
+        'uptodate': [
+            lambda: pid is None
+        ],
+    }
+    yield {
+        'name': 'start',
+        'task_dep': [
+            'noroot',
+            'check',
+            'npm',
+        ],
+        'actions': [
+            LongRunning(f'nohup {cmd} > {CFG.DYNALITE_FILE} &'),
+            f'echo "{msg}"',
+        ],
+        'uptodate': [
+            lambda: pid,
+        ],
+    }
+
+def task_local():
+    '''
+    run locally
+    '''
+    python3 = f'{CFG.APP_PROJPATH}/.venv/bin/python3.7'
+    aws = ' '.join([
+        'AWS_ACCESS_KEY_ID=fake-id',
+        'AWS_SECRET_ACCESS_KEY=fake-key',
+        'PYTHONPATH=.',
+    ])
+    return {
+        'task_dep': [
+            'noroot',
+            'venv',
+            'dynalite:start',
+        ],
+        'actions': [
+            f'{python3} -m setup develop',
+            'echo $PATH',
+            f'{aws} {python3} subhub/app.py',
+        ],
+    }
+
 def task_pull():
     '''
     do a safe git pull
@@ -179,7 +276,7 @@ def check_black():
         ]
     }
 
-def check_requirements():
+def check_reqs():
     '''
     check requirements
     '''
@@ -216,44 +313,37 @@ def check_requirements():
 
 def task_check():
     '''
-    a series of checks to perform
+    checks: black, reqs
     '''
     yield check_black()
-    yield check_requirements()
+    yield check_reqs()
 
-
-def task_setup():
+def task_npm():
     '''
-    run all of the setup steps
+    run npm install on package.json
     '''
-    def create_uptodate(path):
-        def uptodate():
-            '''
-            custom uptodate to check for outdated npm pkgs
-            '''
-            try:
-                with cd(path):
-                    call('npm outdated')
-                return False
-            except CalledProcessError:
-                return True
-        return uptodate
-    for svc in SVCS:
-        servicepath = f'services/{svc}'
-        yield {
-            'name': svc,
-            'task_dep': [
-                'noroot',
-                'check',
-            ],
-            'actions': [
-                f'[ -d {servicepath}/node_modules/ ] && rm -rf {servicepath}/node_modules/ || true',
-                f'cd {servicepath} && npm install',
-            ],
-            'uptodate': [
-                create_uptodate(servicepath),
-            ],
-        }
+    def uptodate():
+        '''
+        custom uptodate to check for outdated npm pkgs
+        '''
+        try:
+            call('npm outdated')
+            return False
+        except CalledProcessError:
+            return True
+    return {
+        'task_dep': [
+            'noroot',
+            'check',
+        ],
+        'actions': [
+            '[ -d node_modules/ ] && rm -rf node_modules/ || true',
+            'npm install',
+        ],
+        'uptodate': [
+            uptodate
+        ],
+    }
 
 def task_test():
     '''
@@ -263,7 +353,7 @@ def task_test():
         'task_dep': [
             'noroot',
             'check',
-            'setup',
+            'npm',
         ],
         'actions': [
             f'cd {CFG.APP_REPOROOT} && tox',
@@ -275,16 +365,15 @@ def task_package():
     run serverless package -v for every service
     '''
     for svc in SVCS:
-        sls = 'node_modules/serverless/bin/serverless'
         yield {
             'name': svc,
             'task_dep': [
                 'noroot',
                 'check',
-                f'setup:{svc}',
+                'npm',
             ],
             'actions': [
-                f'cd services/{svc} && env {envs()} {sls} package --stage {CFG.APP_DEPENV} -v',
+                f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.APP_DEPENV} -v',
             ],
         }
 
@@ -295,16 +384,15 @@ def task_deploy():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        sls = 'node_modules/serverless/bin/serverless'
         yield {
             'name': svc,
             'task_dep': [
                 'noroot',
                 'check',
-                f'setup:{svc}',
+                'npm',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {sls} deploy --stage {CFG.APP_DEPENV} -v',
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} -v',
             ],
         }
 
@@ -314,16 +402,15 @@ def task_remove():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        sls = 'node_modules/serverless/bin/serverless'
         yield {
             'name': svc,
             'task_dep': [
                 'noroot',
                 'check',
-                f'setup:{svc}',
+                'npm',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {sls} remove -v',
+                f'cd {servicepath} && env {envs()} {SLS} remove -v',
             ],
         }
 
