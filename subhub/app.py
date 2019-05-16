@@ -59,6 +59,7 @@ def create_app(config=None):
         stripe.error.APIError,
         stripe.error.RateLimitError,
         stripe.error.IdempotencyError,
+        stripe.error.InvalidRequestError,
     ):
         app.app.errorhandler(err)(intermittent_stripe_error)
 

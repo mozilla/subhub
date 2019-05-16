@@ -23,13 +23,17 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     :param data:
     :return: current subscriptions for user.
     """
-    customer = existing_or_new_customer(
-        g.subhub_account,
-        user_id=uid,
-        email=data["email"],
-        source_token=data["pmt_token"],
-        origin_system=data["orig_system"],
-    )
+    try:
+        customer = existing_or_new_customer(
+            g.subhub_account,
+            user_id=uid,
+            email=data["email"],
+            source_token=data["pmt_token"],
+            origin_system=data["orig_system"],
+        )
+    except InvalidRequestError as e:
+        # raise InvalidRequestError("Unable to subscribe.", None, http_status=400)
+        return {"message": f"Unable to subscribe. {e}"}, 400
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
         return {"message": "User already subscribed."}, 409
@@ -45,15 +49,17 @@ def list_all_plans() -> FlaskListResponse:
     """
     plans = stripe.Plan.list(limit=100)
     stripe_plans = []
-    for p in plans:
+    for plan in plans:
+        product = stripe.Product.retrieve(plan["product"])
         stripe_plans.append(
             {
-                "plan_id": p["id"],
-                "product_id": p["product"],
-                "interval": p["interval"],
-                "amount": p["amount"],
-                "currency": p["currency"],
-                "nickname": p["nickname"],
+                "plan_id": plan["id"],
+                "product_id": plan["product"],
+                "interval": plan["interval"],
+                "amount": plan["amount"],
+                "currency": plan["currency"],
+                "plan_name": plan["nickname"],
+                "product_name": product["name"],
             }
         )
     return stripe_plans, 200
@@ -72,21 +78,24 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
         return {"message": "Customer does not exist."}, 404
     customer = stripe.Customer.retrieve(subscription_user.custId)
     for item in customer["subscriptions"]["data"]:
-        if item["id"] == sub_id and item["status"] in ["active", "trialing"]:
+        if item["id"] == sub_id and item["status"] in [
+            "active",
+            "trialing",
+            "incomplete",
+        ]:
             try:
                 tocancel = stripe.Subscription.retrieve(sub_id)
+                cancel = stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+                return {"message": "Subscription cancellation successful"}, 201
             except InvalidRequestError as e:
                 # TODO handle other errors: APIConnectionError, APIError, AuthenticationError, CardError
                 return {"message": e}, 400
-            if "No such subscription:" in tocancel:
-                return {"message": "Invalid subscription."}, 404
-            if tocancel["status"] in ["active", "trialing"]:
-                tocancel.delete()
-                return {"message": "Subscription cancellation successful"}, 201
-            else:
-                return {"message": "Error cancelling subscription"}, 400
     else:
         return {"message": "Subscription not available."}, 400
+
+
+def support_status(uid) -> FlaskResponse:
+    return subscription_status(uid)
 
 
 def subscription_status(uid) -> FlaskResponse:
@@ -101,7 +110,7 @@ def subscription_status(uid) -> FlaskResponse:
     subscriptions = stripe.Subscription.list(
         customer=items.custId, limit=100, status="all"
     )
-    if subscriptions is None:
+    if not subscriptions:
         return {"message": "No subscriptions for this customer."}, 403
     return_data = create_return_data(subscriptions)
     return return_data, 201
@@ -125,6 +134,7 @@ def create_return_data(subscriptions) -> JsonDict:
                 "plan_id": subscription["plan"]["id"],
                 "status": subscription["status"],
                 "subscription_id": subscription["id"],
+                "cancel_at_period_end": subscription["cancel_at_period_end"],
             }
         )
     return return_data
@@ -181,6 +191,10 @@ def create_update_data(customer) -> dict:
     :param customer:
     :return: return_data dict
     """
+    for subscription in customer["subscriptions"]["data"]:
+        if subscription["status"] == "incomplete":
+            invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
+            intents = stripe.Charge.retrieve(invoice["charge"])
     return_data = dict()
     return_data["subscriptions"] = []
     return_data["payment_type"] = customer["sources"]["data"][0]["funding"]

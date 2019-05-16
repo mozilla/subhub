@@ -136,25 +136,55 @@ def test_create_subscription_with_valid_data():
     g.subhub_account.remove_from_db("validcustomer")
 
 
+def test_subscribe_customer_existing(create_customer_for_processing):
+    """
+    GIVEN create a subscription
+    WHEN provided a customer and plan
+    THEN validate subscription is created
+    """
+    uid = uuid.uuid4()
+    subscription, code = payments.subscribe_to_plan(
+        "validcustomer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+    subscription2, code2 = payments.subscribe_to_plan(
+        "validcustomer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+    assert 409 == code2
+    payments.cancel_subscription(
+        "validcustomer", subscription["subscriptions"][0]["subscription_id"]
+    )
+    g.subhub_account.remove_from_db("validcustomer")
+
+
 def test_create_subscription_with_invalid_payment_token():
     """
     GIVEN should not create a subscription
     WHEN provided a api_token, userid, invalid pmt_token, plan_id, email
     THEN validate subscription is created
     """
-    with pytest.raises(stripe.error.InvalidRequestError) as excinfo:
-        payments.subscribe_to_plan(
-            "invalid_test",
-            {
-                "pmt_token": "tok_invalid",
-                "plan_id": "plan_EtMcOlFMNWW4nd",
-                "email": "invalid_test@test.com",
-                "orig_system": "Test_system",
-            },
-        )
-
+    subscription, code = payments.subscribe_to_plan(
+        "invalid_test",
+        {
+            "pmt_token": "tok_invalid",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "email": "invalid_test@test.com",
+            "orig_system": "Test_system",
+        },
+    )
     g.subhub_account.remove_from_db("invalid_test")
-    assert "No such token: tok_invalid" in str(excinfo)
+    assert "Unable to subscribe." in subscription["message"]
 
 
 def test_create_subscription_with_invalid_plan_id(app):
@@ -200,6 +230,31 @@ def test_cancel_subscription_with_valid_data(app, create_subscription_for_proces
     )
     assert cancelled["message"] == "Subscription cancellation successful"
     assert 201 == code
+    g.subhub_account.remove_from_db("process_test")
+
+
+def test_cancel_subscription_with_invalid_data(app, create_subscription_for_processing):
+    (subscription, code) = create_subscription_for_processing
+    (cancelled, code) = payments.cancel_subscription(
+        "process_test", subscription["subscriptions"][0]["subscription_id"] + "invalid"
+    )
+    assert cancelled["message"] == "Subscription not available."
+    assert 400 == code
+    g.subhub_account.remove_from_db("process_test")
+
+
+def test_cancel_subscription_already_cancelled(app, create_subscription_for_processing):
+    (subscription, code) = create_subscription_for_processing
+    cancelled, code = payments.cancel_subscription(
+        "process_test", subscription["subscriptions"][0]["subscription_id"]
+    )
+    cancelled2, code2 = payments.cancel_subscription(
+        "process_test", subscription["subscriptions"][0]["subscription_id"]
+    )
+    assert cancelled["message"] == "Subscription cancellation successful"
+    assert 201 == code
+    assert cancelled2["message"] == "Subscription cancellation successful"
+    assert 201 == code2
     g.subhub_account.remove_from_db("process_test")
 
 
