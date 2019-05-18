@@ -12,9 +12,14 @@ from flask import g
 
 from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan
+from subhub.exceptions import ClientError
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = logging.getLogger("payments")
+log_handle = logging.StreamHandler()
+log_handle.setLevel(logging.INFO)
+logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+log_handle.setFormatter(logformat)
+logger.addHandler(log_handle)
 
 
 def subscribe_to_plan(uid, data) -> FlaskResponse:
@@ -79,7 +84,6 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     :param sub_id:
     :return: Success or failure message for the cancellation.
     """
-    # TODO Remove payment source on cancel
     subscription_user = g.subhub_account.get_user(uid)
     if not subscription_user:
         return {"message": "Customer does not exist."}, 404
@@ -91,8 +95,8 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
             "incomplete",
         ]:
             try:
-                tocancel = stripe.Subscription.retrieve(sub_id)
-                cancel = stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+                stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+                check_stripe_subscriptions(subscription_user.custId)
                 return {"message": "Subscription cancellation successful"}, 201
             except (
                 InvalidRequestError,
@@ -102,8 +106,44 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
                 CardError,
             ) as e:
                 return {"message": f"Unable to cancel subscription: {e}"}, 400
-        else:
-            return {"message": "Subscription not available."}, 400
+    return {"message": "Subscription not available."}, 400
+
+
+def check_stripe_subscriptions(customer: str) -> list:
+    customer_info = stripe.Customer.retrieve(id=customer)
+    logger.debug(f"cust info {customer_info.subscriptions}")
+    try:
+        customer_subscriptions_data = customer_info.subscriptions
+        customer_subscriptions = customer_subscriptions_data.get("data")
+        sources_to_remove(customer_subscriptions, customer)
+        return customer_subscriptions
+    except NameError as e:
+        return []
+
+
+def sources_to_remove(subscriptions: list, customer: str) -> None:
+    logger.debug(f"subs {subscriptions}")
+    active_subscriptions = []
+    try:
+        active_subscriptions = [
+            sub
+            for sub in subscriptions
+            if sub.get("status") in ["active", "trialing"]
+            and sub.get("cancel_at") is None
+        ]
+        if not bool(active_subscriptions):
+            try:
+                sources = stripe.Customer.retrieve(id=customer)
+            except InvalidRequestError as e:
+                raise InvalidRequestError(
+                    message="Unable to delete source.", payload=str(e)
+                )
+            for source in sources.sources["data"]:
+                stripe.Customer.delete_source(customer, source["id"])
+    except KeyError as e:
+        raise ClientError(message="Source missing key element.", payload=str(e))
+    except TypeError as e:
+        raise ClientError(message="Source missing type element.", payload=str(e))
 
 
 def support_status(uid) -> FlaskResponse:
@@ -137,37 +177,49 @@ def create_return_data(subscriptions) -> JsonDict:
     return_data = dict()
     return_data["subscriptions"] = []
     for subscription in subscriptions["data"]:
+        logger.debug(f"subscription {subscription}")
         if subscription["status"] == "incomplete":
             invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
-            intents = stripe.Charge.retrieve(invoice["charge"])
-            return_data["subscriptions"].append(
-                {
-                    "current_period_end": subscription["current_period_end"],
-                    "current_period_start": subscription["current_period_start"],
-                    "ended_at": subscription["ended_at"],
-                    "nickname": subscription["plan"]["nickname"],
-                    "plan_id": subscription["plan"]["id"],
-                    "status": subscription["status"],
-                    "subscription_id": subscription["id"],
-                    "cancel_at_period_end": subscription["cancel_at_period_end"],
-                    "failure_code": intents["failure_code"],
-                    "failure_message": intents["failure_message"],
-                }
-            )
+            logging.debug(f"invoice {invoice['charge']}")
+            if invoice["charge"]:
+                intents = stripe.Charge.retrieve(invoice["charge"])
+                logging.debug(f"intents {intents}")
+                return_data["subscriptions"].append(
+                    {
+                        "current_period_end": subscription["current_period_end"],
+                        "current_period_start": subscription["current_period_start"],
+                        "ended_at": subscription["ended_at"],
+                        "nickname": subscription["plan"]["nickname"],
+                        "plan_id": subscription["plan"]["id"],
+                        "status": subscription["status"],
+                        "subscription_id": subscription["id"],
+                        "cancel_at_period_end": subscription["cancel_at_period_end"],
+                        "failure_code": intents["failure_code"],
+                        "failure_message": intents["failure_message"],
+                    }
+                )
+            else:
+                return_data["subscriptions"].append(
+                    create_subscription_object_without_failure(subscription)
+                )
         else:
             return_data["subscriptions"].append(
-                {
-                    "current_period_end": subscription["current_period_end"],
-                    "current_period_start": subscription["current_period_start"],
-                    "ended_at": subscription["ended_at"],
-                    "nickname": subscription["plan"]["nickname"],
-                    "plan_id": subscription["plan"]["id"],
-                    "status": subscription["status"],
-                    "subscription_id": subscription["id"],
-                    "cancel_at_period_end": subscription["cancel_at_period_end"],
-                }
+                create_subscription_object_without_failure(subscription)
             )
     return return_data
+
+
+def create_subscription_object_without_failure(subscription: object) -> object:
+    return {
+        "current_period_end": subscription["current_period_end"],
+        "current_period_start": subscription["current_period_start"],
+        "ended_at": subscription["ended_at"],
+        "nickname": subscription["plan"]["nickname"],
+        "plan_id": subscription["plan"]["id"],
+        "status": subscription["status"],
+        "subscription_id": subscription["id"],
+        "cancel_at_period_end": subscription["cancel_at_period_end"],
+    }
 
 
 def update_payment_method(uid, data) -> FlaskResponse:
@@ -236,30 +288,27 @@ def create_update_data(customer) -> dict:
     for subscription in customer["subscriptions"]["data"]:
         if subscription["status"] == "incomplete":
             invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
-            intents = stripe.Charge.retrieve(invoice["charge"])
-            return_data["subscriptions"].append(
-                {
-                    "current_period_end": subscription["current_period_end"],
-                    "current_period_start": subscription["current_period_start"],
-                    "ended_at": subscription["ended_at"],
-                    "nickname": subscription["plan"]["nickname"],
-                    "plan_id": subscription["plan"]["id"],
-                    "status": subscription["status"],
-                    "subscription_id": subscription["id"],
-                    "failure_code": intents["failure_code"],
-                    "failure_message": intents["failure_message"],
-                }
-            )
+            if invoice["charge"]:
+                intents = stripe.Charge.retrieve(invoice["charge"])
+                return_data["subscriptions"].append(
+                    {
+                        "current_period_end": subscription["current_period_end"],
+                        "current_period_start": subscription["current_period_start"],
+                        "ended_at": subscription["ended_at"],
+                        "nickname": subscription["plan"]["nickname"],
+                        "plan_id": subscription["plan"]["id"],
+                        "status": subscription["status"],
+                        "subscription_id": subscription["id"],
+                        "failure_code": intents["failure_code"],
+                        "failure_message": intents["failure_message"],
+                    }
+                )
+            else:
+                return_data["subscriptions"].append(
+                    create_subscription_object_without_failure(subscription)
+                )
         else:
             return_data["subscriptions"].append(
-                {
-                    "current_period_end": subscription["current_period_end"],
-                    "current_period_start": subscription["current_period_start"],
-                    "ended_at": subscription["ended_at"],
-                    "nickname": subscription["plan"]["nickname"],
-                    "plan_id": subscription["plan"]["id"],
-                    "status": subscription["status"],
-                    "subscription_id": subscription["id"],
-                }
+                create_subscription_object_without_failure(subscription)
             )
     return return_data
