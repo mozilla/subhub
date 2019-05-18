@@ -1,9 +1,18 @@
 """Customer functions"""
+import logging
+
 import stripe
 
 from subhub.exceptions import IntermittentError, ServerError
 from stripe.error import InvalidRequestError
 from subhub.subhub_dynamodb import SubHubAccount
+
+logger = logging.getLogger("customer")
+log_handle = logging.StreamHandler()
+log_handle.setLevel(logging.INFO)
+logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+log_handle.setFormatter(logformat)
+logger.addHandler(log_handle)
 
 
 def create_customer(
@@ -69,7 +78,15 @@ def existing_or_new_customer(
             subhub_accouunt, user_id, email, source_token, origin_system
         )
     customer_id = db_account.custId
-    return stripe.Customer.retrieve(customer_id)
+    return existing_payment_source(customer_id, source_token)
+
+
+def existing_payment_source(customer_id: str, source_token: str) -> stripe.Customer:
+    existing_customer = stripe.Customer.retrieve(customer_id)
+    if not existing_customer["sources"]["data"]:
+        existing_customer = stripe.Customer.modify(customer_id, source=source_token)
+        logger.info(f"add source {existing_customer}")
+    return existing_customer
 
 
 def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscription:
