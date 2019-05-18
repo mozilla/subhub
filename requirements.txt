@@ -1,6 +1,6 @@
 doit
-sh
 python-decouple
 flake8
 tox
 black
+ruamel.yaml

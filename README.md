@@ -29,6 +29,12 @@ This value is used only when running `dynalite` locally.  Defaults to `8000`.
 ### DYNALITE_FILE
 This is the value of the file that will be written to by the `dynalite process`.  Defaults to `dynalite.out`.
 
+### PAYMENT_API_KEY
+This is the payment api key.  Defaults to `fake_payment_api_key`
+
+### SUPPORT_API_KEY
+This is the support api key.  Defaults to `fake_support_api_key`
+
 ## Other Important CFG Properties
 These values are calculated and not to be set by a user.  They are mentioned here for clarity.
 
@@ -61,6 +67,7 @@ This is the `git describe --abbrev=7` value, useful for describing the code vers
 http://pydoit.org/
 
 `doit` comes from the idea of bringing the power of build-tools to execute any kind of task
+The `doit` program is used to solve a dependency of tasks just like `make` does but written in `python` for easier writing and maintaining.  It also has some capabilities that `make` does not.  Visit the website above for more details.
 
 ## install requirements to run doit
 Either of the following commands should install the minimum requirements to run `doit` and load the `CFG`
@@ -94,18 +101,17 @@ These are a series of checks which help ensure that the system is in good order 
 ```
 doit check
 ```
+Running `doit check` will run all of the subtasks listed below.
 
-### black check
-This task runs the `black --check` command.
-```
-doit check:black
-```
+The `check` task have several subtasks:
 
-### reqs check
-This task compares what is specified in the `requirements.txt` vs what is installed.
-```
-doit check:reqs
-```
+- `doit check:noroot` This makes sure the doit command is not run as a root user.
+- `doit check:python3.7` This makes sure the python3.7 interpreter is installed.
+- `doit check:awscli` This makes sure the awscli is installed (unless running in travis-ci)
+- `doit check:json` This makes sure all of the json files in the git repo can be loaded.
+- `doit check:yaml` This makes sure all of the yaml files in the git repo can be loaded.
+- `doit check:black` This runs `black --check` to ensure formatting.
+- `doit check:reqs` This compares subhub/requirements.txt vs what is installed via pip freeze.
 
 ## setup the virtualenv (venv)
 This task will create the virtual env and install all of the requirements for use in running code locally.
@@ -139,11 +145,18 @@ This runs the `pytests` via `tox` and `setup.py` specifications.  Currently, `ST
 ```
 doit test
 ```
+Note: The `test` task is a dependency of `package`, `local` and `deploy` tasks, however you can skip them by setting `SKIP_TESTS=<something>`.
 
 ## run package
 This runs the `serverless package` command to zip up the `subhub` code and its dependencies.
 ```
 doit package
+```
+
+## ensure creds
+This checks to see if `aws sts get-caller-identity` can successfully run, verifying that valid AWS credentials are present.  This is a dependency for `deploy`, the next task, to run.
+```
+doit creds
 ```
 
 ## deploy
