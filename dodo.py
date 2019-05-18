@@ -8,14 +8,16 @@ import sys
 import glob
 import json
 import difflib
+import itertools
 import contextlib
 
+from ruamel import yaml
+from functools import lru_cache
 from doit.tools import LongRunning
 from pathlib import Path
 from pkg_resources import parse_version
-from subprocess import Popen, check_call, check_output, CalledProcessError, PIPE
 
-from subhub.cfg import CFG
+from subhub.cfg import CFG, call, CalledProcessError
 
 LOG_LEVELS = [
     'DEBUG',
@@ -50,31 +52,8 @@ def envs(sep=' '):
         f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
     ])
 
-@contextlib.contextmanager
-def cd(path):
-    old_path = os.getcwd()
-    os.chdir(path)
-    try:
-        yield
-    finally:
-        os.chdir(old_path)
-
-def call(cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False):
-    if verbose or nerf:
-        print(cmd)
-    if nerf:
-        return (None, 'nerfed', 'nerfed')
-    process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
-    _stdout, _stderr = [stream.decode('utf-8') for stream in process.communicate()]
-    exitcode = process.poll()
-    if verbose:
-        if _stdout:
-            print(_stdout)
-        if _stderr:
-            print(_stderr)
-    if throw and exitcode:
-        raise CalledProcessError(exitcode, f'cmd={cmd}; stdout={_stdout}; stderr={_stderr}')
-    return exitcode, _stdout, _stderr
+def globs(*patterns, **kwargs):
+    return itertools.chain.from_iterable(glob.iglob(pattern, **kwargs) for pattern in patterns)
 
 def docstr_format(*args, **kwargs):
     def wrapper(func):
@@ -88,7 +67,7 @@ class UnknownPkgmgrError(Exception):
 
 def check_hash(program):
     try:
-        check_call(f'hash {program}', shell=True, stdout=PIPE, stderr=PIPE)
+        call(f'hash {program}')
         return True
     except CalledProcessError:
         return False
@@ -127,15 +106,131 @@ def task_count():
         ],
     }
 
-def task_noroot():
+def check_noroot():
     '''
     make sure script isn't run as root
     '''
-    then = 'echo "   DO NOT RUN AS ROOT!"; echo; exit 1'
-    bash = f'if [[ $(id -u) -eq 0 ]]; then {then}; fi'
+    return {
+        'name': 'noroot',
+        'actions': [
+            'echo "DO NOT RUN AS ROOT!"',
+            'false',
+        ],
+        'uptodate': [
+            lambda: os.getuid() != 0,
+        ],
+    }
+
+def gen_prog_check(name, program=None):
+    '''
+    genereate program check
+    '''
+    return {
+        'name': name,
+        'task_dep': [
+            'check:noroot',
+        ],
+        'actions': [
+            f'echo "required {name} not installed!"',
+            'false',
+        ],
+        'uptodate': [
+            lambda: check_hash(program or name)
+        ]
+    }
+
+def gen_file_check(name, func, *patterns):
+    filenames = globs(*patterns, recursive=True)
+    def load_test(func, filename):
+        try:
+            func(open(filename))
+            return True
+        except:
+            return False
+    @lru_cache(3)
+    def failed_loads():
+        return [filename for filename in filenames if not load_test(func, filename)]
+    return {
+        'name': name,
+        'task_dep': [
+            'check:noroot',
+        ],
+        'actions': [
+            f'echo "{func.__module__}.{func.__name__} failed on {filename}"' for filename in failed_loads()
+        ] + ['false'] if len(failed_loads()) else [],
+        'uptodate': [
+            lambda: len(failed_loads()) == 0,
+        ]
+    }
+
+def check_black():
+    '''
+    run black --check in subhub directory
+    '''
+    black_check = f'black --check {CFG.APP_PROJPATH}'
+    return {
+        'name': 'black',
+        'task_dep': [
+            'check:noroot',
+        ],
+        'actions': [
+            f'{black_check} || echo "consider running \'doit black\'"',
+            'false',
+        ],
+        'uptodate': [
+            black_check,
+        ]
+    }
+
+def check_reqs():
+    '''
+    check requirements
+    '''
+    installed = call('python3 -m pip freeze')[1].strip().split('\n')
+    installed = [tuple(item.split('==')) for item  in installed if '==' in item]
+    required = open('requirements.txt').read().strip().split('\n')
+    required = [tuple(item.split('==')) if '==' in item else (item, None) for item in required]
+    def uptodate():
+        def match_one(iname, iver, rname, rver=None):
+            return (iname == rname and parse_version(iver) >= parse_version(rver or iver))
+        def match_any(installed, rname, rver):
+            return any([match_one(iname, iver, rname, rver) for iname, iver in installed])
+        return all([match_any(installed, rname, rver) for rname, rver in required])
+
+    return {
+        'name': 'reqs',
+        'task_dep': [
+            'check:noroot',
+        ],
+        'actions':[
+            'echo "consider installing requirements.txt by running ./dodo.py"',
+            'false',
+        ],
+        'uptodate': [
+            uptodate,
+        ],
+    }
+
+def task_check():
+    '''
+    checks: noroot, python3.7, awscli, json, yaml, black, reqs
+    '''
+    yield check_noroot()
+    yield gen_prog_check('python3.7')
+    if not CFG('TRAVIS', None):
+        yield gen_prog_check('awscli', 'aws')
+    yield gen_file_check('json', json.load, '**/*.json')
+    yield gen_file_check('yaml', yaml.safe_load, '**/*.yaml', '**/*.yml')
+    yield check_black()
+    yield check_reqs()
+
+def task_black():
+    '''
+    run black on subhub/
+    '''
     return {
         'actions': [
-            f'bash -c \'{bash}\'',
+            f'black {CFG.APP_PROJPATH}',
         ],
     }
 
@@ -149,7 +244,7 @@ def task_venv():
     testreqs = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
     return {
         'task_dep': [
-            'noroot',
+            'check',
         ],
         'actions': [
             f'virtualenv --python=$(which python3.7) {venv}',
@@ -161,14 +256,11 @@ def task_venv():
 
 def task_dynalite():
     '''
-    start, stop the dynalite db
+    dynalite db for testing and local runs: start, stop
     '''
     cmd = f'{DYNALITE} --port {CFG.DYNALITE_PORT}'
     msg = f'dyanlite server started on {CFG.DYNALITE_PORT} logging to {CFG.DYNALITE_FILE}'
     def running():
-        '''
-        return pid of running dyanlite
-        '''
         pid = None
         try:
             pid = call(f'lsof -i:{CFG.DYNALITE_PORT} -t')[1].strip()
@@ -185,7 +277,6 @@ def task_dynalite():
     yield {
         'name': 'stop',
         'task_dep': [
-            'noroot',
             'check',
             'npm',
         ],
@@ -199,7 +290,6 @@ def task_dynalite():
     yield {
         'name': 'start',
         'task_dep': [
-            'noroot',
             'check',
             'npm',
         ],
@@ -224,8 +314,9 @@ def task_local():
     ])
     return {
         'task_dep': [
-            'noroot',
+            'check',
             'venv',
+            'test',
             'dynalite:start',
         ],
         'actions': [
@@ -235,97 +326,11 @@ def task_local():
         ],
     }
 
-def task_pull():
-    '''
-    do a safe git pull
-    '''
-    submods = check_output("git submodule status | awk '{print $2}'", shell=True).decode('utf-8').split()
-    test = '`git diff-index --quiet HEAD --`'
-    pull = 'git pull --rebase'
-    update = 'git submodule update --remote'
-    dirty = 'echo "refusing to \'{cmd}\' because the tree is dirty"'
-    dirty_pull, dirty_update = [dirty.format(cmd=cmd) for cmd in (pull, update)]
-
-    yield {
-        'name': 'mozilla-it/props-bot',
-        'actions': [
-            f'if {test}; then {pull}; else {dirty_pull}; exit 1; fi',
-        ],
-    }
-
-    for submod in submods:
-        yield {
-            'name': submod,
-            'actions': [
-                f'cd {submod} && if {test}; then {update}; else {dirty_update}; exit 1; fi',
-            ],
-        }
-
-def check_black():
-    '''
-    run black --check in subhub directory
-    '''
-    black_check = f'black --check {CFG.APP_PROJPATH}'
-    return {
-        'name': 'black',
-        'actions': [
-            f'{black_check} || echo "consider running \'doit black\'"; false'
-        ],
-        'uptodate': [
-            black_check,
-        ]
-    }
-
-def check_reqs():
-    '''
-    check requirements
-    '''
-    installed = call('python3 -m pip freeze')[1].strip().split('\n')
-    installed = [tuple(item.split('==')) for item  in installed if '==' in item]
-    required = open('requirements.txt').read().strip().split('\n')
-    required = [tuple(item.split('==')) if '==' in item else (item, None) for item in required]
-    def uptodate():
-        '''
-        uptodate
-        '''
-        def match_one(iname, iver, rname, rver=None):
-            '''
-            match one
-            '''
-            return (iname == rname and parse_version(iver) >= parse_version(rver or iver))
-        def match_any(installed, rname, rver):
-            '''
-            match any
-            '''
-            return any([match_one(iname, iver, rname, rver) for iname, iver in installed])
-        return all([match_any(installed, rname, rver) for rname, rver in required])
-
-    return {
-        'name': 'reqs',
-        'actions':[
-            'echo "consider installing requirements.txt by running ./dodo.py"',
-            'false',
-        ],
-        'uptodate': [
-            uptodate,
-        ],
-    }
-
-def task_check():
-    '''
-    checks: black, reqs
-    '''
-    yield check_black()
-    yield check_reqs()
-
 def task_npm():
     '''
     run npm install on package.json
     '''
     def uptodate():
-        '''
-        custom uptodate to check for outdated npm pkgs
-        '''
         try:
             call('npm outdated')
             return False
@@ -333,7 +338,6 @@ def task_npm():
             return True
     return {
         'task_dep': [
-            'noroot',
             'check',
         ],
         'actions': [
@@ -351,12 +355,14 @@ def task_test():
     '''
     return {
         'task_dep': [
-            'noroot',
             'check',
             'npm',
         ],
         'actions': [
             f'cd {CFG.APP_REPOROOT} && tox',
+        ],
+        'uptodate': [
+            lambda: os.environ.get('SKIP_TESTS', None),
         ],
     }
 
@@ -368,15 +374,37 @@ def task_package():
         yield {
             'name': svc,
             'task_dep': [
-                'noroot',
                 'check',
                 'npm',
+                'test',
             ],
             'actions': [
                 f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.APP_DEPENV} -v',
             ],
         }
 
+def task_creds():
+    '''
+    check for valid aws credentials
+    '''
+    def uptodate():
+        try:
+            call('aws sts get-caller-identity')
+            return True
+        except CalledProcessError:
+            return False
+    return {
+        'task_dep': [
+            'check',
+        ],
+        'actions': [
+            'echo "missing valid AWS credentials"',
+            'false',
+        ],
+        'uptodate': [
+            uptodate
+        ],
+    }
 
 def task_deploy():
     '''
@@ -387,9 +415,10 @@ def task_deploy():
         yield {
             'name': svc,
             'task_dep': [
-                'noroot',
                 'check',
+                'creds',
                 'npm',
+                'test',
             ],
             'actions': [
                 f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} -v',
@@ -405,8 +434,8 @@ def task_remove():
         yield {
             'name': svc,
             'task_dep': [
-                'noroot',
                 'check',
+                'creds',
                 'npm',
             ],
             'actions': [
@@ -450,16 +479,6 @@ def task_tidy():
         'actions': [
             'rm -rf ' + ' '.join(TIDY_FILES),
             'find . | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf',
-        ],
-    }
-
-def task_black():
-    '''
-    run black on subhub/
-    '''
-    return {
-        'actions': [
-            f'black {CFG.APP_PROJPATH}',
         ],
     }
 

@@ -9,9 +9,9 @@ import pwd
 import sys
 import time
 import logging
-import sh
 
 from decouple import UndefinedValueError, AutoConfig, config
+from subprocess import Popen, CalledProcessError, PIPE
 
 LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
 
@@ -33,24 +33,45 @@ class NotGitRepoError(Exception):
         super(NotGitRepoError, self).__init__(msg)
 
 
+def call(
+    cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False
+):
+    if verbose or nerf:
+        print(cmd)
+    if nerf:
+        return (None, "nerfed", "nerfed")
+    process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
+    _stdout, _stderr = [stream.decode("utf-8") for stream in process.communicate()]
+    exitcode = process.poll()
+    if verbose:
+        if _stdout:
+            print(_stdout)
+        if _stderr:
+            print(_stderr)
+    if throw and exitcode:
+        raise CalledProcessError(
+            exitcode, f"cmd={cmd}; stdout={_stdout}; stderr={_stderr}"
+        )
+    return exitcode, _stdout, _stderr
+
+
 def git(*args, strip=True, **kwargs):
     """
     git
     """
     try:
-        sh.contrib.git("rev-parse", "--is-inside-work-tree")
-    except sh.ErrorReturnCode as e:
-        stderr = e.stderr.decode("utf-8")
-        if "not a git repository" in stderr.lower():
+        _, stdout, stderr = call("git rev-parse --is-inside-work-tree")
+    except CalledProcessError as ex:
+        if "not a git repository" in str(ex).lower():
             raise NotGitRepoError
     try:
-        result = str(sh.contrib.git(*args, **kwargs))  # pylint: disable=no-member
+        _, result, _ = call("git " + " ".join(args), **kwargs)
         if result:
             result = result.strip()
         return result
-    except sh.ErrorReturnCode as e:
-        log.error(e)
-        raise e
+    except CalledProcessError as ex:
+        log.error(ex)
+        raise ex
 
 
 class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
@@ -92,7 +113,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         jobs
         """
         try:
-            result = sh.nproc()
+            result = call("nproc")[1]
         except:
             result = 1
         return int(result)
@@ -123,7 +144,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         reporoot
         """
-        return git("rev-parse", "--show-toplevel")
+        return git("rev-parse --show-toplevel")
 
     @property
     def APP_VERSION(self):
@@ -131,7 +152,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         version
         """
         try:
-            return git("describe", "--abbrev=7", "--always")
+            return git("describe --abbrev=7 --always")
         except NotGitRepoError:
             return self("APP_VERSION")
 
@@ -141,7 +162,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         branch
         """
         try:
-            return git("rev-parse", "--abbrev-ref", "HEAD")
+            return git("rev-parse --abbrev-ref HEAD")
         except NotGitRepoError:
             return self("APP_BRANCH")
 
@@ -165,7 +186,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         revision
         """
         try:
-            return git("rev-parse", "HEAD")
+            return git("rev-parse HEAD")
         except NotGitRepoError:
             return self("APP_REVISION")
 
@@ -175,7 +196,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         remote origin url
         """
         try:
-            return git("config", "--get", "remote.origin.url")
+            return git("config --get remote.origin.url")
         except NotGitRepoError:
             return self("APP_REMOTE_ORIGIN_URL")
 
@@ -209,6 +230,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         reponame = self.APP_REPONAME
         log.info(f"reponame={reponame}")
+        result = git(f"ls-remote https://github.com/{reponame}")
         result = git("ls-remote", f"https://github.com/{reponame}")
         return {
             refname: revision
@@ -220,7 +242,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         gsm status
         """
-        result = git("submodule", "status", strip=False)
+        result = git("submodule status", strip=False)
         pattern = r"([ +-])([a-f0-9]{40}) ([A-Za-z0-9\/\-_.]+)( .*)?"
         matches = re.findall(pattern, result)
         states = {
@@ -260,6 +282,20 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         dynalite output file
         """
         return self("DYNALITE_FILE", "dynalite.out")
+
+    @property
+    def PAYMENT_API_KEY(self):
+        """
+        payment api key
+        """
+        return self("PAYMENT_API_KEY", "fake_payment_api_key")
+
+    @property
+    def SUPPORT_API_KEY(self):
+        """
+        support api key
+        """
+        return self("SUPPORT_API_KEY", "fake_support_api_key")
 
     @property
     def AWS_EXECUTION_ENV(self):

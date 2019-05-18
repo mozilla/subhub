@@ -3,12 +3,11 @@
 
 import os
 import re
-import sh
 import pwd
 import sys
 import tempfile
 import contextlib
-from subhub.cfg import CFG, git, NotGitRepoError
+from subhub.cfg import CFG, call, git, NotGitRepoError
 
 NON_GIT_REPO_PATH = tempfile.mkdtemp()
 
@@ -68,11 +67,7 @@ def test_APP_JOBS():
     """
     jobs
     """
-    try:
-        expected = sh.nproc()
-    except:
-        expected = 1
-    assert CFG.APP_JOBS == int(expected)
+    assert CFG.APP_JOBS != 0
 
 
 def test_APP_TIMEOUT():
@@ -259,6 +254,28 @@ def test_DYNALITE_FILE():
         assert False
 
 
+def test_PAYMENT_API_KEY():
+    """
+    payment api key
+    """
+    try:
+        CFG.PAYMENT_API_KEY
+        assert True
+    except:
+        assert False
+
+
+def test_SUPPORT_API_KEY():
+    """
+    support api key
+    """
+    try:
+        CFG.SUPPORT_API_KEY
+        assert True
+    except:
+        assert False
+
+
 def test_AWS_EXECUTION_ENV():
     """
     aws execution env
@@ -284,6 +301,16 @@ def test_keep_pydoits_hands_off():
     func = CFG.create_doit_tasks
     assert callable(func)
     assert func() == None
+
+
+def test_call():
+    """
+    test the call function
+    """
+    print()
+    assert call("echo test", nerf=True) == (None, "nerfed", "nerfed")
+    assert call("echo test", verbose=True)[0] == 0
+    assert call("echo test 1>&2", verbose=True)[0] == 0
 
 
 def test_negative_git():
