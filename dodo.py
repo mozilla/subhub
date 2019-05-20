@@ -42,14 +42,17 @@ SLS = f'{CFG.APP_REPOROOT}/node_modules/serverless/bin/serverless'
 DYNALITE = f'{CFG.APP_REPOROOT}/node_modules/.bin/dynalite'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
-def envs(sep=' '):
+def envs(sep=' ', **kwargs):
+    envs = dict(
+        APP_DEPENV=CFG.APP_DEPENV,
+        APP_PROJNAME=CFG.APP_PROJNAME,
+        APP_BRANCH=CFG.APP_BRANCH,
+        APP_REVISION=CFG.APP_REVISION,
+        APP_VERSION=CFG.APP_VERSION,
+        APP_REMOTE_ORIGIN_URL=CFG.APP_REMOTE_ORIGIN_URL,
+    )
     return sep.join([
-        f'APP_DEPENV={CFG.APP_DEPENV}',
-        f'APP_PROJNAME={CFG.APP_PROJNAME}',
-        f'APP_BRANCH={CFG.APP_BRANCH}',
-        f'APP_REVISION={CFG.APP_REVISION}',
-        f'APP_VERSION={CFG.APP_VERSION}',
-        f'APP_REMOTE_ORIGIN_URL={CFG.APP_REMOTE_ORIGIN_URL}',
+        f'{key}={value}' for key, value in dict(envs, **kwargs).items()
     ])
 
 def globs(*patterns, **kwargs):
@@ -307,11 +310,9 @@ def task_local():
     run locally
     '''
     python3 = f'{CFG.APP_PROJPATH}/.venv/bin/python3.7'
-    aws = ' '.join([
-        'AWS_ACCESS_KEY_ID=fake-id',
-        'AWS_SECRET_ACCESS_KEY=fake-key',
-        'PYTHONPATH=.',
-    ])
+    ID='fake-id'
+    KEY='fake-key'
+    PP='.'
     return {
         'task_dep': [
             'check',
@@ -322,7 +323,7 @@ def task_local():
         'actions': [
             f'{python3} -m setup develop',
             'echo $PATH',
-            f'{aws} {python3} subhub/app.py',
+            f'env {envs(AWS_ACCESS_KEY_ID=ID,AWS_SECRET_ACCESS_KEY=KEY,PYTHONPATH=PP)} {python3} subhub/app.py',
         ],
     }
 

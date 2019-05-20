@@ -1,5 +1,4 @@
 import logging
-from typing import Any, Dict, List, Tuple
 
 import stripe
 from stripe.error import (
@@ -11,15 +10,11 @@ from stripe.error import (
 )
 from flask import g
 
+from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-
-# API types
-JsonDict = Dict[str, Any]
-FlaskResponse = Tuple[JsonDict, int]
-FlaskListResponse = Tuple[List[JsonDict], int]
 
 
 def subscribe_to_plan(uid, data) -> FlaskResponse:
