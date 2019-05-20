@@ -42,6 +42,20 @@ parameters:
     required: true
     description: Subscription ID
 paths:
+  /version:
+    get:
+      operationId: subhub.api.version.get_version
+      tags:
+        - Version
+      summary: SubHub version
+      description: Show Subhub version string (git desribe --abbrev=7)
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Version'
   /support/{uid}/subscriptions:
     get:
       operationId: subhub.api.payments.support_status
@@ -281,6 +295,15 @@ paths:
                 description: Pay Token.
                 example: tok_KPte7942xySKBKyrBu11yEpf
 definitions:
+  Version:
+    type: object
+    properties:
+      message:
+        type: string
+        example: v0.0.2-109-gadd6c97
+      code:
+        type: number
+        example: 200
   Plans:
     type: array
     items:
