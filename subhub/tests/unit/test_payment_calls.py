@@ -193,18 +193,17 @@ def test_create_subscription_with_invalid_plan_id(app):
     WHEN provided a api_token, userid, pmt_token, invalid plan_id, email
     THEN validate subscription is created
     """
-    with pytest.raises(stripe.error.InvalidRequestError) as excinfo:
-        payments.subscribe_to_plan(
-            "invalid_plan",
-            {
-                "pmt_token": "tok_visa",
-                "plan_id": "plan_abc123",
-                "email": "invalid_plan@tester.com",
-                "orig_system": "Test_system",
-            },
-        )
+    plan, code = payments.subscribe_to_plan(
+        "invalid_plan",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_abc123",
+            "email": "invalid_plan@tester.com",
+            "orig_system": "Test_system",
+        },
+    )
     g.subhub_account.remove_from_db("invalid_plan")
-    assert "No such plan: plan_abc123" in str(excinfo)
+    assert "Unable to subscribe:" in plan["message"]
 
 
 def test_list_all_plans_valid():
