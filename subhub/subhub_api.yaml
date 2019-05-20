@@ -344,6 +344,14 @@ definitions:
           type: boolean
           description: Shows if subscription will be cancelled at the end of the period.
           example: true
+        failure_code:
+          type: string
+          description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+          example: Card declined
+        failure_message:
+          type: string
+          description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+          example: Your card was declined.
   Errormessage:
     type: object
     properties:
