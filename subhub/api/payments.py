@@ -49,7 +49,7 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
             customer=customer.id, items=[{"plan": data["plan_id"]}]
         )
     except InvalidRequestError as e:
-        return {"message": f"Unable to subscribe. {e}"}, 400
+        return {"message": f"Unable to subscribe: {e}"}, 400
     updated_customer = stripe.Customer.retrieve(customer.id)
     return create_return_data(updated_customer["subscriptions"]), 201
 
