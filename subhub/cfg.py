@@ -30,7 +30,20 @@ class NotGitRepoError(Exception):
         init
         """
         msg = f"not a git repository error cwd={cwd}"
-        super(NotGitRepoError, self).__init__(msg)
+        super().__init__(msg)
+
+
+class GitCommandNotFoundError(Exception):
+    """
+    GitCommandNotFoundError
+    """
+
+    def __init__(self):
+        """
+        init
+        """
+        msg = "git: command not found"
+        super().__init__(msg)
 
 
 def call(
@@ -55,17 +68,22 @@ def call(
     return exitcode, _stdout, _stderr
 
 
-def git(*args, strip=True, **kwargs):
+def git(args, strip=True, **kwargs):
     """
     git
     """
     try:
         _, stdout, stderr = call("git rev-parse --is-inside-work-tree")
     except CalledProcessError as ex:
-        if "not a git repository" in str(ex).lower():
+        if "not a git repository" in str(ex):
             raise NotGitRepoError
+        elif "git: command not found" in str(ex):
+            raise GitCommandNotFoundError
+        else:
+            log.error("failed repo check but NOT a NotGitRepoError???")
+            log.error(ex)
     try:
-        _, result, _ = call("git " + " ".join(args), **kwargs)
+        _, result, _ = call(f"git {args}", **kwargs)
         if result:
             result = result.strip()
         return result
@@ -153,7 +171,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         try:
             return git("describe --abbrev=7 --always")
-        except NotGitRepoError:
+        except (NotGitRepoError, GitCommandNotFoundError):
             return self("APP_VERSION")
 
     @property
@@ -163,7 +181,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         try:
             return git("rev-parse --abbrev-ref HEAD")
-        except NotGitRepoError:
+        except (NotGitRepoError, GitCommandNotFoundError):
             return self("APP_BRANCH")
 
     @property
@@ -187,7 +205,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         try:
             return git("rev-parse HEAD")
-        except NotGitRepoError:
+        except (NotGitRepoError, GitCommandNotFoundError):
             return self("APP_REVISION")
 
     @property
@@ -197,7 +215,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         try:
             return git("config --get remote.origin.url")
-        except NotGitRepoError:
+        except (NotGitRepoError, GitCommandNotFoundError):
             return self("APP_REMOTE_ORIGIN_URL")
 
     @property
@@ -231,7 +249,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         reponame = self.APP_REPONAME
         log.info(f"reponame={reponame}")
         result = git(f"ls-remote https://github.com/{reponame}")
-        result = git("ls-remote", f"https://github.com/{reponame}")
         return {
             refname: revision
             for revision, refname in [line.split() for line in result.split("\n")]
