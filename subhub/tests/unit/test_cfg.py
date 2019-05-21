@@ -28,7 +28,7 @@ def test_NotGitRepoError():
     """
     with cd(NON_GIT_REPO_PATH):
         try:
-            git("rev-parse", "HEAD")
+            git("rev-parse HEAD")
             result = False
         except NotGitRepoError:
             result = True
@@ -95,14 +95,14 @@ def test_APP_REPOROOT():
     """
     reporoot
     """
-    assert CFG.APP_REPOROOT == git("rev-parse", "--show-toplevel")
+    assert CFG.APP_REPOROOT == git("rev-parse --show-toplevel")
 
 
 def test_APP_VERSION():
     """
     version
     """
-    assert CFG.APP_VERSION == git("describe", "--abbrev=7", "--always")
+    assert CFG.APP_VERSION == git("describe --abbrev=7 --always")
     with cd(NON_GIT_REPO_PATH):
         os.environ["APP_VERSION"] = "APP_VERSION"
         assert CFG.APP_VERSION == "APP_VERSION"
@@ -112,7 +112,7 @@ def test_APP_BRANCH():
     """
     branch
     """
-    assert CFG.APP_BRANCH == git("rev-parse", "--abbrev-ref", "HEAD")
+    assert CFG.APP_BRANCH == git("rev-parse --abbrev-ref HEAD")
     with cd(NON_GIT_REPO_PATH):
         os.environ["APP_BRANCH"] = "APP_BRANCH"
         assert CFG.APP_BRANCH == "APP_BRANCH"
@@ -137,7 +137,7 @@ def test_APP_REVISION():
     """
     version
     """
-    assert CFG.APP_REVISION == git("rev-parse", "HEAD")
+    assert CFG.APP_REVISION == git("rev-parse HEAD")
     with cd(NON_GIT_REPO_PATH):
         os.environ["APP_REVISION"] = "APP_REVISION"
         assert CFG.APP_REVISION == "APP_REVISION"
@@ -147,7 +147,7 @@ def test_APP_REMOTE_ORIGIN_URL():
     """
     remote origin url
     """
-    assert CFG.APP_REMOTE_ORIGIN_URL == git("config", "--get", "remote.origin.url")
+    assert CFG.APP_REMOTE_ORIGIN_URL == git("config --get remote.origin.url")
     with cd(NON_GIT_REPO_PATH):
         os.environ["APP_REMOTE_ORIGIN_URL"] = "APP_REMOTE_ORIGIN_URL"
         assert CFG.APP_REMOTE_ORIGIN_URL == "APP_REMOTE_ORIGIN_URL"
@@ -183,7 +183,7 @@ def test_APP_LS_REMOTE():
     """
     ls-remote
     """
-    result = git("ls-remote", f"https://github.com/{CFG.APP_REPONAME}")
+    result = git(f"ls-remote https://github.com/{CFG.APP_REPONAME}")
     assert CFG.APP_LS_REMOTE == {
         refname: revision
         for revision, refname in [line.split() for line in result.split("\n")]
