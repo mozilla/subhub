@@ -8,6 +8,7 @@
   "devDependencies": {
     "dynalite": "^2.2.0",
     "serverless": "^1.27.3",
+    "serverless-dynamodb-local": "0.2.37",
     "serverless-domain-manager": "^3.2.1",
     "serverless-offline": "^4.9.4",
     "serverless-plugin-tracing": "^2.0.0",
