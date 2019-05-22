@@ -558,6 +558,48 @@ def task_pytest():
             ],
         }
 
+def task_creds():
+    '''
+    check for valid aws credentials
+    '''
+    def uptodate():
+        try:
+            call('aws sts get-caller-identity')
+            return True
+        except CalledProcessError:
+            return False
+    return {
+        'task_dep': [
+            'check',
+        ],
+        'actions': [
+            'echo "missing valid AWS credentials"',
+            'false',
+        ],
+        'uptodate': [
+            uptodate
+        ],
+    }
+
+def task_domain():
+    '''
+    domains: create, delete
+    '''
+    for svc in SVCS:
+        servicepath = f'services/{svc}'
+        for action in ('create', 'delete'):
+            yield {
+                'name': f'{svc}:{action}',
+                'task_dep': [
+                    'check',
+                    'creds',
+                    'yarn',
+                ],
+                'actions': [
+                    f'cd {servicepath} && env {envs()} {SLS} {action}_domain --stage {CFG.DEPLOYED_ENV} -v',
+                ],
+            }
+
 def task_package():
     '''
     run serverless package -v for every service
