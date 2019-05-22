@@ -2,6 +2,10 @@
 payment subscription REST api for customers:
 - FxA (Firefox Accounts)
 
+## Required Software
+- python3.7: requires python3.7 interpreter for creating virtual envionments for testing and running subhub
+- yarn (https://yarnpkg.com): package manager for node modules for setting up serverless for running and deploying subhub
+
 ## Important Environment Variables
 The CFG object is for accessing values either from the `subhub/.env` file and|or superceeded by env vars.
 A value that is known to be set or have a default can be accessed:
