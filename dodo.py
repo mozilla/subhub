@@ -193,24 +193,29 @@ def check_reqs():
     installed = [tuple(item.split('==')) for item  in installed if '==' in item]
     required = open('requirements.txt').read().strip().split('\n')
     required = [tuple(item.split('==')) if '==' in item else (item, None) for item in required]
-    def uptodate():
+    @lru_cache(3)
+    def check():
         def match_one(iname, iver, rname, rver=None):
             return (iname == rname and parse_version(iver) >= parse_version(rver or iver))
         def match_any(installed, rname, rver):
             return any([match_one(iname, iver, rname, rver) for iname, iver in installed])
-        return all([match_any(installed, rname, rver) for rname, rver in required])
-
+        return [(rname, rver) for rname, rver in required if not match_any(installed, rname, rver)]
+    def report(rname, rver):
+        version = f'or at version {rver}' if rver else ''
+        return f'echo "-> {rname} is not installed {version}"'
     return {
         'name': 'reqs',
         'task_dep': [
             'check:noroot',
         ],
-        'actions':[
-            'echo "consider installing requirements.txt by running ./dodo.py"',
+        'actions': [
+            report(rname, rver) for rname, rver in check()
+        ] + [
+            'echo "consider running \'./dodo.py\' or \'sudo pip install -r requirements.txt\'"',
             'false',
-        ],
+        ] if len(check()) else [],
         'uptodate': [
-            uptodate,
+            lambda: len(check()) == 0,
         ],
     }
 
@@ -232,25 +237,6 @@ def task_black():
     run black on subhub/
     '''
     return {
-        'name': 'noroot',
-        'actions': [
-            'echo "DO NOT RUN AS ROOT!"',
-            'false',
-        ],
-        'uptodate': [
-            lambda: os.getuid() != 0,
-        ],
-    }
-
-def gen_prog_check(name, program=None):
-    '''
-    genereate program check
-    '''
-    return {
-        'name': name,
-        'task_dep': [
-            'check:noroot',
-        ],
         'actions': [
             f'black {CFG.APP_PROJPATH}',
         ],
