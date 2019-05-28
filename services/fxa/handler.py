@@ -5,6 +5,8 @@ import os
 import sys
 
 import awsgi
+import newrelic.agent
+newrelic.agent.initialize()
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
@@ -25,10 +27,11 @@ except Exception:  # pylint: disable=broad-except
     # TODO: Add Sentry exception catch here
     raise
 
-
+@newrelic.agent.lambda_handler()
 def handle(event, context):
     try:
         return awsgi.response(app, event, context)
     except Exception:  # pylint: disable=broad-except
         logger.exception("Exception occurred while handling %s", event)
         # TODO: Add Sentry exception catch here
+        raise

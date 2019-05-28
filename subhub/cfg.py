@@ -370,6 +370,20 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         return self("AWS_EXECUTION_ENV", None)
 
+    @property
+    def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
+        """
+        https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda
+        """
+        return self("NEW_RELIC_SERVERLESS_MODE_ENABLED", "true")
+
+    @property
+    def NEW_RELIC_DISTRIBUTED_TRACING_ENABLED(self):
+        """
+        same as above in NEW_RELIC_SERVERLESS_MODE_ENABLED
+        """
+        return self("NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", "true")
+
     def __getattr__(self, attr):
         """
         getattr
