@@ -126,6 +126,8 @@ resources:
             AttributeName: userId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
     Events:
       Type: 'AWS::DynamoDB::Table'
       Properties:
@@ -138,3 +140,5 @@ resources:
             AttributeName: eventId
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
