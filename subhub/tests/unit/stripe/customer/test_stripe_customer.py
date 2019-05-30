@@ -4,7 +4,6 @@ import boto3
 import flask
 
 from subhub.cfg import CFG
-from subhub import secrets
 
 from subhub.tests.unit.stripe.utils import run_test, MockSqsClient
 

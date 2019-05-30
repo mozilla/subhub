@@ -20,3 +20,8 @@ class MockSqsClient:
 
     def send_message(QueueUrl={}, MessageBody={}):
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+
+class MockSubhubAccount:
+    def subhub_account(self):
+        pass
