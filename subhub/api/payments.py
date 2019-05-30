@@ -1,5 +1,5 @@
 import logging
-
+from datetime import datetime
 import stripe
 from stripe.error import (
     InvalidRequestError,
@@ -14,12 +14,8 @@ from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan
 from subhub.exceptions import ClientError
 
-logger = logging.getLogger("payments")
-log_handle = logging.StreamHandler()
-log_handle.setLevel(logging.INFO)
-logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handle.setFormatter(logformat)
-logger.addHandler(log_handle)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 
 def subscribe_to_plan(uid, data) -> FlaskResponse:
@@ -51,7 +47,34 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     except InvalidRequestError as e:
         return {"message": f"Unable to subscribe: {e}"}, 400
     updated_customer = stripe.Customer.retrieve(customer.id)
-    return create_return_data(updated_customer["subscriptions"]), 201
+    newest_subscription = find_newest_subscription(updated_customer["subscriptions"])
+    return create_return_data(newest_subscription), 201
+
+
+def find_newest_subscription(subscriptions):
+    result = None
+
+    if not subscriptions:
+        return result
+
+    for subscription in subscriptions["data"]:
+        if not subscription:
+            continue
+        if not result:
+            result = subscription
+            continue
+
+        if subscription["status"] == "active":
+            current_period_start = datetime.fromtimestamp(
+                int(subscription["current_period_start"])
+            )
+            result_current_period_start = datetime.fromtimestamp(
+                int(result["current_period_start"])
+            )
+            if result_current_period_start < current_period_start:
+                result = subscription
+
+    return {"data": [result]}
 
 
 def list_all_plans() -> FlaskListResponse:
@@ -77,38 +100,6 @@ def list_all_plans() -> FlaskListResponse:
     return stripe_plans, 200
 
 
-def cancel_subscription(uid, sub_id) -> FlaskResponse:
-    """
-    Cancel an existing subscription for a user.
-    :param uid:
-    :param sub_id:
-    :return: Success or failure message for the cancellation.
-    """
-    subscription_user = g.subhub_account.get_user(uid)
-    if not subscription_user:
-        return {"message": "Customer does not exist."}, 404
-    customer = stripe.Customer.retrieve(subscription_user.custId)
-    for item in customer["subscriptions"]["data"]:
-        if item["id"] == sub_id and item["status"] in [
-            "active",
-            "trialing",
-            "incomplete",
-        ]:
-            try:
-                stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
-                check_stripe_subscriptions(subscription_user.custId)
-                return {"message": "Subscription cancellation successful"}, 201
-            except (
-                InvalidRequestError,
-                APIConnectionError,
-                APIError,
-                AuthenticationError,
-                CardError,
-            ) as e:
-                return {"message": f"Unable to cancel subscription: {e}"}, 400
-    return {"message": "Subscription not available."}, 400
-
-
 def check_stripe_subscriptions(customer: str) -> list:
     customer_info = stripe.Customer.retrieve(id=customer)
     logger.debug(f"cust info {customer_info.subscriptions}")
@@ -118,6 +109,7 @@ def check_stripe_subscriptions(customer: str) -> list:
         sources_to_remove(customer_subscriptions, customer)
         return customer_subscriptions
     except NameError as e:
+        logger.debug(f"check_stripe_subscriptions: {e}")
         return []
 
 
@@ -144,6 +136,38 @@ def sources_to_remove(subscriptions: list, customer: str) -> None:
         raise ClientError(message="Source missing key element.", payload=str(e))
     except TypeError as e:
         raise ClientError(message="Source missing type element.", payload=str(e))
+
+
+def cancel_subscription(uid, sub_id) -> FlaskResponse:
+    """
+    Cancel an existing subscription for a user.
+    :param uid:
+    :param sub_id:
+    :return: Success or failure message for the cancellation.
+    """
+    subscription_user = g.subhub_account.get_user(uid)
+    if not subscription_user:
+        return {"message": "Customer does not exist."}, 404
+    customer = stripe.Customer.retrieve(subscription_user.custId)
+    for item in customer["subscriptions"]["data"]:
+        if item["id"] == sub_id and item["status"] in [
+            "active",
+            "trialing",
+            "incomplete",
+        ]:
+            try:
+                stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+                return {"message": "Subscription cancellation successful"}, 201
+            except (
+                InvalidRequestError,
+                APIConnectionError,
+                APIError,
+                AuthenticationError,
+                CardError,
+            ) as e:
+                return {"message": f"Unable to cancel subscription: {e}"}, 400
+        else:
+            return {"message": "Subscription not available."}, 400
 
 
 def support_status(uid) -> FlaskResponse:
@@ -177,10 +201,8 @@ def create_return_data(subscriptions) -> JsonDict:
     return_data = dict()
     return_data["subscriptions"] = []
     for subscription in subscriptions["data"]:
-        logger.debug(f"subscription {subscription}")
         if subscription["status"] == "incomplete":
             invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
-            logging.debug(f"invoice {invoice['charge']}")
             if invoice["charge"]:
                 intents = stripe.Charge.retrieve(invoice["charge"])
                 logging.debug(f"intents {intents}")
