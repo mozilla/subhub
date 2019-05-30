@@ -56,6 +56,7 @@ provider:
         - 'xray:PutTelemetryRecords'
       Resource:
         - '*'
+  resourcePolicy: ${self:custom.resourcePolicies.${self:custom.access.${self:provider.stage}}}
 
 package:
   exclude:
@@ -82,6 +83,49 @@ custom:
     createRoute53Record: true
     hostedZoneId: Z2KY0AWCLX3H6L
     endpointType: regional
+  access:
+    prod: restricted
+    stage: restricted
+    qa: restricted
+    dev: unfettered
+  resourcePolicies:
+    unfettered:
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/*
+    restricted:
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/version
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/support/*
+        Condition:
+          IpAddress:
+            aws:SourceIp: ${file(./whitelist.yml):support}
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/customer/*
+          - execute-api:/*/*/plans
+        Condition:
+          IpAddress:
+            aws:SourceIp: ${file(./whitelist.yml):payments.${self:provider.stage}}
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/webhooks
+        Condition:
+          IpAddress:
+            aws:SourceIp: ${file(./whitelist.yml):webhook}
 
 functions:
   subhub:
