@@ -1,0 +1,38 @@
+{
+  "created": 1326853478,
+  "livemode": false,
+  "id": "evt_00000000000000",
+  "type": "customer.source.expiring",
+  "object": "event",
+  "request": null,
+  "pending_webhooks": 1,
+  "api_version": "2018-02-06",
+  "data": {
+      "object": {
+        "id": "card_1EaRqsJNcmPzuWtRr0ro1vhX",
+        "object": "card",
+        "address_city": "Katy",
+        "address_country": "USA",
+        "address_line1": "123 Main",
+        "address_line1_check": "pass",
+        "address_line2": null,
+        "address_state": "TX",
+        "address_zip": "77494",
+        "address_zip_check": "pass",
+        "brand": "Visa",
+        "country": "US",
+        "customer": "cus_00000000000000",
+        "cvc_check": null,
+        "dynamic_last4": null,
+        "exp_month": 5,
+        "exp_year": 2019,
+        "fingerprint": "eYFLxJ8weKg24R6o",
+        "funding": "credit",
+        "last4": "4242",
+        "metadata": {
+        },
+        "name": "Bob Jones",
+        "tokenization_method": null
+      }
+    }
+ }

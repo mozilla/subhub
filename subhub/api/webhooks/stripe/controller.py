@@ -2,7 +2,8 @@ from flask import request, Response
 import logging
 
 import stripe
-from subhub.api.webhooks.stripe.pipeline import StripeWebhookEventPipeline
+
+# from subhub.api.webhooks.stripe.pipeline import StripeWebhookEventPipeline
 
 from subhub.cfg import CFG
 from subhub import secrets

@@ -14,13 +14,12 @@ logger.addHandler(log_handle)
 
 class StripeCustomerCreated(AbstractStripeWebhookEvent):
     def run(self):
-        print(f"customer created: {self.payload}")
         d = self.payload
         sfd = {}
         sfd["event_id"] = d["id"]
-        sfd["event_type"] = "customer_created"
+        sfd["event_type"] = d["type"]
         sfd["email"] = d["data"]["object"]["email"]
-        sfd["stripe_id"] = d["data"]["object"]["id"]
+        sfd["customer_id"] = d["data"]["object"]["id"]
         sfd["name"] = d["data"]["object"]["name"]
         user_id = d["data"]["object"]["metadata"].get("userid")
         sfd["user_id"] = user_id
@@ -36,7 +35,7 @@ class StripeCustomerDeleted(AbstractStripeWebhookEvent):
         sfd["event_id"] = d["id"]
         sfd["event_type"] = d["type"]
         sfd["email"] = d["data"]["object"]["email"]
-        sfd["stripe_id"] = d["data"]["object"]["id"]
+        sfd["customer_id"] = d["data"]["object"]["id"]
         sfd["name"] = d["data"]["object"]["name"]
         user_id = d["data"]["object"]["metadata"].get("userid")
         sfd["user_id"] = user_id
@@ -45,18 +44,33 @@ class StripeCustomerDeleted(AbstractStripeWebhookEvent):
         self.send_to_routes(routes, json.dumps(sfd))
 
 
-class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
+class StripeCustomerUpdated(AbstractStripeWebhookEvent):
     def run(self):
-        print(f"customer source expiring: {self.payload}")
         d = self.payload
         sfd = {}
         sfd["event_id"] = d["id"]
-        sfd["event_type"] = "customer_source_expiring"
-        sfd["stripe_id"] = d["data"]["object"]["customer"]
+        sfd["event_type"] = d["type"]
+        sfd["email"] = d["data"]["object"]["email"]
+        sfd["customer_id"] = d["data"]["object"]["id"]
+        sfd["name"] = d["data"]["object"]["name"]
 
-        routes = [
-            StaticRoutes.SALESFORCE_ROUTE
-        ]  # setup not complete StaticRoutes.FIREFOX_ROUTE,
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
+        self.send_to_routes(routes, json.dumps(sfd))
+
+
+class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
+    def run(self):
+        d = self.payload
+        sfd = {}
+        sfd["event_id"] = d["id"]
+        sfd["event_type"] = d["type"]
+        sfd["customer_id"] = d["data"]["object"]["customer"]
+        sfd["last4"] = d["data"]["object"]["last4"]
+        sfd["brand"] = d["data"]["object"]["brand"]
+        sfd["exp_month"] = d["data"]["object"]["exp_month"]
+        sfd["exp_year"] = d["data"]["object"]["exp_year"]
+
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(sfd))
 
 
@@ -66,7 +80,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
         sfd = {}
         sfd["event_id"] = d["id"]
         sfd["event_type"] = d["type"]
-        sfd["stripe_id"] = d["data"]["object"]["id"]
+        sfd["subscription_id"] = d["data"]["object"]["id"]
         sfd["customer_id"] = d["data"]["object"]["customer"]
         sfd["current_period_start"] = d["data"]["object"]["current_period_start"]
         sfd["current_period_end"] = d["data"]["object"]["current_period_end"]
@@ -94,8 +108,9 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
         d = self.payload
         sfd = {}
         sfd["event_id"] = d["id"]
-        sfd["event_type"] = "customer_subscription_deleted"
-        sfd["stripe_id"] = d["data"]["object"]["customer"]
+        sfd["event_type"] = d["type"]
+        sfd["customer_id"] = d["data"]["object"]["customer"]
+        sfd["subscription_id"] = d["data"]["object"]["id"]
         sfd["created"] = d["data"]["object"]["created"]
         sfd["subscription_created"] = d["data"]["object"]["items"]["data"][0]["created"]
         sfd["current_period_start"] = d["data"]["object"]["current_period_start"]
@@ -103,8 +118,9 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
         sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
         sfd["plan_currency"] = d["data"]["object"]["plan"]["currency"]
         sfd["plan_name"] = d["data"]["object"]["plan"]["nickname"]
-        sfd["trial_period_days"]: d["data"]["object"]["plan"]["trial_period_days"]
-        sfd["status"]: d["data"]["object"]["status"]
+        sfd["trial_period_days"] = d["data"]["object"]["plan"]["trial_period_days"]
+        sfd["status"] = d["data"]["object"]["status"]
+        sfd["canceled_at"] = d["data"]["object"]["canceled_at"]
 
         routes = [StaticRoutes.SALESFORCE_ROUTE, StaticRoutes.FIREFOX_ROUTE]
         self.send_to_routes(routes, json.dumps(sfd))
@@ -113,37 +129,20 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
 class StripeCustomerSubscriptionUpdated(AbstractStripeWebhookEvent):
     def run(self):
         d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = "customer_subscription_updated"
-        sfd["stripe_id"] = d["data"]["object"]["customer"]
-        sfd["created"] = d["data"]["object"]["created"]
-        sfd["subscription_created"] = d["data"]["object"]["items"]["data"][0]["created"]
-        sfd["current_period_start"] = d["data"]["object"]["current_period_start"]
-        sfd["current_period_end"] = d["data"]["object"]["current_period_end"]
-        sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
-        sfd["plan_currency"] = d["data"]["object"]["plan"]["currency"]
-        sfd["plan_name"] = d["data"]["object"]["plan"]["nickname"]
-        sfd["trial_period_days"]: d["data"]["object"]["plan"]["trial_period_days"]
-        sfd["status"]: d["data"]["object"]["status"]
+        if d["data"]["object"]["cancel_at_period_end"]:
+            sfd = {}
+            sfd["event_id"] = d["id"]
+            sfd["event_type"] = d["type"]
+            sfd["subscription_id"] = d["data"]["object"]["id"]
+            sfd["canceled_at"] = d["data"]["object"]["canceled_at"]
+            sfd["cancel_at"] = d["data"]["object"]["cancel_at"]
+            sfd["customer_id"] = d["data"]["object"]["customer"]
+            sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
+            sfd["cancel_at_period_end"] = d["data"]["object"]["cancel_at_period_end"]
 
-        routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
-
-
-class StripeCustomerUpdated(AbstractStripeWebhookEvent):
-    def run(self):
-        print(f"customer updated: {self.payload}")
-        d = self.payload
-        sfd = {}
-
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["email"] = d["data"]["object"]["email"]
-        sfd["stripe_id"] = d["data"]["object"]["id"]
-        sfd["name"] = d["data"]["object"]["name"]
-
-        routes = [
-            StaticRoutes.SALESFORCE_ROUTE
-        ]  # setup not complete StaticRoutes.FIREFOX_ROUTE,
-        self.send_to_routes(routes, json.dumps(sfd))
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+            self.send_to_routes(routes, json.dumps(sfd))
+        else:
+            logger.info(
+                f"cancel_at_period_end {d['data']['object']['cancel_at_period_end']}"
+            )
