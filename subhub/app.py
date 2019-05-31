@@ -6,7 +6,6 @@ import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 
-from subhub import secrets
 from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
 from subhub.subhub_dynamodb import SubHubAccount, WebHookEvent
@@ -60,19 +59,18 @@ def create_app(config=None):
 
     # Setup Stripe Error handlers
     def intermittent_stripe_error(e):
-        return {"message": "stripe error: {}".format(str(e))}, 503
+        return (jsonify({"message": "{}".format(str(e.user_message))}), 503)
 
     for err in (
         stripe.error.APIConnectionError,
         stripe.error.APIError,
         stripe.error.RateLimitError,
         stripe.error.IdempotencyError,
-        stripe.error.InvalidRequestError,
     ):
         app.app.errorhandler(err)(intermittent_stripe_error)
 
     def server_stripe_error(e):
-        return {"message": "error fulfilling request: {}".format(str(e))}, 500
+        return (jsonify({"message": "{}".format(str(e.user_message))}), 500)
 
     for err in (
         stripe.error.AuthenticationError,
@@ -83,7 +81,7 @@ def create_app(config=None):
 
     @app.app.errorhandler(stripe.error.CardError)
     def client_stripe_error(e):
-        return {"message": "invalid card: {}".format(str(e))}, 400
+        return (jsonify({"message": "{}".format(str(e.user_message))}), 400)
 
     @app.app.before_request
     def before_request():

@@ -170,40 +170,54 @@ def test_subscribe_customer_existing(create_customer_for_processing):
 
 def test_create_subscription_with_invalid_payment_token():
     """
-    GIVEN should not create a subscription
-    WHEN provided a api_token, userid, invalid pmt_token, plan_id, email
-    THEN validate subscription is created
+    GIVEN a api_token, userid, invalid pmt_token, plan_id, email
+    WHEN the pmt_token is invalid
+    THEN a StripeError should be raised
     """
-    subscription, code = payments.subscribe_to_plan(
-        "invalid_test",
-        {
-            "pmt_token": "tok_invalid",
-            "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": "invalid_test@test.com",
-            "orig_system": "Test_system",
-        },
-    )
+    exception = None
+    try:
+        subscription, code = payments.subscribe_to_plan(
+            "invalid_test",
+            {
+                "pmt_token": "tok_invalid",
+                "plan_id": "plan_EtMcOlFMNWW4nd",
+                "email": "invalid_test@test.com",
+                "orig_system": "Test_system",
+            },
+        )
+    except Exception as e:
+        exception = e
+
     g.subhub_account.remove_from_db("invalid_test")
-    assert "Unable to subscribe." in subscription["message"]
+
+    assert isinstance(exception, stripe.error.InvalidRequestError)
+    assert "Unable to create customer." in exception.user_message
 
 
 def test_create_subscription_with_invalid_plan_id(app):
     """
-    GIVEN should not create a subscription
-    WHEN provided a api_token, userid, pmt_token, invalid plan_id, email
-    THEN validate subscription is created
+    GIVEN a api_token, userid, pmt_token, plan_id, email
+    WHEN the plan_id provided is invalid
+    THEN a StripeError is raised
     """
-    plan, code = payments.subscribe_to_plan(
-        "invalid_plan",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_abc123",
-            "email": "invalid_plan@tester.com",
-            "orig_system": "Test_system",
-        },
-    )
+    exception = None
+    try:
+        plan, code = payments.subscribe_to_plan(
+            "invalid_plan",
+            {
+                "pmt_token": "tok_visa",
+                "plan_id": "plan_abc123",
+                "email": "invalid_plan@tester.com",
+                "orig_system": "Test_system",
+            },
+        )
+    except Exception as e:
+        exception = e
+
     g.subhub_account.remove_from_db("invalid_plan")
-    assert "Unable to subscribe:" in plan["message"]
+
+    assert isinstance(exception, stripe.error.InvalidRequestError)
+    assert "No such plan:" in exception.user_message
 
 
 def test_list_all_plans_valid():
@@ -257,6 +271,45 @@ def test_cancel_subscription_already_cancelled(app, create_subscription_for_proc
     g.subhub_account.remove_from_db("process_test")
 
 
+def test_cancel_subscription_with_invalid_subhub_user(app):
+    """
+    GIVEN an active subscription
+    WHEN provided an api_token and an invalid userid
+    THEN return customer not found error
+    """
+    (cancelled, code) = payments.cancel_subscription("invalid_user", "subscription_id")
+    assert 404 == code
+    assert cancelled["message"] == "Customer does not exist."
+
+
+def test_cancel_subscription_with_invalid_stripe_customer(
+    app, create_subscription_for_processing
+):
+    """
+    GIVEN an userid and subscription id
+    WHEN the user has an invalid stripe customer id
+    THEN a StripeError is raised
+    """
+    (subscription, code) = create_subscription_for_processing
+
+    subhub_user = g.subhub_account.get_user("process_test")
+    subhub_user.custId = None
+    g.subhub_account.save_user(subhub_user)
+
+    exception = None
+    try:
+        (cancelled, code) = payments.cancel_subscription(
+            "process_test", subscription["subscriptions"][0]["subscription_id"]
+        )
+    except Exception as e:
+        exception = e
+
+    g.subhub_account.remove_from_db("process_test")
+
+    assert isinstance(exception, stripe.error.InvalidRequestError)
+    assert "Customer instance has invalid ID" in exception.user_message
+
+
 def test_check_subscription_with_valid_parameters(
     app, create_subscription_for_processing
 ):
@@ -294,11 +347,72 @@ def test_update_payment_method_invalid_payment_token(
     """
     GIVEN api_token, userid, pmt_token
     WHEN invalid pmt_token
-    THEN do not update payment method for a customer
+    THEN a StripeError exception is raised
     """
+    exception = None
+    try:
+        (updated_pmt, code) = payments.update_payment_method(
+            "process_test", {"pmt_token": "tok_invalid"}
+        )
+    except Exception as e:
+        exception = e
+
+    g.subhub_account.remove_from_db("process_test")
+
+    assert isinstance(exception, stripe.error.InvalidRequestError)
+    assert "No such token:" in exception.user_message
+
+
+def test_update_payment_method_missing_stripe_customer(
+    app, create_subscription_for_processing
+):
+    """
+    GIVEN api_token, userid, pmt_token
+    WHEN provided user with missing stripe customer id
+    THEN return missing customer
+    """
+    (subscription, code) = create_subscription_for_processing
+    subhub_user = g.subhub_account.get_user("process_test")
+    subhub_user.custId = None
+    g.subhub_account.save_user(subhub_user)
+
     (updated_pmt, code) = payments.update_payment_method(
         "process_test", {"pmt_token": "tok_invalid"}
     )
-    assert 400 == code
-    assert "No such token:" in updated_pmt["message"]
+    assert 404 == code
+    g.subhub_account.remove_from_db("process_test")
+
+
+def test_update_payment_method_invalid_stripe_customer(
+    app, create_subscription_for_processing
+):
+    """
+    GIVEN api_token, userid, pmt_token
+    WHEN provided invalid stripe data
+    THEN a StripeError is raised
+    """
+
+    (subscription, code) = create_subscription_for_processing
+    subhub_user = g.subhub_account.get_user("process_test")
+    subhub_user.custId = "bad_id"
+    g.subhub_account.save_user(subhub_user)
+
+    exception = None
+    try:
+        (updated_pmt, code) = payments.update_payment_method(
+            "process_test", {"pmt_token": "tok_invalid"}
+        )
+    except Exception as e:
+        exception = e
+
+    g.subhub_account.remove_from_db("process_test")
+
+    assert isinstance(exception, stripe.error.InvalidRequestError)
+    assert "No such customer:" in exception.user_message
+
+
+def test_customer_update_success(create_subscription_for_processing):
+    (subscription, code) = create_subscription_for_processing
+    (data, code) = payments.customer_update("process_test")
+    assert 200 == code
     g.subhub_account.remove_from_db("process_test")

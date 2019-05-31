@@ -1,7 +1,9 @@
 import logging
 
 import stripe
-from mockito import when, mock, unstub
+from stripe.error import InvalidRequestError
+
+from mockito import when, mock, unstub, ANY
 
 from subhub.api import payments
 from subhub.exceptions import ClientError
@@ -68,6 +70,28 @@ def test_check_stripe_subscriptions_fail():
     when(stripe.Customer).delete_source("cus_tester3", "src_123").thenReturn(
         delete_response
     )
+    test_fail = payments.check_stripe_subscriptions("cus_tester3")
+    logging.info(f"test fail {test_fail}")
+    assert test_fail == []
+    unstub()
+
+
+def test_check_stripe_subscriptions_name_error():
+
+    cancel_response = mock(
+        {
+            "id": "cus_tester3",
+            "object": "customer",
+            "subscriptions": {"data": []},
+            "sources": {"data": [{"id": "src_123"}]},
+        },
+        spec=stripe.Customer,
+    )
+
+    when(stripe.Customer).retrieve(id="cus_tester3").thenReturn(
+        cancel_response
+    ).thenRaise(NameError)
+
     test_fail = payments.check_stripe_subscriptions("cus_tester3")
     logging.info(f"test fail {test_fail}")
     assert test_fail == []
