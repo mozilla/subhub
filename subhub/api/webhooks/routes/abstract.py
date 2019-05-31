@@ -36,4 +36,4 @@ class AbstractRoute(ABC):
             logger.info(f"updated event {payload['event_id']} {update_event}")
 
     def report_route_error(self, payload):
-        pass
+        logger.error(f"report route error {payload}")

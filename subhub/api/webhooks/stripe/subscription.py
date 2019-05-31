@@ -28,7 +28,5 @@ class StripeSubscriptionCreated(AbstractStripeWebhookEvent):
         sfd["plan_currency"] = d["data"]["plan"]["currency"]
         sfd["plan_name"] = d["data"]["plan"]["nickname"]
 
-        routes = [
-            StaticRoutes.SALESFORCE_ROUTE
-        ]  # setup not complete StaticRoutes.FIREFOX_ROUTE,
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(sfd))

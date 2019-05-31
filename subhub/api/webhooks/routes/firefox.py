@@ -19,7 +19,9 @@ class FirefoxRoute(AbstractRoute):
             queues = sqs_client.list_queues(
                 QueueNamePrefix="DevSub"
             )  # we filter to narrow down the list
+            logger.info(f"queues {queues}")
             queue_url = queues["QueueUrls"][0]
+            logger.info(f"queue url {queue_url}")
             msg = sqs_client.send_message(QueueUrl=queue_url, MessageBody=self.payload)
 
             if msg["ResponseMetadata"]["HTTPStatusCode"] == 200:
@@ -32,9 +34,4 @@ class FirefoxRoute(AbstractRoute):
 
         except ClientError as e:
             logging.error(f"Firefox error: {e}")
-            self.report_route_error(self.payload)
-
-        if msg == "200":
-            self.report_route(self.payload)
-        else:
             self.report_route_error(self.payload)

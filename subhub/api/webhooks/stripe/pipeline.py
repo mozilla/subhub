@@ -1,13 +1,20 @@
-from subhub.api.webhooks.stripe.customer import StripeCustomerCreated
+from subhub.api.webhooks.stripe.customer import (
+    StripeCustomerCreated,
+    StripeCustomerDeleted,
+    StripeCustomerSubscriptionCreated,
+    StripeCustomerUpdated,
+    StripeCustomerSubscriptionUpdated,
+    StripeCustomerSubscriptionDeleted,
+    StripeCustomerSourceExpiring,
+)
 from subhub.api.webhooks.stripe.charge import StripeChargeSucceededEvent
-from subhub.api.webhooks.stripe.customer import StripeCustomerDeleted
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionCreated
-from subhub.api.webhooks.stripe.customer import StripeCustomerUpdated
 from subhub.api.webhooks.stripe.subscription import StripeSubscriptionCreated
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionUpdated
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
-from subhub.api.webhooks.stripe.customer import StripeCustomerSourceExpiring
 from subhub.api.webhooks.stripe.unhandled import StripeUnhandledEvent
+from subhub.api.webhooks.stripe.invoices import (
+    StripeInvoiceFinalized,
+    StripeInvoicePaymentFailed,
+)
+from subhub.api.webhooks.stripe.payment_intents import StripePaymentIntentSucceeded
 
 
 class StripeWebhookEventPipeline:
@@ -35,5 +42,11 @@ class StripeWebhookEventPipeline:
             StripeChargeSucceededEvent(self.payload).run()
         elif event_type == "subscription.created":
             StripeSubscriptionCreated(self.payload).run()
+        elif event_type == "invoice.finalized":
+            StripeInvoiceFinalized(self.payload).run()
+        elif event_type == "invoice.payment_failed":
+            StripeInvoicePaymentFailed(self.payload).run()
+        elif event_type == "payment_intent.succeeded":
+            StripePaymentIntentSucceeded(self.payload).run()
         else:
             StripeUnhandledEvent(self.payload).run()

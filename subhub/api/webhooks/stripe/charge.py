@@ -1,6 +1,5 @@
 import logging
 import json
-import requests
 
 from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.api.webhooks.routes.static import StaticRoutes
@@ -43,9 +42,7 @@ class StripeChargeSucceededEvent(AbstractStripeWebhookEvent):
         sfd["application_fee"] = d["data"]["object"]["application_fee"]
         routes = [StaticRoutes.SALESFORCE_ROUTE]
 
-        routes = [
-            StaticRoutes.SALESFORCE_ROUTE
-        ]  # setup not complete StaticRoutes.FIREFOX_ROUTE,
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(sfd))
 
 
