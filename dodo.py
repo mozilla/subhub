@@ -232,6 +232,52 @@ def task_check():
     yield check_black()
     yield check_reqs()
 
+def task_creds():
+    '''
+    check for valid aws credentials
+    '''
+    def creds_check():
+        try:
+            call('aws sts get-caller-identity')
+            return True
+        except CalledProcessError:
+            return False
+    return {
+        'task_dep': [
+            'check',
+        ],
+        'actions': [
+            'echo "missing valid AWS credentials"',
+            'false',
+        ],
+        'uptodate': [
+            creds_check
+        ],
+    }
+
+def task_stripe():
+    '''
+    check to see if STRIPE_API_KEY is set
+    '''
+    def stripe_check():
+        try:
+            CFG.STRIPE_API_KEY
+        except:
+            return False
+        return True
+    return {
+        'task_dep': [
+            'check',
+        ],
+        'actions': [
+            'echo "missing STRIPE_API_KEY env var or .env entry"',
+            'false',
+        ],
+        'uptodate': [
+            stripe_check,
+        ]
+    }
+
 def task_black():
     '''
     run black on subhub/
@@ -321,6 +367,7 @@ def task_local():
     return {
         'task_dep': [
             'check',
+            'stripe',
             'venv',
             'test',
             'dynalite:start',
@@ -336,7 +383,7 @@ def task_npm():
     '''
     run npm install on package.json
     '''
-    def uptodate():
+    def npm_check():
         try:
             call('npm outdated')
             return False
@@ -351,7 +398,7 @@ def task_npm():
             'npm install',
         ],
         'uptodate': [
-            uptodate
+            npm_check
         ],
     }
 
@@ -362,6 +409,7 @@ def task_test():
     return {
         'task_dep': [
             'check',
+            'stripe',
             'npm',
         ],
         'actions': [
@@ -389,29 +437,6 @@ def task_package():
             ],
         }
 
-def task_creds():
-    '''
-    check for valid aws credentials
-    '''
-    def uptodate():
-        try:
-            call('aws sts get-caller-identity')
-            return True
-        except CalledProcessError:
-            return False
-    return {
-        'task_dep': [
-            'check',
-        ],
-        'actions': [
-            'echo "missing valid AWS credentials"',
-            'false',
-        ],
-        'uptodate': [
-            uptodate
-        ],
-    }
-
 def task_deploy():
     '''
     run serverless deploy -v for every service
@@ -423,6 +448,7 @@ def task_deploy():
             'task_dep': [
                 'check',
                 'creds',
+                'stripe',
                 'npm',
                 'test',
             ],
