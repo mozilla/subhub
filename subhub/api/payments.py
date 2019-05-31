@@ -1,13 +1,6 @@
 import logging
 from datetime import datetime
 import stripe
-from stripe.error import (
-    InvalidRequestError,
-    APIConnectionError,
-    APIError,
-    AuthenticationError,
-    CardError,
-)
 from flask import g
 
 from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
@@ -25,27 +18,17 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     :param data:
     :return: current subscriptions for user.
     """
-    try:
-        customer = existing_or_new_customer(
-            g.subhub_account,
-            user_id=uid,
-            email=data["email"],
-            source_token=data["pmt_token"],
-            origin_system=data["orig_system"],
-        )
-    except InvalidRequestError as e:
-        return {"message": f"Unable to subscribe. {e}"}, 400
+    customer = existing_or_new_customer(
+        g.subhub_account,
+        user_id=uid,
+        email=data["email"],
+        source_token=data["pmt_token"],
+        origin_system=data["orig_system"],
+    )
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
         return {"message": "User already subscribed."}, 409
-    if existing_plan:
-        return {"message": "User already subscribed."}, 409
-    try:
-        stripe.Subscription.create(
-            customer=customer.id, items=[{"plan": data["plan_id"]}]
-        )
-    except InvalidRequestError as e:
-        return {"message": f"Unable to subscribe: {e}"}, 400
+    stripe.Subscription.create(customer=customer.id, items=[{"plan": data["plan_id"]}])
     updated_customer = stripe.Customer.retrieve(customer.id)
     newest_subscription = find_newest_subscription(updated_customer["subscriptions"])
     return create_return_data(newest_subscription), 201
@@ -124,12 +107,7 @@ def sources_to_remove(subscriptions: list, customer: str) -> None:
             and sub.get("cancel_at") is None
         ]
         if not bool(active_subscriptions):
-            try:
-                sources = stripe.Customer.retrieve(id=customer)
-            except InvalidRequestError as e:
-                raise InvalidRequestError(
-                    message="Unable to delete source.", payload=str(e)
-                )
+            sources = stripe.Customer.retrieve(id=customer)
             for source in sources.sources["data"]:
                 stripe.Customer.delete_source(customer, source["id"])
     except KeyError as e:
@@ -155,19 +133,12 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
             "trialing",
             "incomplete",
         ]:
-            try:
-                stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
-                return {"message": "Subscription cancellation successful"}, 201
-            except (
-                InvalidRequestError,
-                APIConnectionError,
-                APIError,
-                AuthenticationError,
-                CardError,
-            ) as e:
-                return {"message": f"Unable to cancel subscription: {e}"}, 400
+            stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+            check_stripe_subscriptions(subscription_user.custId)
+            return {"message": "Subscription cancellation successful"}, 201
         else:
             return {"message": "Subscription not available."}, 400
+    return {"message": "Subscription not available."}, 400
 
 
 def support_status(uid) -> FlaskResponse:
@@ -254,25 +225,12 @@ def update_payment_method(uid, data) -> FlaskResponse:
     items = g.subhub_account.get_user(uid)
     if not items or not items.custId:
         return {"message": "Customer does not exist."}, 404
-    try:
-        customer = stripe.Customer.retrieve(items.custId)
-        if customer["metadata"]["userid"] == uid:
-            try:
-                customer.modify(items.custId, source=data["pmt_token"])
-                return {"message": "Payment method updated successfully."}, 201
-            except (
-                InvalidRequestError,
-                APIConnectionError,
-                APIError,
-                AuthenticationError,
-                CardError,
-            ) as e:
-
-                return {"message": f"{e}"}, 400
-        else:
-            return "Customer mismatch.", 400
-    except KeyError as e:
-        return f"Customer does not exist: missing {e}", 404
+    customer = stripe.Customer.retrieve(items.custId)
+    if customer["metadata"]["userid"] == uid:
+        customer.modify(items.custId, source=data["pmt_token"])
+        return {"message": "Payment method updated successfully."}, 201
+    else:
+        return {"message": "Customer mismatch."}, 400
 
 
 def customer_update(uid) -> tuple:
