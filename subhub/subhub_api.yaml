@@ -363,7 +363,7 @@ definitions:
         currency:
           type: string
           example: usd
-        nickname:
+        plan_name:
           type: string
           example: Monthly Rocket Launches
   Subscriptions:
@@ -377,7 +377,7 @@ definitions:
         plan_id:
           type: string
           example: pro_basic_823
-        nickname:
+        plan_name:
           type: string
           example: "pro_basic"
         current_period_end:
