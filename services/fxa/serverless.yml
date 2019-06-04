@@ -13,6 +13,13 @@ provider:
   runtime: python3.7
   region: us-west-2
   stage: ${opt:stage, 'dev'}
+  stackName: ${self:custom.prefix}-stack
+  apiName: ${self:custom.prefix}-apigw
+  deploymentPrefix: ${self:custom.prefix}
+  endpointType: regional
+  logRetentionInDays: 90
+  logs:
+    restApi: true
   memorySize: 256
   timeout: 10
   tracing: true
