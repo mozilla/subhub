@@ -6,6 +6,7 @@ import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 
+from subhub import secrets
 from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
 from subhub.subhub_dynamodb import SubHubAccount, WebHookEvent
