@@ -14,7 +14,7 @@ class StripeChargeSucceededEvent(AbstractStripeWebhookEvent):
             charge_id=self.payload.id,
             invoice_id=self.payload.data.object.invoice,
             customer_id=self.payload.data.object.customer,
-            order_id=self.payload.data.object.metadata.order_id,
+            order_id=self.payload.data.object.metadata.get("order_id", None),
             card_last4=self.payload.data.object.payment_method_details.card.last4,
             card_brand=self.payload.data.object.payment_method_details.card.brand,
             card_exp_month=self.payload.data.object.payment_method_details.card.exp_month,

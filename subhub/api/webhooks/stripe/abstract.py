@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
 import requests
-
 from attrdict import AttrDict
 from subhub.api.webhooks.routes.pipeline import RoutesPipeline
 from subhub.cfg import CFG
@@ -14,6 +13,10 @@ class AbstractStripeWebhookEvent(ABC):
     def __init__(self, payload):
         self.payload = AttrDict(payload)
 
+    @property
+    def is_active_or_trialing(self):
+        return self.payload.data.object.status in ("active", "trialing")
+
     @staticmethod
     def send_to_routes(report_routes, message_to_route):
         logger.info(
@@ -23,6 +26,7 @@ class AbstractStripeWebhookEvent(ABC):
         )
         RoutesPipeline(report_routes, message_to_route).run()
 
+    @staticmethod
     def send_to_salesforce(self, payload):
         logger.info("sending to salesforce", payload=payload)
         uri = CFG.SALESFORCE_BASKET_URI

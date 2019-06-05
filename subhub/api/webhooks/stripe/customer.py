@@ -1,8 +1,11 @@
 import json
+import time
 
-from attrdict import AttrDict
+import stripe
+
 from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.api.webhooks.routes.static import StaticRoutes
+from subhub.exceptions import ClientError
 
 from subhub.log import get_logger
 
@@ -15,7 +18,7 @@ class StripeCustomerCreated(AbstractStripeWebhookEvent):
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
             name=self.payload.data.object.name,
-            user_id=self.payload.data.object.metadata.userid,
+            user_id=self.payload.data.object.metadata.get("userid", None),
         )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))
@@ -27,7 +30,7 @@ class StripeCustomerDeleted(AbstractStripeWebhookEvent):
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
             name=self.payload.data.object.name,
-            user_id=self.payload.data.object.metadata.userid,
+            user_id=self.payload.data.object.metadata.get("userid", None),
         )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))
@@ -59,53 +62,53 @@ class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
 
 class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
     def run(self):
-        data = {
-            "event_id": self.payload.id,
-            "event_type": self.payload.type,
-            "customer_id": self.payload.data.object.customer,
-            "subscription_id": self.payload.data.object.id,
-            "current_period_start": self.payload.data.object.current_period_start,
-            "current_period_end": self.payload.data.object.current_period_end,
-            "canceled_at": self.payload.data.object.canceled_at,
-            "days_until_due": self.payload.data.object.days_until_due,
-            "default_payment_method": self.payload.data.object.default_payment_method,
-            "plan_id": self.payload.data.object.plan.id,
-            "plan_amount": self.payload.data.object.plan.amount,
-            "plan_currency": self.payload.data.object.plan.currency,
-            "plan_interval": self.payload.data.object.plan.interval,
-            "status": self.payload.data.object.status,
-            "trial_start": self.payload.data.object.trial_start,
-            "trial_end": self.payload.data.object.trial_end,
-            "tax_percent": self.payload.data.object.tax_percent,
-            "application_fee_percent": self.payload.data.object.application_fee_percent,
-            "user_id": self.payload.data.object.metadata.get("userid", None),  # why?
-        }
-        routes = [StaticRoutes.SALESFORCE_ROUTE, StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
+        user_id = self.payload.data.object.metadata.get("userid", None)
+        updated_customer = ""
+        if not user_id:
+            customer_id = self.payload.object.customer
+            updated_customer = stripe.Customer.retrieve(customer_id)
+            user_id = updated_customer.metadata.get("userid")
+        if user_id:
+            sfd = dict(
+                uid=user_id,
+                active=self.is_active_or_trialing,
+                subscriptionId=self.payload.data.object.id,
+                productName=self.payload.data.object.plan.nickname,
+                eventId=self.payload.id,  # required by FxA
+                event_id=self.payload.id,  # required by SubHub
+                eventCreatedAt=self.payload.created,
+                messageCreatedAt=int(time.time()),
+            )
+            routes = [StaticRoutes.FIREFOX_ROUTE]
+            self.send_to_routes(routes, json.dumps(sfd))
+        else:
+            raise ClientError(f"userid is None for customer {updated_customer}")
 
 
 class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
     def run(self):
-        # items is a keyword in the attrdict; this steps around that
-        items = AttrDict(self.payload.data.object["items"])
-        data = {
-            "event_id": self.payload.id,
-            "event_type": self.payload.type,
-            "customer_id": self.payload.data.object.customer,
-            "subscription_id": self.payload.data.object.id,
-            "current_period_start": self.payload.data.object.current_period_start,
-            "current_period_end": self.payload.data.object.current_period_end,
-            "subscription_created": items.data[0].created,
-            "plan_amount": self.payload.data.object.plan.amount,
-            "plan_currency": self.payload.data.object.plan.currency,
-            "plan_name": self.payload.data.object.plan.nickname,
-            "trial_period_days": self.payload.data.object.plan.trial_period_days,
-            "status": self.payload.data.object.status,
-            "canceled_at": self.payload.data.object.canceled_at,
-            "created": self.payload.data.object.created,
-        }
-        routes = [StaticRoutes.SALESFORCE_ROUTE, StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
+        user_id = self.payload.data.object.metadata.get("userid", None)
+        if not user_id:
+            customer_id = self.payload.object.customer
+            updated_customer = stripe.Customer.retrieve(customer_id)
+            user_id = updated_customer.metadata.get("userid")
+        if user_id:
+            sfd = dict(
+                uid=user_id,
+                active=self.is_active_or_trialing,
+                subscriptionId=self.payload.data.object.id,
+                productName=self.payload.data.object.plan.nickname,
+                eventId=self.payload.id,  # required by FxA
+                event_id=self.payload.id,  # required by SubHub
+                eventCreatedAt=self.payload.created,
+                messageCreatedAt=int(time.time()),
+            )
+            routes = [StaticRoutes.FIREFOX_ROUTE]
+            self.send_to_routes(routes, json.dumps(sfd))
+        else:
+            raise ClientError(
+                f"userid is None for customer {self.payload.object.customer}"
+            )
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeWebhookEvent):
