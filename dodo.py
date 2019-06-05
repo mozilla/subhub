@@ -228,8 +228,8 @@ def task_check():
     yield gen_prog_check('yarn')
     if not CFG('TRAVIS', None):
         yield gen_prog_check('awscli', 'aws')
-    yield gen_file_check('json', json.load, '**/*.json')
-    yield gen_file_check('yaml', yaml.safe_load, '**/*.yaml', '**/*.yml')
+    yield gen_file_check('json', json.load, 'services/**/*.json')
+    yield gen_file_check('yaml', yaml.safe_load, 'services/**/*.yaml', 'services/**/*.yml')
     yield check_black()
     yield check_reqs()
 
@@ -333,7 +333,7 @@ def task_dynalite():
         'name': 'stop',
         'task_dep': [
             'check',
-            'npm',
+            'yarn',
         ],
         'actions': [
             f'kill {pid}',
@@ -346,7 +346,7 @@ def task_dynalite():
         'name': 'start',
         'task_dep': [
             'check',
-            'npm',
+            'yarn',
         ],
         'actions': [
             LongRunning(f'nohup {cmd} > {CFG.DYNALITE_FILE} &'),
@@ -380,28 +380,21 @@ def task_local():
         ],
     }
 
-def task_npm():
+def task_yarn():
     '''
-    run npm install on package.json
+    run yarn install on package.json
     '''
-    def npm_check():
-        try:
-            call('npm outdated')
-            return False
-        except CalledProcessError:
-            return True
     return {
         'task_dep': [
             'check',
         ],
         'actions': [
             '[ -d node_modules/ ] && rm -rf node_modules/ || true',
-            'npm install',
-        ],
-        'uptodate': [
-            npm_check
+            'yarn install',
         ],
     }
+
+
 
 def task_test():
     '''
@@ -411,7 +404,7 @@ def task_test():
         'task_dep': [
             'check',
             'stripe',
-            'npm',
+            'yarn',
         ],
         'actions': [
             f'cd {CFG.APP_REPOROOT} && tox',
@@ -430,7 +423,7 @@ def task_package():
             'name': svc,
             'task_dep': [
                 'check',
-                'npm',
+                'yarn',
                 'test',
             ],
             'actions': [
@@ -450,7 +443,7 @@ def task_deploy():
                 'check',
                 'creds',
                 'stripe',
-                'npm',
+                'yarn',
                 'test',
             ],
             'actions': [
@@ -469,7 +462,7 @@ def task_remove():
             'task_dep': [
                 'check',
                 'creds',
-                'npm',
+                'yarn',
             ],
             'actions': [
                 f'cd {servicepath} && env {envs()} {SLS} remove -v',
