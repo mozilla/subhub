@@ -348,6 +348,9 @@ definitions:
         product_id:
           type: string
           example: pro_basic
+        product_name:
+          type: string
+          example: Moz_Sub
         interval:
           type: string
           example: month
