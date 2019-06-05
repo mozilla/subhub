@@ -72,6 +72,7 @@
       "latest_invoice": null,
       "livemode": false,
       "metadata": {
+        "userid": "tester123"
       },
       "plan": {
         "id": "subhub-plan-api_00000000000000",

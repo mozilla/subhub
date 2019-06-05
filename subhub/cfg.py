@@ -347,6 +347,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("PAYMENT_API_KEY", "fake_payment_api_key")
 
     @property
+    def TOPIC_ARN_KEY(self):
+        """
+        topic arn for sns
+        :return:
+        """
+        return self("TOPIC_ARN_KEY", "fake_topic_arn_key")
+
+    @property
     def SUPPORT_API_KEY(self):
         """
         support api key
@@ -354,25 +362,27 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("SUPPORT_API_KEY", "fake_support_api_key")
 
     @property
-    def WEBHOOK_API_KEY(self):
-        """
-        webhook api key
-        """
-        return self("WEBHOOK_API_KEY", "fake_webhook_api_key")
-
-    @property
     def AWS_ACCESS_KEY_ID(self):
         """
         aws access key id
+        :return:
         """
-        return self("AWS_ACCESS_KEY_ID", "fake_key")
+        return self("AWS_ACCESS_KEY_ID", "fake_aws_access_key_id")
 
     @property
     def AWS_SECRET_ACCESS_KEY(self):
         """
         aws secret access key
+        :return:
         """
-        return self("AWS_SECRET_ACCESS_KEY", "fake_access")
+        return self("AWS_SECRET_ACCESS_KEY", "fake_aws_secret_access_key")
+
+    @property
+    def WEBHOOK_API_KEY(self):
+        """
+        webhook api key
+        """
+        return self("WEBHOOK_API_KEY", "fake_webhook_api_key")
 
     @property
     def AWS_EXECUTION_ENV(self):

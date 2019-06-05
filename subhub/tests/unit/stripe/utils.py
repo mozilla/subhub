@@ -3,7 +3,7 @@ import json
 
 from subhub.cfg import CFG
 from subhub import secrets
-from subhub.api.webhooks.stripe.pipeline import StripeWebhookEventPipeline
+from subhub.api.webhooks.stripe.controller import StripeWebhookEventPipeline
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 
@@ -19,6 +19,13 @@ class MockSqsClient:
         return {"QueueUrls": ["DevSub"]}
 
     def send_message(QueueUrl={}, MessageBody={}):
+        return {"ResponseMetadata": {"HTTPStatusCode": 200}}
+
+
+class MockSnsClient:
+    def publish(
+        Message: dict = None, MessageStructure: str = "json", TopicArn: str = None
+    ):
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 

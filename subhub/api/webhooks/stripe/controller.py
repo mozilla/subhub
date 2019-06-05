@@ -11,7 +11,6 @@ from subhub.api.webhooks.stripe.subscription import StripeSubscriptionCreated
 from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionUpdated
 from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
 from subhub.api.webhooks.stripe.customer import StripeCustomerSourceExpiring
-from subhub.api.webhooks.stripe.unhandled import StripeUnhandledEvent
 from subhub.log import get_logger
 
 logger = get_logger()
