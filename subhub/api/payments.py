@@ -136,8 +136,6 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
             stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
             check_stripe_subscriptions(subscription_user.custId)
             return {"message": "Subscription cancellation successful"}, 201
-        else:
-            return {"message": "Subscription not available."}, 400
     return {"message": "Subscription not available."}, 400
 
 

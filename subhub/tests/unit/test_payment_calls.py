@@ -246,6 +246,90 @@ def test_cancel_subscription_with_valid_data(app, create_subscription_for_proces
     g.subhub_account.remove_from_db("process_test")
 
 
+def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first():
+    """
+    GIVEN a user with multiple subscriptions
+    WHEN the first subscription is cancelled
+    THEN the specified subscription is cancelled
+    """
+    uid = uuid.uuid4()
+    subscription1, code1 = payments.subscribe_to_plan(
+        "valid_customer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+    subscription2, code2 = payments.subscribe_to_plan(
+        "valid_customer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_F4G9jB3x5i6Dpj",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+
+    # cancel the first subscription created
+    (cancelled, code) = payments.cancel_subscription(
+        "valid_customer", subscription1["subscriptions"][0]["subscription_id"]
+    )
+    assert cancelled["message"] == "Subscription cancellation successful"
+    assert 201 == code
+
+    # clean up test data created
+    (cancelled, code) = payments.cancel_subscription(
+        "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
+    )
+    g.subhub_account.remove_from_db("valid_customer")
+    assert cancelled["message"] == "Subscription cancellation successful"
+    assert 201 == code
+
+
+def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_second():
+    """
+    GIVEN a user with multiple subscriptions
+    WHEN the second subscription is cancelled
+    THEN the specified subscription is cancelled
+    """
+    uid = uuid.uuid4()
+    subscription1, code1 = payments.subscribe_to_plan(
+        "valid_customer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_EtMcOlFMNWW4nd",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+    subscription2, code2 = payments.subscribe_to_plan(
+        "valid_customer",
+        {
+            "pmt_token": "tok_visa",
+            "plan_id": "plan_F4G9jB3x5i6Dpj",
+            "email": f"valid@{uid}customer.com",
+            "orig_system": "Test_system",
+        },
+    )
+
+    # cancel the second subscription created
+    (cancelled, code) = payments.cancel_subscription(
+        "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
+    )
+    assert cancelled["message"] == "Subscription cancellation successful"
+    assert 201 == code
+
+    # clean up test data created
+    (cancelled, code) = payments.cancel_subscription(
+        "valid_customer", subscription1["subscriptions"][0]["subscription_id"]
+    )
+    g.subhub_account.remove_from_db("valid_customer")
+    assert cancelled["message"] == "Subscription cancellation successful"
+    assert 201 == code
+
+
 def test_cancel_subscription_with_invalid_data(app, create_subscription_for_processing):
     (subscription, code) = create_subscription_for_processing
     (cancelled, code) = payments.cancel_subscription(
