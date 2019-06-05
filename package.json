@@ -8,10 +8,10 @@
   "devDependencies": {
     "dynalite": "^2.2.0",
     "serverless": "^1.27.3",
-    "serverless-dynamodb-local": "0.2.37",
+    "serverless-dynamodb-local": "0.2.38",
     "serverless-domain-manager": "^3.2.1",
-    "serverless-offline": "^4.9.4",
+    "serverless-offline": "5.0.1",
     "serverless-plugin-tracing": "^2.0.0",
-    "serverless-python-requirements": "^3.3.1"
+    "serverless-python-requirements": "4.3.0"
   }
 }
