@@ -265,6 +265,7 @@ def create_update_data(customer) -> dict:
     return_data["last4"] = customer["sources"]["data"][0]["last4"]
     return_data["exp_month"] = customer["sources"]["data"][0]["exp_month"]
     return_data["exp_year"] = customer["sources"]["data"][0]["exp_year"]
+
     for subscription in customer["subscriptions"]["data"]:
         if subscription["status"] == "incomplete":
             invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
@@ -278,17 +279,23 @@ def create_update_data(customer) -> dict:
                         "plan_name": subscription["plan"]["nickname"],
                         "plan_id": subscription["plan"]["id"],
                         "status": subscription["status"],
+                        "cancel_at_period_end": subscription["cancel_at_period_end"],
                         "subscription_id": subscription["id"],
                         "failure_code": intents["failure_code"],
                         "failure_message": intents["failure_message"],
                     }
                 )
             else:
+                return_data["cancel_at_period_end"] = subscription[
+                    "cancel_at_period_end"
+                ]
                 return_data["subscriptions"].append(
                     create_subscription_object_without_failure(subscription)
                 )
         else:
+            return_data["cancel_at_period_end"] = subscription["cancel_at_period_end"]
             return_data["subscriptions"].append(
                 create_subscription_object_without_failure(subscription)
             )
+
     return return_data
