@@ -59,7 +59,7 @@ def create_app(config=None):
 
     # Setup Stripe Error handlers
     def intermittent_stripe_error(e):
-        return (jsonify({"message": "{}".format(str(e.user_message))}), 503)
+        return jsonify({"message": f"{e.user_message}"}), 503
 
     for err in (
         stripe.error.APIConnectionError,
@@ -70,18 +70,29 @@ def create_app(config=None):
         app.app.errorhandler(err)(intermittent_stripe_error)
 
     def server_stripe_error(e):
-        return (jsonify({"message": "{}".format(str(e.user_message))}), 500)
+        return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 500
 
-    for err in (
-        stripe.error.AuthenticationError,
-        stripe.error.InvalidRequestError,
-        stripe.error.StripeErrorWithParamCode,
-    ):
+    for err in (stripe.error.AuthenticationError,):
         app.app.errorhandler(err)(server_stripe_error)
 
-    @app.app.errorhandler(stripe.error.CardError)
-    def client_stripe_error(e):
-        return (jsonify({"message": "{}".format(str(e.user_message))}), 400)
+    def server_stripe_error_with_params(e):
+        return (
+            jsonify(
+                {
+                    "message": f"{e.user_message}",
+                    "params": f"{e.param}",
+                    "code": f"{e.code}",
+                }
+            ),
+            500,
+        )
+
+    for err in (
+        stripe.error.InvalidRequestError,
+        stripe.error.StripeErrorWithParamCode,
+        stripe.error.CardError,
+    ):
+        app.app.errorhandler(err)(server_stripe_error_with_params)
 
     @app.app.before_request
     def before_request():
