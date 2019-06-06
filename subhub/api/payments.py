@@ -139,6 +139,30 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     return {"message": "Subscription not available."}, 400
 
 
+def reactivate_subscription(uid, sub_id):
+    """
+    Given a user's subscription that is flagged for cancellation, but is still active
+    remove the cancellation flag to ensure the subscription remains active
+    :param uid: User ID
+    :param sub_id: Subscription ID
+    :return: Success or failure message for the activation
+    """
+    subscription_user = g.subhub_account.get_user(uid)
+    if not subscription_user:
+        return {"message": "Customer does not exist."}, 404
+
+    customer = stripe.Customer.retrieve(subscription_user.custId)
+    active_subscriptions = customer["subscriptions"]["data"]
+
+    for subscription in active_subscriptions:
+        if subscription["id"] == sub_id:
+            if subscription["cancel_at_period_end"]:
+                stripe.Subscription.modify(sub_id, cancel_at_period_end=False)
+                return {"message": "Subscription reactivation was successful."}, 201
+            return {"message": "Subscription is already active."}, 200
+    return {"message": "Current subscription not found."}, 404
+
+
 def support_status(uid) -> FlaskResponse:
     return subscription_status(uid)
 
