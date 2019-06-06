@@ -29,3 +29,4 @@ stripe==2.24.1
 urllib3==1.24.2
 Werkzeug==0.15.2
 newrelic==4.20.0.120
+attrdict==2.0.1

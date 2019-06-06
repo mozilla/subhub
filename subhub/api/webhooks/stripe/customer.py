@@ -1,6 +1,7 @@
 import logging
 import json
 
+from attrdict import AttrDict
 from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.api.webhooks.routes.static import StaticRoutes
 
@@ -14,135 +15,117 @@ logger.addHandler(log_handle)
 
 class StripeCustomerCreated(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["email"] = d["data"]["object"]["email"]
-        sfd["customer_id"] = d["data"]["object"]["id"]
-        sfd["name"] = d["data"]["object"]["name"]
-        user_id = d["data"]["object"]["metadata"].get("userid")
-        sfd["user_id"] = user_id
-
+        data = self.create_data(
+            email=self.payload.data.object.email,
+            customer_id=self.payload.data.object.id,
+            name=self.payload.data.object.name,
+            user_id=self.payload.data.object.metadata.userid,
+        )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerDeleted(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["email"] = d["data"]["object"]["email"]
-        sfd["customer_id"] = d["data"]["object"]["id"]
-        sfd["name"] = d["data"]["object"]["name"]
-        user_id = d["data"]["object"]["metadata"].get("userid")
-        sfd["user_id"] = user_id
-
+        data = self.create_data(
+            email=self.payload.data.object.email,
+            customer_id=self.payload.data.object.id,
+            name=self.payload.data.object.name,
+            user_id=self.payload.data.object.metadata.userid,
+        )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerUpdated(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["email"] = d["data"]["object"]["email"]
-        sfd["customer_id"] = d["data"]["object"]["id"]
-        sfd["name"] = d["data"]["object"]["name"]
-
+        data = self.create_data(
+            email=self.payload.data.object.email,
+            customer_id=self.payload.data.object.id,
+            name=self.payload.data.object.name,
+        )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["customer_id"] = d["data"]["object"]["customer"]
-        sfd["last4"] = d["data"]["object"]["last4"]
-        sfd["brand"] = d["data"]["object"]["brand"]
-        sfd["exp_month"] = d["data"]["object"]["exp_month"]
-        sfd["exp_year"] = d["data"]["object"]["exp_year"]
-
+        data = self.create_data(
+            customer_id=self.payload.data.object.customer,
+            last4=self.payload.data.object.last4,
+            brand=self.payload.data.object.brand,
+            exp_month=self.payload.data.object.exp_month,
+            exp_year=self.payload.data.object.exp_year,
+        )
         routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["subscription_id"] = d["data"]["object"]["id"]
-        sfd["customer_id"] = d["data"]["object"]["customer"]
-        sfd["current_period_start"] = d["data"]["object"]["current_period_start"]
-        sfd["current_period_end"] = d["data"]["object"]["current_period_end"]
-        sfd["canceled_at"] = d["data"]["object"]["canceled_at"]
-        sfd["days_until_due"] = d["data"]["object"]["days_until_due"]
-        sfd["default_payment_method"] = d["data"]["object"]["default_payment_method"]
-        sfd["plan_id"] = d["data"]["object"]["plan"]["id"]
-        sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
-        sfd["plan_currency"] = d["data"]["object"]["plan"]["currency"]
-        sfd["plan_interval"] = d["data"]["object"]["plan"]["interval"]
-        sfd["status"] = d["data"]["object"]["status"]
-        sfd["trial_start"] = d["data"]["object"]["trial_start"]
-        sfd["trial_end"] = d["data"]["object"]["trial_end"]
-        sfd["tax_percent"] = d["data"]["object"]["tax_percent"]
-        sfd["application_fee_percent"] = d["data"]["object"]["application_fee_percent"]
-        user_id = d["data"]["object"]["metadata"].get("userid")
-        sfd["user_id"] = user_id
-
+        data = {
+            "event_id": self.payload.id,
+            "event_type": self.payload.type,
+            "customer_id": self.payload.data.object.customer,
+            "subscription_id": self.payload.data.object.id,
+            "current_period_start": self.payload.data.object.current_period_start,
+            "current_period_end": self.payload.data.object.current_period_end,
+            "canceled_at": self.payload.data.object.canceled_at,
+            "days_until_due": self.payload.data.object.days_until_due,
+            "default_payment_method": self.payload.data.object.default_payment_method,
+            "plan_id": self.payload.data.object.plan.id,
+            "plan_amount": self.payload.data.object.plan.amount,
+            "plan_currency": self.payload.data.object.plan.currency,
+            "plan_interval": self.payload.data.object.plan.interval,
+            "status": self.payload.data.object.status,
+            "trial_start": self.payload.data.object.trial_start,
+            "trial_end": self.payload.data.object.trial_end,
+            "tax_percent": self.payload.data.object.tax_percent,
+            "application_fee_percent": self.payload.data.object.application_fee_percent,
+            "user_id": self.payload.data.object.metadata.get("userid", None),  # why?
+        }
         routes = [StaticRoutes.SALESFORCE_ROUTE, StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        sfd = {}
-        sfd["event_id"] = d["id"]
-        sfd["event_type"] = d["type"]
-        sfd["customer_id"] = d["data"]["object"]["customer"]
-        sfd["subscription_id"] = d["data"]["object"]["id"]
-        sfd["created"] = d["data"]["object"]["created"]
-        sfd["subscription_created"] = d["data"]["object"]["items"]["data"][0]["created"]
-        sfd["current_period_start"] = d["data"]["object"]["current_period_start"]
-        sfd["current_period_end"] = d["data"]["object"]["current_period_end"]
-        sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
-        sfd["plan_currency"] = d["data"]["object"]["plan"]["currency"]
-        sfd["plan_name"] = d["data"]["object"]["plan"]["nickname"]
-        sfd["trial_period_days"] = d["data"]["object"]["plan"]["trial_period_days"]
-        sfd["status"] = d["data"]["object"]["status"]
-        sfd["canceled_at"] = d["data"]["object"]["canceled_at"]
-
+        # items is a keyword in the attrdict; this steps around that
+        items = AttrDict(self.payload.data.object["items"])
+        data = {
+            "event_id": self.payload.id,
+            "event_type": self.payload.type,
+            "customer_id": self.payload.data.object.customer,
+            "subscription_id": self.payload.data.object.id,
+            "current_period_start": self.payload.data.object.current_period_start,
+            "current_period_end": self.payload.data.object.current_period_end,
+            "subscription_created": items.data[0].created,
+            "plan_amount": self.payload.data.object.plan.amount,
+            "plan_currency": self.payload.data.object.plan.currency,
+            "plan_name": self.payload.data.object.plan.nickname,
+            "trial_period_days": self.payload.data.object.plan.trial_period_days,
+            "status": self.payload.data.object.status,
+            "canceled_at": self.payload.data.object.canceled_at,
+            "created": self.payload.data.object.created,
+        }
         routes = [StaticRoutes.SALESFORCE_ROUTE, StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(sfd))
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeWebhookEvent):
     def run(self):
-        d = self.payload
-        if d["data"]["object"]["cancel_at_period_end"]:
-            sfd = {}
-            sfd["event_id"] = d["id"]
-            sfd["event_type"] = d["type"]
-            sfd["subscription_id"] = d["data"]["object"]["id"]
-            sfd["canceled_at"] = d["data"]["object"]["canceled_at"]
-            sfd["cancel_at"] = d["data"]["object"]["cancel_at"]
-            sfd["customer_id"] = d["data"]["object"]["customer"]
-            sfd["plan_amount"] = d["data"]["object"]["plan"]["amount"]
-            sfd["cancel_at_period_end"] = d["data"]["object"]["cancel_at_period_end"]
-
+        if self.payload.data.object.cancel_at_period_end:
+            data = self.create_data(
+                customer_id=self.payload.data.object.customer,
+                subscription_id=self.payload.data.object.id,
+                plan_amount=self.payload.data.object.plan.amount,
+                canceled_at=self.payload.data.object.canceled_at,
+                cancel_at=self.payload.data.object.cancel_at,
+                cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+            )
             routes = [StaticRoutes.SALESFORCE_ROUTE]
-            self.send_to_routes(routes, json.dumps(sfd))
+            self.send_to_routes(routes, json.dumps(data))
         else:
             logger.info(
-                f"cancel_at_period_end {d['data']['object']['cancel_at_period_end']}"
+                f"cancel_at_period_end {self.payload.data.object.cancel_at_period_end}"
             )

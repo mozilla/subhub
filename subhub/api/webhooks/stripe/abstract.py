@@ -2,7 +2,7 @@ import logging
 from abc import ABC, abstractmethod
 import requests
 
-import requests
+from attrdict import AttrDict
 from subhub.api.webhooks.routes.pipeline import RoutesPipeline
 from subhub.cfg import CFG
 from subhub import secrets
@@ -17,8 +17,8 @@ logger.addHandler(log_handle)
 
 class AbstractStripeWebhookEvent(ABC):
     def __init__(self, payload):
-        assert isinstance(payload, object)
-        self.payload = payload
+        assert isinstance(payload, dict)
+        self.payload = AttrDict(payload)
 
     @staticmethod
     def send_to_routes(report_routes, messageToRoute):
@@ -47,3 +47,6 @@ class AbstractStripeWebhookEvent(ABC):
     @abstractmethod
     def run(self):
         pass
+
+    def create_data(self, **kwargs):
+        return dict(event_id=self.payload.id, event_type=self.payload.type, **kwargs)
