@@ -187,6 +187,38 @@ paths:
           schema:
             $ref: '#/definitions/Plans'
   /customer/{uid}/subscriptions/{sub_id}:
+    post:
+      operationId: subhub.api.payments.reactivate_subscription
+      tags:
+        - Subscriptions
+      summary: Reactivate a Subscription
+      description: Reactivate a subscription that's been cancelled but hasn't yet ended.
+      security:
+        - PayApiKey: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Subscription already active
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '201':
+          description: Subscription reactivation successful
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '404':
+          description: Subscription or User could not be found
+          schema:
+            $ref: '#/definitions/Errormessage'
+      parameters:
+        - $ref: '#/parameters/uidParam'
+        - $ref: '#/parameters/subIdParam'
     delete:
       operationId: subhub.api.payments.cancel_subscription
       tags:
@@ -196,7 +228,7 @@ paths:
       security:
         - PayApiKey: []
       produces:
-        - application/json;
+        - application/json
       responses:
         '201':
           description: Subscription cancellation successful.

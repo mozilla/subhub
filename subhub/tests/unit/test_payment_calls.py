@@ -4,9 +4,11 @@ import pytest
 import stripe
 import stripe.error
 from flask import g
+from unittest.mock import Mock
 
 from subhub.api import payments
 from subhub.customer import create_customer, subscribe_customer
+from subhub.tests.unit.stripe.utils import MockSubhubUser
 
 
 def test_create_customer_tok_visa():
@@ -500,3 +502,181 @@ def test_customer_update_success(create_subscription_for_processing):
     (data, code) = payments.customer_update("process_test")
     assert 200 == code
     g.subhub_account.remove_from_db("process_test")
+
+
+def test_reactivate_subscription_success(monkeypatch):
+    """
+    GIVEN a user with active subscriptions
+    WHEN a user attempts to reactivate a subscription flagged for cancellation
+    THEN the subscription is updated
+    """
+    uid = "subhub_user"
+    custId = "cust_1"
+    sub_id = "sub_123"
+
+    subhub_user = Mock(return_value=MockSubhubUser())
+    subhub_user.custId = custId
+    subhub_user.id = uid
+
+    stripe_customer = Mock(
+        return_value={
+            "subscriptions": {
+                "data": [
+                    {
+                        "id": "sub_121",
+                        "status": "active",
+                        "cancel_at_period_end": False,
+                    },
+                    {"id": sub_id, "status": "active", "cancel_at_period_end": True},
+                ]
+            }
+        }
+    )
+
+    none = Mock(return_value=None)
+
+    monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
+    monkeypatch.setattr("stripe.Subscription.modify", none)
+
+    (response, code) = payments.reactivate_subscription(uid, sub_id)
+
+    assert 201 == code
+    assert "Subscription reactivation was successful." == response["message"]
+
+
+def test_reactivate_subscription_already_active(monkeypatch):
+    """
+    GIVEN a user with active subscriptions
+    WHEN a user attempts to reactivate a subscription not flagged for cancellation
+    THEN the subscription does not change states
+    """
+
+    uid = "subhub_user"
+    custId = "cust_1"
+    sub_id = "sub_123"
+
+    subhub_user = Mock(return_value=MockSubhubUser())
+    subhub_user.custId = custId
+    subhub_user.id = uid
+
+    stripe_customer = Mock(
+        return_value={
+            "subscriptions": {
+                "data": [
+                    {
+                        "id": "sub_121",
+                        "status": "active",
+                        "cancel_at_period_end": False,
+                    },
+                    {"id": sub_id, "status": "active", "cancel_at_period_end": False},
+                ]
+            }
+        }
+    )
+
+    none = Mock(return_value=None)
+
+    monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
+    monkeypatch.setattr("stripe.Subscription.modify", none)
+
+    (response, code) = payments.reactivate_subscription(uid, sub_id)
+
+    assert 200 == code
+    assert "Subscription is already active." == response["message"]
+
+
+def test_reactivate_subscription_no_subscriptions(monkeypatch):
+    """
+    GIVEN a user with no active subscriptions
+    WHEN a user attempts to reactivate a subscription
+    THEN a subscription not found error is returned
+    """
+
+    uid = "subhub_user"
+    custId = "cust_1"
+    sub_id = "sub_123"
+
+    subhub_user = Mock(return_value=MockSubhubUser())
+    subhub_user.custId = custId
+    subhub_user.id = uid
+
+    stripe_customer = Mock(return_value={"subscriptions": {"data": []}})
+
+    none = Mock(return_value=None)
+
+    monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
+    monkeypatch.setattr("stripe.Subscription.modify", none)
+
+    (response, code) = payments.reactivate_subscription(uid, sub_id)
+
+    assert 404 == code
+    assert "Current subscription not found." == response["message"]
+
+
+def test_reactivate_subscription_bad_subscription_id(monkeypatch):
+    """
+    GIVEN a user with active subscriptions
+    WHEN a user attempts to reactivate an invalid subscription
+    THEN a subscription not found error is returned
+    """
+
+    uid = "subhub_user"
+    custId = "cust_1"
+    sub_id = "sub_123"
+
+    subhub_user = Mock(return_value=MockSubhubUser())
+    subhub_user.custId = custId
+    subhub_user.id = uid
+
+    stripe_customer = Mock(
+        return_value={
+            "subscriptions": {
+                "data": [
+                    {
+                        "id": "sub_121",
+                        "status": "active",
+                        "cancel_at_period_end": False,
+                    },
+                    {
+                        "id": "sub_122",
+                        "status": "active",
+                        "cancel_at_period_end": False,
+                    },
+                ]
+            }
+        }
+    )
+
+    none = Mock(return_value=None)
+
+    monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
+    monkeypatch.setattr("stripe.Subscription.modify", none)
+
+    (response, code) = payments.reactivate_subscription(uid, sub_id)
+
+    assert 404 == code
+    assert "Current subscription not found." == response["message"]
+
+
+def test_reactivate_subscription_bad_user_id(monkeypatch):
+    """
+    GIVEN an invalid user id
+    WHEN a user attempts to reactivate an invalid subscription
+    THEN a customer not found error is returned
+    """
+
+    uid = "subhub_user"
+    sub_id = "sub_123"
+
+    none = Mock(return_value=None)
+
+    monkeypatch.setattr("flask.g.subhub_account.get_user", none)
+
+    (response, code) = payments.reactivate_subscription(uid, sub_id)
+
+    assert 404 == code
+    assert "Customer does not exist." == response["message"]

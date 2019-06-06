@@ -25,3 +25,8 @@ class MockSqsClient:
 class MockSubhubAccount:
     def subhub_account(self):
         pass
+
+
+class MockSubhubUser:
+    id = None
+    custId = None
