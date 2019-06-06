@@ -103,8 +103,8 @@ def test_stripe_webhook_customer_subscription_created(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.subscription.created",
-        "subscription_id": "sub_00000000000000",
         "customer_id": "cus_00000000000000",
+        "subscription_id": "sub_00000000000000",
         "current_period_start": 1519435009,
         "current_period_end": 1521854209,
         "canceled_at": 1519680008,
@@ -141,16 +141,16 @@ def test_stripe_webhook_customer_subscription_deleted(mocker):
         "event_type": "customer.subscription.deleted",
         "customer_id": "cus_00000000000000",
         "subscription_id": "sub_00000000000000",
-        "created": 1519435009,
-        "subscription_created": 1519435009,
         "current_period_start": 1519435009,
         "current_period_end": 1521854209,
+        "subscription_created": 1519435009,
         "plan_amount": 500,
         "plan_currency": "usd",
         "plan_name": "jollybilling",
         "trial_period_days": None,
         "status": "canceled",
         "canceled_at": 1519680008,
+        "created": 1519435009,
     }
     mockito.when(boto3).client(
         "sqs",
@@ -170,11 +170,11 @@ def test_stripe_webhook_customer_subscription_updated(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.subscription.updated",
+        "customer_id": "cus_00000000000000",
         "subscription_id": "sub_00000000000000",
+        "plan_amount": 500,
         "canceled_at": 1519680008,
         "cancel_at": 1521854209,
-        "customer_id": "cus_00000000000000",
-        "plan_amount": 500,
         "cancel_at_period_end": True,
     }
     mockito.when(boto3).client(

@@ -54,7 +54,7 @@ class StripeWebhookEventPipeline:
         elif event_type == "subscription.created":
             StripeSubscriptionCreated(self.payload).run()
         else:
-            StripeUnhandledEvent(self.payload).run()
+            pass
 
 
 def view() -> tuple:
