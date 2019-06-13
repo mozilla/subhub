@@ -28,5 +28,5 @@ class MockSubhubAccount:
 
 
 class MockSubhubUser:
-    id = None
-    custId = None
+    id = "123"
+    custId = "cust_123"

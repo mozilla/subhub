@@ -91,9 +91,14 @@ def create_app(config=None):
     for err in (
         stripe.error.InvalidRequestError,
         stripe.error.StripeErrorWithParamCode,
-        stripe.error.CardError,
     ):
         app.app.errorhandler(err)(server_stripe_error_with_params)
+
+    def server_stripe_card_error(e):
+        return (jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402)
+
+    for err in (stripe.error.CardError,):
+        app.app.errorhandler(err)(server_stripe_card_error)
 
     @app.app.before_request
     def before_request():
