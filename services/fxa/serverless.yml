@@ -151,13 +151,14 @@ functions:
           path: '{proxy+}'
           cors: true
     environment:
+      STAGE: ${self:provider.stage}
       APP_DEPENV: ${env:APP_DEPENV}
       APP_PROJNAME: ${env:APP_PROJNAME}
       APP_BRANCH: ${env:APP_BRANCH}
       APP_REVISION: ${env:APP_REVISION}
       APP_VERSION: ${env:APP_VERSION}
       APP_REMOTE_ORIGIN_URL: ${env:APP_REMOTE_ORIGIN_URL}
-      STAGE: ${self:provider.stage}
+      APP_LOG_LEVEL: ${env:APP_LOG_LEVEL}
       USER_TABLE:
         Ref: 'Users'
       EVENT_TABLE:

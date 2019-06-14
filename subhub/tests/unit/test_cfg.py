@@ -9,6 +9,10 @@ import tempfile
 import contextlib
 from subhub.cfg import CFG, call, git, NotGitRepoError
 
+from subhub.log import get_logger
+
+logger = get_logger
+
 NON_GIT_REPO_PATH = tempfile.mkdtemp()
 
 
@@ -307,7 +311,6 @@ def test_call():
     """
     test the call function
     """
-    print()
     assert call("echo test", nerf=True) == (None, "nerfed", "nerfed")
     assert call("echo test", verbose=True)[0] == 0
     assert call("echo test 1>&2", verbose=True)[0] == 0

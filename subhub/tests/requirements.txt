@@ -1,4 +1,13 @@
+flake8
+mock
+mockito
+mockito
+moto
+patch
+pytest
 pytest
 pytest-cov
+pytest-cov
 pytest-mock
-mockito
+pytest-mock
+pytest-watch

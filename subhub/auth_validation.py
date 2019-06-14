@@ -1,10 +1,8 @@
-import logging
-
-from subhub.cfg import CFG
 from subhub import secrets
+from subhub.cfg import CFG
+from subhub.log import get_logger
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 
 def payment_auth(api_token, required_scopes=None):

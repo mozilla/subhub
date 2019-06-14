@@ -1,8 +1,8 @@
-import logging
 import os
 import signal
 import subprocess
 import uuid
+import logging
 
 import psutil
 import pytest
@@ -13,6 +13,10 @@ from subhub.api import payments
 from subhub.app import create_app
 from subhub.cfg import CFG
 from subhub.customer import create_customer
+
+from subhub.log import get_logger
+
+logger = get_logger()
 
 ddb_process = None
 

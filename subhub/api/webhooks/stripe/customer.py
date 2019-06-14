@@ -1,16 +1,12 @@
-import logging
 import json
 
 from attrdict import AttrDict
 from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.api.webhooks.routes.static import StaticRoutes
 
-logger = logging.getLogger("customer.created")
-log_handle = logging.StreamHandler()
-log_handle.setLevel(logging.INFO)
-logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handle.setFormatter(logformat)
-logger.addHandler(log_handle)
+from subhub.log import get_logger
+
+logger = get_logger()
 
 
 class StripeCustomerCreated(AbstractStripeWebhookEvent):
