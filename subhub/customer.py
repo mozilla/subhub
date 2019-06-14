@@ -1,18 +1,12 @@
 """Customer functions"""
-import logging
-
 import stripe
 
 from subhub.exceptions import IntermittentError, ServerError
 from stripe.error import InvalidRequestError
 from subhub.subhub_dynamodb import SubHubAccount
+from subhub.log import get_logger
 
-logger = logging.getLogger("customer")
-log_handle = logging.StreamHandler()
-log_handle.setLevel(logging.INFO)
-logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handle.setFormatter(logformat)
-logger.addHandler(log_handle)
+logger = get_logger()
 
 
 def create_customer(

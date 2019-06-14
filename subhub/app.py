@@ -11,8 +11,13 @@ from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
 from subhub.subhub_dynamodb import SubHubAccount, WebHookEvent
 
+from subhub.log import get_logger
+
+logger = get_logger()
+
 
 def create_app(config=None):
+    logger.info("creating flask app", config=config)
     if not CFG.AWS_EXECUTION_ENV:
         options = {"swagger_ui": True}
         region = "localhost"
@@ -111,7 +116,6 @@ def create_app(config=None):
 
 
 if __name__ == "__main__":
-    print("starting app")
     app = create_app()
     app.debug = True
     app.use_reloader = True

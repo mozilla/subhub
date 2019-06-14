@@ -1,4 +1,3 @@
-import logging
 import uuid
 import json
 from subhub.api.payments import subscribe_to_plan, customer_update, create_update_data
@@ -6,7 +5,10 @@ from subhub.tests.unit.stripe.utils import MockSubhubAccount
 from unittest.mock import Mock, patch, PropertyMock
 import os
 
-logging.basicConfig(level=logging.DEBUG)
+from subhub.log import get_logger
+
+logger = get_logger()
+
 
 UID = uuid.uuid4()
 THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))

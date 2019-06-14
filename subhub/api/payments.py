@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 import stripe
 from flask import g
@@ -6,9 +5,9 @@ from flask import g
 from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan
 from subhub.exceptions import ClientError
+from subhub.log import get_logger
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 
 def subscribe_to_plan(uid, data) -> FlaskResponse:
@@ -66,6 +65,7 @@ def list_all_plans() -> FlaskListResponse:
     :return:
     """
     plans = stripe.Plan.list(limit=100)
+    logger.info("number of plans", count=len(plans))
     stripe_plans = []
     for plan in plans:
         product = stripe.Product.retrieve(plan["product"])
@@ -85,19 +85,19 @@ def list_all_plans() -> FlaskListResponse:
 
 def check_stripe_subscriptions(customer: str) -> list:
     customer_info = stripe.Customer.retrieve(id=customer)
-    logger.debug(f"cust info {customer_info.subscriptions}")
+    logger.debug("check strip subscriptions", subscriptions=customer_info.subscriptions)
     try:
         customer_subscriptions_data = customer_info.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
         sources_to_remove(customer_subscriptions, customer)
         return customer_subscriptions
-    except NameError as e:
-        logger.debug(f"check_stripe_subscriptions: {e}")
+    except NameError as ne:
+        logger.debug("check_stripe_subscriptions error", error=ne)
         return []
 
 
 def sources_to_remove(subscriptions: list, customer: str) -> None:
-    logger.debug(f"subs {subscriptions}")
+    logger.debug("subscriptions", subscriptions=subscriptions)
     active_subscriptions = []
     try:
         active_subscriptions = [
@@ -110,10 +110,10 @@ def sources_to_remove(subscriptions: list, customer: str) -> None:
             sources = stripe.Customer.retrieve(id=customer)
             for source in sources.sources["data"]:
                 stripe.Customer.delete_source(customer, source["id"])
-    except KeyError as e:
-        raise ClientError(message="Source missing key element.", payload=str(e))
-    except TypeError as e:
-        raise ClientError(message="Source missing type element.", payload=str(e))
+    except KeyError as ke:
+        raise ClientError(message="Source missing key element.") from ke
+    except TypeError as te:
+        raise ClientError(message="Source missing type element.") from te
 
 
 def cancel_subscription(uid, sub_id) -> FlaskResponse:
@@ -198,7 +198,7 @@ def create_return_data(subscriptions) -> JsonDict:
             invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
             if invoice["charge"]:
                 intents = stripe.Charge.retrieve(invoice["charge"])
-                logging.debug(f"intents {intents}")
+                logger.debug("intents", intents=intents)
                 return_data["subscriptions"].append(
                     {
                         "current_period_end": subscription["current_period_end"],

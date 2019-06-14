@@ -19,14 +19,6 @@ from pkg_resources import parse_version
 
 from subhub.cfg import CFG, call, CalledProcessError
 
-LOG_LEVELS = [
-    'DEBUG',
-    'INFO',
-    'WARNING',
-    'ERROR',
-    'CRITICAL',
-]
-
 DOIT_CONFIG = {
     'default_tasks': [
         'pull',
@@ -38,8 +30,12 @@ DOIT_CONFIG = {
 
 SPACE = ' '
 NEWLINE = '\n'
-SLS = f'{CFG.APP_REPOROOT}/node_modules/serverless/bin/serverless'
-DYNALITE = f'{CFG.APP_REPOROOT}/node_modules/.bin/dynalite'
+VENV = f'{CFG.APP_REPOROOT}/venv'
+PYTHON3 = f'{VENV}/bin/python3.7'
+PIP3 = f'{PYTHON3} -m pip'
+NODE_MODULES = f'{CFG.APP_REPOROOT}/node_modules'
+SLS = f'{NODE_MODULES}/serverless/bin/serverless'
+DYNALITE = f'{NODE_MODULES}/.bin/dynalite'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
 def envs(sep=' ', **kwargs):
@@ -50,6 +46,7 @@ def envs(sep=' ', **kwargs):
         APP_REVISION=CFG.APP_REVISION,
         APP_VERSION=CFG.APP_VERSION,
         APP_REMOTE_ORIGIN_URL=CFG.APP_REMOTE_ORIGIN_URL,
+        APP_LOG_LEVEL=CFG.APP_LOG_LEVEL,
     )
     return sep.join([
         f'{key}={value}' for key, value in dict(envs, **kwargs).items()
@@ -293,8 +290,6 @@ def task_venv():
     '''
     setup virtual env
     '''
-    venv = f'{CFG.APP_PROJPATH}/.venv'
-    pip3 = f'{venv}/bin/pip3'
     appreqs = f'{CFG.APP_PROJPATH}/requirements.txt'
     testreqs = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
     return {
@@ -302,10 +297,10 @@ def task_venv():
             'check',
         ],
         'actions': [
-            f'virtualenv --python=$(which python3.7) {venv}',
-            f'{pip3} install --upgrade pip',
-            f'[ -f "{appreqs}" ] && {pip3} install -r "{appreqs}" || true',
-            f'[ -f "{testreqs}" ] && {pip3} install -r "{testreqs}" || true',
+            f'virtualenv --python=$(which python3.7) {VENV}',
+            f'{PIP3} install --upgrade pip',
+            f'[ -f "{appreqs}" ] && {PIP3} install -r "{appreqs}" || true',
+            f'[ -f "{testreqs}" ] && {PIP3} install -r "{testreqs}" || true',
         ]
     }
 
@@ -347,6 +342,7 @@ def task_dynalite():
         'task_dep': [
             'check',
             'yarn',
+            'dynalite:stop',
         ],
         'actions': [
             LongRunning(f'nohup {cmd} > {CFG.DYNALITE_FILE} &'),
@@ -361,7 +357,6 @@ def task_local():
     '''
     run locally
     '''
-    python3 = f'{CFG.APP_PROJPATH}/.venv/bin/python3.7'
     ID='fake-id'
     KEY='fake-key'
     PP='.'
@@ -374,9 +369,9 @@ def task_local():
             'dynalite:start',
         ],
         'actions': [
-            f'{python3} -m setup develop',
+            f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {envs(AWS_ACCESS_KEY_ID=ID,AWS_SECRET_ACCESS_KEY=KEY,PYTHONPATH=PP)} {python3} subhub/app.py',
+            f'env {envs(AWS_ACCESS_KEY_ID=ID,AWS_SECRET_ACCESS_KEY=KEY,PYTHONPATH=PP)} {PYTHON3} subhub/app.py',
         ],
     }
 
@@ -405,6 +400,8 @@ def task_test():
             'check',
             'stripe',
             'yarn',
+            'venv',
+            'dynalite:stop',
         ],
         'actions': [
             f'cd {CFG.APP_REPOROOT} && tox',
@@ -447,7 +444,7 @@ def task_deploy():
                 'test',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} -v',
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} --aws-s3-accelerate -v',
             ],
         }
 

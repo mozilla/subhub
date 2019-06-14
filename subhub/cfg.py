@@ -8,16 +8,12 @@ import re
 import pwd
 import sys
 import time
-import logging
-
 from decouple import UndefinedValueError, AutoConfig, config
 from subprocess import Popen, CalledProcessError, PIPE
 
-LOG_LEVELS = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
+from logging import getLogger
 
-LOG_LEVEL = config("LOG_LEVEL", logging.WARNING, cast=int)
-
-log = logging.getLogger(__name__)
+logger = getLogger()  # to avoid installing structlog for doit automation
 
 
 class NotGitRepoError(Exception):
@@ -50,7 +46,7 @@ def call(
     cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False
 ):
     if verbose or nerf:
-        print(cmd)
+        logger.info("verbose", cmd=cmd)
     if nerf:
         return (None, "nerfed", "nerfed")
     process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
@@ -58,9 +54,9 @@ def call(
     exitcode = process.poll()
     if verbose:
         if _stdout:
-            print(_stdout)
+            logger.info("verbose", stdout=_stdout)
         if _stderr:
-            print(_stderr)
+            logger.info("verbose", stderr=_stderr)
     if throw and exitcode:
         raise CalledProcessError(
             exitcode, f"cmd={cmd}; stdout={_stdout}; stderr={_stderr}"
@@ -80,15 +76,14 @@ def git(args, strip=True, **kwargs):
         elif "git: command not found" in str(ex):
             raise GitCommandNotFoundError
         else:
-            log.error("failed repo check but NOT a NotGitRepoError???")
-            log.error(ex)
+            logger.error("failed repo check but NOT a NotGitRepoError???", ex=ex)
     try:
         _, result, _ = call(f"git {args}", **kwargs)
         if result:
             result = result.strip()
         return result
     except CalledProcessError as ex:
-        log.error(ex)
+        logger.error(ex)
         raise ex
 
 
@@ -163,6 +158,22 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         reporoot
         """
         return git("rev-parse --show-toplevel")
+
+    @property
+    def APP_LOG_LEVEL(self):
+        """
+        log level
+        """
+        default_level = {
+            "prod": "WARNING",
+            "stage": "INFO",
+            "qa": "INFO",
+            "dev": "DEBUG",
+        }.get(self.APP_DEPENV, "NOTSET")
+        try:
+            return self("APP_LOG_LEVEL", default_level)
+        except:
+            pass
 
     @property
     def APP_VERSION(self):
@@ -247,7 +258,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         ls-remote
         """
         reponame = self.APP_REPONAME
-        log.info(f"reponame={reponame}")
+        logger.info(f"reponame={reponame}")
         result = git(f"ls-remote https://github.com/{reponame}")
         return {
             refname: revision
@@ -388,7 +399,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         getattr
         """
-        log.info(f"attr = {attr}")
         if attr == "create_doit_tasks":  # note: to keep pydoit's hands off
             return lambda: None
         result = self(attr)

@@ -1,12 +1,11 @@
-import logging
 from typing import Optional
 
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.models import Model, DoesNotExist
 from pynamodb.exceptions import PutError
+from subhub.log import get_logger
 
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 
 # This exists purely for type-checking, the actual model is dynamically

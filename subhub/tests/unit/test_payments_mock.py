@@ -1,14 +1,11 @@
-import logging
-
 import stripe
-from stripe.error import InvalidRequestError
 
 from mockito import when, mock, unstub, ANY
 
 from subhub.api import payments
-from subhub.exceptions import ClientError
+from subhub.log import get_logger
 
-logging.basicConfig(level=logging.DEBUG)
+logger = get_logger()
 
 
 def test_check_stripe_subscriptions():
@@ -23,6 +20,7 @@ def test_check_stripe_subscriptions():
     )
     when(stripe.Customer).retrieve(id="cus_tester1").thenReturn(response)
     test_subscriptions = payments.check_stripe_subscriptions("cus_tester1")
+    logger.info("test subscriptions", test_subscriptions=test_subscriptions)
     assert test_subscriptions[0]["id"] == "sub_123"
     assert test_subscriptions[0]["status"] == "active"
     unstub()
@@ -49,6 +47,7 @@ def test_check_stripe_subscriptions_cancelled():
         delete_response
     )
     test_cancel = payments.check_stripe_subscriptions("cus_tester2")
+    logger.info("test cancel", test_cancel=test_cancel)
     assert test_cancel[0]["status"] == "cancelled"
     unstub()
 
@@ -71,7 +70,7 @@ def test_check_stripe_subscriptions_fail():
         delete_response
     )
     test_fail = payments.check_stripe_subscriptions("cus_tester3")
-    logging.info(f"test fail {test_fail}")
+    logger.info("test fail", test_fail=test_fail)
     assert test_fail == []
     unstub()
 
@@ -93,6 +92,6 @@ def test_check_stripe_subscriptions_name_error():
     ).thenRaise(NameError)
 
     test_fail = payments.check_stripe_subscriptions("cus_tester3")
-    logging.info(f"test fail {test_fail}")
+    logger.info("test fail", test_fail=test_fail)
     assert test_fail == []
     unstub()

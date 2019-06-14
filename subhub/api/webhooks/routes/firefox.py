@@ -1,15 +1,12 @@
 import boto3
 import json
-import logging
 
 from botocore.exceptions import ClientError
 from subhub.api.webhooks.routes.abstract import AbstractRoute
 from subhub.cfg import CFG
-from subhub import secrets
+from subhub.log import get_logger
 
-
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 
 class FirefoxRoute(AbstractRoute):
@@ -33,5 +30,5 @@ class FirefoxRoute(AbstractRoute):
                 self.report_route_error(self.payload)
 
         except ClientError as e:
-            logging.error(f"Firefox error: {e}")
+            logger.error("Firefox error", error=e)
             self.report_route_error(self.payload)

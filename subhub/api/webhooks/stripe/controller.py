@@ -1,13 +1,7 @@
 from flask import request, Response
-import logging
 
 import stripe
-
-# from subhub.api.webhooks.stripe.pipeline import StripeWebhookEventPipeline
-
 from subhub.cfg import CFG
-from subhub import secrets
-
 from subhub.api.webhooks.stripe.customer import StripeCustomerCreated
 from subhub.api.webhooks.stripe.charge import StripeChargeSucceededEvent
 from subhub.api.webhooks.stripe.customer import StripeCustomerDeleted
@@ -18,14 +12,9 @@ from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionUpdate
 from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
 from subhub.api.webhooks.stripe.customer import StripeCustomerSourceExpiring
 from subhub.api.webhooks.stripe.unhandled import StripeUnhandledEvent
+from subhub.log import get_logger
 
-
-logger = logging.getLogger("webhook_controller")
-log_handle = logging.StreamHandler()
-log_handle.setLevel(logging.INFO)
-logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handle.setFormatter(logformat)
-logger.addHandler(log_handle)
+logger = get_logger()
 
 
 class StripeWebhookEventPipeline:

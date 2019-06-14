@@ -1,17 +1,11 @@
-import logging
 import json
 
+from attrdict import AttrDict
 from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.api.webhooks.routes.static import StaticRoutes
+from subhub.log import get_logger
 
-from attrdict import AttrDict
-
-logger = logging.getLogger("charge_succeeded")
-log_handle = logging.StreamHandler()
-log_handle.setLevel(logging.INFO)
-logformat = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-log_handle.setFormatter(logformat)
-logger.addHandler(log_handle)
+logger = get_logger()
 
 
 class StripeChargeSucceededEvent(AbstractStripeWebhookEvent):

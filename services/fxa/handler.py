@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-import logging
 import os
 import sys
 
@@ -14,10 +13,9 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 sys.path.append(dir_path)
 
 from subhub.app import create_app
+from subhub.log import get_logger
 
-# Logging
-logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger = get_logger()
 
 # Create app at module scope to cache it for repeat requests
 try:
@@ -30,8 +28,9 @@ except Exception:  # pylint: disable=broad-except
 @newrelic.agent.lambda_handler()
 def handle(event, context):
     try:
+        logger.info("handling event", subhub_event=event, context=context)
         return awsgi.response(app, event, context)
-    except Exception:  # pylint: disable=broad-except
-        logger.exception("Exception occurred while handling %s", event)
+    except Exception as e:  # pylint: disable=broad-except
+        logger.exception("exception occurred", subhub_event=event, context=context, error=e)
         # TODO: Add Sentry exception catch here
         raise
