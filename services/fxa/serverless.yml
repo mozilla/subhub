@@ -24,6 +24,32 @@ provider:
   timeout: 10
   tracing: true
   snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
+  environment:
+    STAGE: ${self:provider.stage}
+    APP_DEPENV: ${env:APP_DEPENV}
+    APP_PROJNAME: ${env:APP_PROJNAME}
+    APP_BRANCH: ${env:APP_BRANCH}
+    APP_REVISION: ${env:APP_REVISION}
+    APP_VERSION: ${env:APP_VERSION}
+    APP_REMOTE_ORIGIN_URL: ${env:APP_REMOTE_ORIGIN_URL}
+    APP_LOG_LEVEL: ${env:APP_LOG_LEVEL}
+    USER_TABLE:
+      Ref: 'Users'
+    EVENT_TABLE:
+      Ref: 'Events'
+  tags:
+    cost-center: 1400
+    project-name: subhub
+    project-desc: payment subscription REST api for customers
+    project-email: subhub@mozilla.com
+    deploy-env: ${env:APP_DEPENV}
+    deploy-method: serverless
+    sources: https://github.com/mozilla/subhub
+    urls: prod.fxa.mozilla-subhub.app/v1
+    keywords: subhub:subscriptions:flask:serverless:swagger
+    branch: ${env:APP_BRANCH}
+    revision: ${env:APP_REVISION}
+    version: ${env:APP_VERSION}
   stackTags:
     service: ${self:service}
   iamRoleStatements:
@@ -156,19 +182,6 @@ functions:
           method: ANY
           path: '{proxy+}'
           cors: true
-    environment:
-      STAGE: ${self:provider.stage}
-      APP_DEPENV: ${env:APP_DEPENV}
-      APP_PROJNAME: ${env:APP_PROJNAME}
-      APP_BRANCH: ${env:APP_BRANCH}
-      APP_REVISION: ${env:APP_REVISION}
-      APP_VERSION: ${env:APP_VERSION}
-      APP_REMOTE_ORIGIN_URL: ${env:APP_REMOTE_ORIGIN_URL}
-      APP_LOG_LEVEL: ${env:APP_LOG_LEVEL}
-      USER_TABLE:
-        Ref: 'Users'
-      EVENT_TABLE:
-        Ref: 'Events'
 
 resources:
   Resources:
