@@ -258,6 +258,8 @@ def task_stripe():
     check to see if STRIPE_API_KEY is set
     '''
     def stripe_check():
+        if os.environ.get('SKIP_TESTS', None):
+            return True
         try:
             CFG.STRIPE_API_KEY
         except:
