@@ -153,6 +153,7 @@ paths:
               - plan_id
               - email
               - orig_system
+              - display_name
             properties:
               pmt_token:
                 type: string
@@ -170,6 +171,10 @@ paths:
                 type: string
                 description: Originating System
                 example: Firefox
+              display_name:
+                type: string
+                description: User Display Name
+                example: Joe User
   /plans:
     get:
       operationId: subhub.api.payments.list_all_plans

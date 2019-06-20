@@ -23,6 +23,7 @@ def test_create_customer_tok_visa():
         source_token="tok_visa",
         email="test_visa@tester.com",
         origin_system="Test_system",
+        display_name="John Tester",
     )
     pytest.customer = customer
     assert customer["metadata"]["userid"] == "test_mozilla"
@@ -40,6 +41,7 @@ def test_create_customer_tok_mastercard():
         source_token="tok_mastercard",
         email="test_mastercard@tester.com",
         origin_system="Test_system",
+        display_name="John Tester",
     )
     assert customer["metadata"]["userid"] == "test_mozilla"
 
@@ -57,6 +59,7 @@ def test_create_customer_tok_invalid():
             source_token="tok_invalid",
             email="test_invalid@tester.com",
             origin_system="Test_system",
+            display_name="John Tester",
         )
 
 
@@ -72,6 +75,7 @@ def test_create_customer_tok_avsFail():
         source_token="tok_avsFail",
         email="test_avsfail@tester.com",
         origin_system="Test_system",
+        display_name="John Tester",
     )
     assert customer["metadata"]["userid"] == "test_mozilla"
 
@@ -88,6 +92,7 @@ def test_create_customer_tok_avsUnchecked():
         source_token="tok_avsUnchecked",
         email="test_avsunchecked@tester.com",
         origin_system="Test_system",
+        display_name="John Tester",
     )
     assert customer["metadata"]["userid"] == "test_mozilla"
 
@@ -129,6 +134,7 @@ def test_create_subscription_with_valid_data():
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": "valid@{}customer.com".format(uid),
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
     assert 201 == code
@@ -152,6 +158,7 @@ def test_subscribe_customer_existing(create_customer_for_processing):
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
     subscription2, code2 = payments.subscribe_to_plan(
@@ -161,6 +168,7 @@ def test_subscribe_customer_existing(create_customer_for_processing):
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
     assert 409 == code2
@@ -185,6 +193,7 @@ def test_create_subscription_with_invalid_payment_token():
                 "plan_id": "plan_EtMcOlFMNWW4nd",
                 "email": "invalid_test@test.com",
                 "orig_system": "Test_system",
+                "display_name": "Jon Tester",
             },
         )
     except Exception as e:
@@ -211,6 +220,7 @@ def test_create_subscription_with_invalid_plan_id(app):
                 "plan_id": "plan_abc123",
                 "email": "invalid_plan@tester.com",
                 "orig_system": "Test_system",
+                "display_name": "Jon Tester",
             },
         )
     except Exception as e:
@@ -262,6 +272,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
     subscription2, code2 = payments.subscribe_to_plan(
@@ -271,6 +282,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first
             "plan_id": "plan_F4G9jB3x5i6Dpj",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
 
@@ -304,6 +316,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_secon
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
     subscription2, code2 = payments.subscribe_to_plan(
@@ -313,6 +326,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_secon
             "plan_id": "plan_F4G9jB3x5i6Dpj",
             "email": f"valid@{uid}customer.com",
             "orig_system": "Test_system",
+            "display_name": "Jon Tester",
         },
     )
 

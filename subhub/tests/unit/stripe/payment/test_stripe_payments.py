@@ -28,15 +28,14 @@ def test_stripe_payment_intent_succeeded(mocker):
         "charge_id": "ch_000000",
         "invoice_id": "in_000000",
         "customer_id": "cus_000000",
-        "amount_paid": 1000,
+        "amount": 1000,
         "created": 1559568879,
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "payment/payment-intent-succeeded.json"
     run_customer(mocker, data, filename)

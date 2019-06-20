@@ -94,7 +94,7 @@ provider:
       Action:
         - sns:Publish
       Resource:
-        - 'Fn::Join': [':', ['arn:aws:sns', Ref: AWS::Region, Ref: AWS::AccountId, '${self:provider.stage}-fxa-data']]
+        - 'Fn::Join': [':', ['arn:aws:sns', Ref: AWS::Region, Ref: AWS::AccountId, '${self:provider.stage}-fxa-event-data']]
   resourcePolicy: ${self:custom.resourcePolicies.${self:custom.access.${self:provider.stage}}}
 
 package:
@@ -147,7 +147,7 @@ custom:
           - execute-api:/*/*/support/*
         Condition:
           IpAddress:
-            aws:SourceIp: ${file(./whitelist.yml):support}
+            aws:SourceIp: ${file(./whitelist.yml):support.${self:provider.stage}}
       - Effect: Allow
         Principal: "*"
         Action: execute-api:Invoke

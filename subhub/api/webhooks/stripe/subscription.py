@@ -20,5 +20,6 @@ class StripeSubscriptionCreated(AbstractStripeWebhookEvent):
             plan_name=self.payload.data.plan.nickname,
             created=self.payload.data.object.created,
         )
+        logger.info("subscription created", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))

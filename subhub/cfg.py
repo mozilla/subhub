@@ -323,7 +323,15 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         basket uri
         """
-        return self("SALESFORCE_BASKET_URI", "https://google.com")
+        return self("SALESFORCE_BASKET_URI", "https://google.com?api-key=")
+
+    @property
+    def BASKET_API_KEY(self):
+        """
+        basket api key
+        :return:
+        """
+        return self("BASKET_API_KEY", "fake_basket_api_key")
 
     @property
     def FXA_SQS_URI(self):

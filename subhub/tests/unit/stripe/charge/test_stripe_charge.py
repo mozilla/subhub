@@ -27,9 +27,8 @@ def test_stripe_webhook_succeeded(mocker):
     }
 
     # using mockito
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     mockito.when(boto3).client(
         "sqs",
         region_name=CFG.AWS_REGION,

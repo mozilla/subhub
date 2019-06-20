@@ -12,6 +12,7 @@ logger = get_logger()
 class SalesforceRoute(AbstractRoute):
     def route(self):
         route_payload = json.loads(self.payload)
-        requests.post(CFG.SALESFORCE_BASKET_URI, data=route_payload)
+        basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
+        requests.post(basket_url, json=route_payload)
         self.report_route(route_payload, "salesforce")
         logger.info("sending to salesforce", payload=self.payload)
