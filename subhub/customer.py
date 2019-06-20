@@ -15,6 +15,7 @@ def create_customer(
     email: str,
     source_token: str,
     origin_system: str,
+    display_name: str,
 ) -> stripe.Customer:
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
@@ -40,6 +41,7 @@ def create_customer(
                 source=source_token,
                 email=email,
                 description=user_id,
+                name=display_name,
                 metadata={"userid": user_id},
             )
 
@@ -65,11 +67,12 @@ def existing_or_new_customer(
     email: str,
     source_token: str,
     origin_system: str,
+    display_name: str,
 ) -> stripe.Customer:
     db_account = subhub_accouunt.get_user(user_id)
     if not db_account:
         return create_customer(
-            subhub_accouunt, user_id, email, source_token, origin_system
+            subhub_accouunt, user_id, email, source_token, origin_system, display_name
         )
     customer_id = db_account.custId
     return existing_payment_source(customer_id, source_token)

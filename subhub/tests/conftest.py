@@ -79,6 +79,7 @@ def create_customer_for_processing():
         source_token="tok_visa",
         email="test_fixture@{}tester.com".format(uid.hex),
         origin_system="Test_system",
+        display_name="John Tester",
     )
     yield customer
 
@@ -93,6 +94,7 @@ def create_subscription_for_processing():
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "orig_system": "Test_system",
             "email": "subtest@{}tester.com".format(uid),
+            "display_name": "John Tester",
         },
     )
     yield subscription

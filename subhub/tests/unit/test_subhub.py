@@ -85,6 +85,7 @@ def test_customer_signup_server_stripe_error_with_params(
         "plan_id": "invalid",
         "orig_system": "Test_system",
         "email": "subtest@example.com",
+        "display_name": "John Tester",
     }
 
     response = client.post(
@@ -127,6 +128,7 @@ def test_subscribe_card_declined_error_handler(subscription_mock, app, monkeypat
         "plan_id": "plan",
         "orig_system": "Test_system",
         "email": "subtest@example.com",
+        "display_name": "John Tester",
     }
 
     response = client.post(

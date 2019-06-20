@@ -31,13 +31,12 @@ def test_stripe_webhook_customer_created(mocker):
         "name": "Jon Tester",
         "user_id": "user123",
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-created.json"
     run_customer(mocker, data, filename)
 
@@ -51,6 +50,7 @@ def test_stripe_webhook_customer_deleted(mocker):
         "name": "Jon Tester",
         "user_id": "user123",
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client(
         "sqs",
@@ -58,9 +58,7 @@ def test_stripe_webhook_customer_deleted(mocker):
         aws_access_key_id=CFG.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=CFG.AWS_SECRET_ACCESS_KEY,
     ).thenReturn(MockSnsClient)
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-deleted.json"
     run_customer(mocker, data, filename)
 
@@ -73,13 +71,12 @@ def test_stripe_webhook_customer_updated(mocker):
         "customer_id": "cus_00000000000000",
         "name": "Jon Tester",
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-updated.json"
     run_customer(mocker, data, filename)
 
@@ -94,13 +91,12 @@ def test_stripe_webhook_customer_source_expiring(mocker):
         "exp_month": 5,
         "exp_year": 2019,
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-source-expiring.json"
     run_customer(mocker, data, filename)
 
@@ -115,13 +111,12 @@ def test_stripe_webhook_customer_subscription_created(mocker):
         eventCreatedAt=1326853478,
         messageCreatedAt=int(time.time()),
     )
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(
         MockSnsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-subscription-created.json"
     run_customer(mocker, data, filename)
 
@@ -152,13 +147,12 @@ def test_stripe_webhook_customer_subscription_deleted(mocker):
         "eventCreatedAt": 1326853478,
         "messageCreatedAt": int(time.time()),
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(
         MockSnsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-subscription-deleted.json"
     run_customer(mocker, data, filename)
 
@@ -174,6 +168,7 @@ def test_stripe_webhook_customer_subscription_updated(mocker):
         "cancel_at": 1521854209,
         "cancel_at_period_end": True,
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     mockito.when(boto3).client(
         "sqs",
         region_name=CFG.AWS_REGION,
@@ -181,8 +176,6 @@ def test_stripe_webhook_customer_subscription_updated(mocker):
         aws_secret_access_key=CFG.AWS_SECRET_ACCESS_KEY,
     ).thenReturn(MockSqsClient)
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-subscription-updated.json"
     run_customer(mocker, data, filename)

@@ -25,22 +25,21 @@ def test_stripe_invoice_finalized(mocker):
         "customer_id": "cus_00000000000",
         "subscription_id": "sub_000000",
         "currency": "usd",
-        "charge": "ch_0000000",
+        "charge_id": "ch_0000000",
         "period_start": 1559568873,
         "period_end": 1559568873,
-        "amount_paid": 1000,
+        "amount": 1000,
         "invoice_number": "C8828DAC-0001",
         "description": "1 Moz-Sub × Moz_Sub (at $10.00 / month)",
         "application_fee_amount": None,
         "created": 1559568873,
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "invoice/invoice-finalized.json"
     run_customer(mocker, data, filename)
 
@@ -52,17 +51,16 @@ def test_stripe_invoice_payment_failed(mocker):
         "customer_id": "cus_00000000000",
         "subscription_id": "sub_000000",
         "currency": "usd",
-        "charge": "ch_000000",
+        "charge_id": "ch_000000",
         "number": "3D000-0003",
         "amount_due": 100,
         "created": 1558624628,
     }
+    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
         MockSqsClient
     )
-    mockito.when(requests).post(CFG.SALESFORCE_BASKET_URI, data=data).thenReturn(
-        response
-    )
+    mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "invoice/invoice-payment-failed.json"
     run_customer(mocker, data, filename)

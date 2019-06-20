@@ -11,6 +11,9 @@ from subhub.api.webhooks.stripe.subscription import StripeSubscriptionCreated
 from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionUpdated
 from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
 from subhub.api.webhooks.stripe.customer import StripeCustomerSourceExpiring
+from subhub.api.webhooks.stripe.invoices import StripeInvoiceFinalized
+from subhub.api.webhooks.stripe.invoices import StripeInvoicePaymentFailed
+from subhub.api.webhooks.stripe.payment_intents import StripePaymentIntentSucceeded
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -41,12 +44,17 @@ class StripeWebhookEventPipeline:
             StripeChargeSucceededEvent(self.payload).run()
         elif event_type == "subscription.created":
             StripeSubscriptionCreated(self.payload).run()
+        elif event_type == "invoice.finalized":
+            StripeInvoiceFinalized(self.payload).run()
+        elif event_type == "payment_intent.succeeded":
+            StripePaymentIntentSucceeded(self.payload).run()
+        elif event_type == "invoice.payment_failed":
+            StripeInvoicePaymentFailed(self.payload).run()
         else:
             pass
 
 
 def view() -> tuple:
-    logger.info(f"meta {request}")
     try:
         payload = request.data
         sig_header = request.headers["Stripe-Signature"]
@@ -55,14 +63,14 @@ def view() -> tuple:
         p.run()
     except ValueError as e:
         # Invalid payload
-        logger.error(f"ValueError: {e}")
+        logger.error("ValueError", error=e)
         return Response(status=400)
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
-        logger.error(f"SignatureVerificationError {e}")
+        logger.error("SignatureVerificationError", error=e)
         return Response(status=400)
     except Exception as e:
-        logger.error(f"Oops! {e}")
+        logger.error("General Exception", error=e)
         return Response(e, status=500)
 
     return Response("Success", status=200)
