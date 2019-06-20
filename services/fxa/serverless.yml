@@ -23,6 +23,7 @@ provider:
   memorySize: 256
   timeout: 10
   tracing: true
+  snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
   stackTags:
     service: ${self:service}
   iamRoleStatements:
@@ -155,9 +156,6 @@ functions:
           method: ANY
           path: '{proxy+}'
           cors: true
-      - sns:
-          topicName: ${self:provider.stage}-fxa-data
-          displayName: FxA Event Data
     environment:
       STAGE: ${self:provider.stage}
       APP_DEPENV: ${env:APP_DEPENV}
@@ -174,6 +172,29 @@ functions:
 
 resources:
   Resources:
+    SubHubSNS:
+      Type: AWS::SNS::Topic
+      Properties:
+        DisplayName: FxA ${self:provider.stage} Event Data
+        TopicName: ${self:provider.stage}-fxa-event-data
+    SubHubTopicPolicy:
+      Type: AWS::SNS::TopicPolicy
+      Properties:
+        PolicyDocument:
+          Id: AWSAccountTopicAccess
+          Version: '2008-10-17'
+          Statement:
+            - Sid: FxAStageAccess
+              Effect: Allow
+              Principal:
+                AWS: arn:aws:iam::${self:provider.snsaccount}:root
+              Action:
+                - SNS:Subscribe
+                - SNS:Receive
+                - SNS:GetTopicAttributes
+              Resource: arn:aws:sns:us-west-2:903937621340:${self:provider.stage}-fxa-event-data
+        Topics:
+          - Ref: SubHubSNS
     Users:
       Type: 'AWS::DynamoDB::Table'
       Properties:
