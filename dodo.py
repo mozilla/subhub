@@ -447,6 +447,8 @@ def task_deploy():
             ],
             'actions': [
                 f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} --aws-s3-accelerate -v',
+                f'curl --silent https://{CFG.APP_DEPENV}.{svc}.mozilla-subhub.app/v1/version',
+                'git describe --abbrev=7',
             ],
         }
 
