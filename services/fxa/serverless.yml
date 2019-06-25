@@ -38,7 +38,7 @@ provider:
     EVENT_TABLE:
       Ref: 'Events'
   tags:
-    cost-center: 1400
+    cost-center: 1440
     project-name: subhub
     project-desc: payment subscription REST api for customers
     project-email: subhub@mozilla.com
