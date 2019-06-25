@@ -407,7 +407,7 @@ def test_cancel_subscription_with_invalid_stripe_customer(
     (subscription, code) = create_subscription_for_processing
 
     subhub_user = g.subhub_account.get_user("process_test")
-    subhub_user.custId = None
+    subhub_user.cust_id = None
     g.subhub_account.save_user(subhub_user)
 
     exception = None
@@ -487,7 +487,7 @@ def test_update_payment_method_missing_stripe_customer(
     """
     (subscription, code) = create_subscription_for_processing
     subhub_user = g.subhub_account.get_user("process_test")
-    subhub_user.custId = None
+    subhub_user.cust_id = None
     g.subhub_account.save_user(subhub_user)
 
     (updated_pmt, code) = payments.update_payment_method(
@@ -508,7 +508,7 @@ def test_update_payment_method_invalid_stripe_customer(
 
     (subscription, code) = create_subscription_for_processing
     subhub_user = g.subhub_account.get_user("process_test")
-    subhub_user.custId = "bad_id"
+    subhub_user.cust_id = "bad_id"
     g.subhub_account.save_user(subhub_user)
 
     exception = None
@@ -539,11 +539,11 @@ def test_reactivate_subscription_success(monkeypatch):
     THEN the subscription is updated
     """
     uid = "subhub_user"
-    custId = "cust_1"
+    cust_id = "cust_1"
     sub_id = "sub_123"
 
     subhub_user = Mock(return_value=MockSubhubUser())
-    subhub_user.custId = custId
+    subhub_user.cust_id = cust_id
     subhub_user.id = uid
 
     stripe_customer = Mock(
@@ -581,11 +581,11 @@ def test_reactivate_subscription_already_active(monkeypatch):
     """
 
     uid = "subhub_user"
-    custId = "cust_1"
+    cust_id = "cust_1"
     sub_id = "sub_123"
 
     subhub_user = Mock(return_value=MockSubhubUser())
-    subhub_user.custId = custId
+    subhub_user.cust_id = cust_id
     subhub_user.id = uid
 
     stripe_customer = Mock(
@@ -623,11 +623,11 @@ def test_reactivate_subscription_no_subscriptions(monkeypatch):
     """
 
     uid = "subhub_user"
-    custId = "cust_1"
+    cust_id = "cust_1"
     sub_id = "sub_123"
 
     subhub_user = Mock(return_value=MockSubhubUser())
-    subhub_user.custId = custId
+    subhub_user.cust_id = cust_id
     subhub_user.id = uid
 
     stripe_customer = Mock(return_value={"subscriptions": {"data": []}})
@@ -652,11 +652,11 @@ def test_reactivate_subscription_bad_subscription_id(monkeypatch):
     """
 
     uid = "subhub_user"
-    custId = "cust_1"
+    cust_id = "cust_1"
     sub_id = "sub_123"
 
     subhub_user = Mock(return_value=MockSubhubUser())
-    subhub_user.custId = custId
+    subhub_user.cust_id = cust_id
     subhub_user.id = uid
 
     stripe_customer = Mock(

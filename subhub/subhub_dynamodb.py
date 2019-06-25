@@ -8,37 +8,37 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
+def _create_account_model(table_name_, region_, host_):
+    class SubHubAccountModel(Model):
+        class Meta:
+            table_name = table_name_
+            region = region_
+            if host_:
+                host = host_
+
+        user_id = UnicodeAttribute(hash_key=True)
+        cust_id = UnicodeAttribute(null=True)
+        origin_system = UnicodeAttribute()
+
+    return SubHubAccountModel
+
+
 # This exists purely for type-checking, the actual model is dynamically
 # created in DbAccount
 class SubHubAccountModel(Model):
-    userId = UnicodeAttribute(hash_key=True)
-    custId = UnicodeAttribute(null=True)
-    orig_system = UnicodeAttribute()
+    user_id = UnicodeAttribute(hash_key=True)
+    cust_id = UnicodeAttribute(null=True)
+    origin_system = UnicodeAttribute()
 
 
 class SubHubAccount:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        _table = table_name
-        _region = region
-        _host = host
-
-        class SubHubAccountModel(Model):
-            class Meta:
-                table_name = _table
-                region = _region
-                if _host:
-                    host = _host
-
-            userId = UnicodeAttribute(hash_key=True)
-            custId = UnicodeAttribute(null=True)
-            orig_system = UnicodeAttribute()
-
-        self.model = SubHubAccountModel
+        self.model = _create_account_model(table_name, region, host)
 
     def new_user(
-        self, uid: str, origin_system: str, custId: Optional[str] = None
+        self, uid: str, origin_system: str, cust_id: Optional[str] = None
     ) -> SubHubAccountModel:
-        return self.model(userId=uid, custId=custId, orig_system=origin_system)
+        return self.model(user_id=uid, cust_id=cust_id, origin_system=origin_system)
 
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
         try:
@@ -55,10 +55,10 @@ class SubHubAccount:
         except PutError:
             return False
 
-    def append_custid(self, uid: str, custId: str) -> bool:
+    def append_custid(self, uid: str, cust_id: str) -> bool:
         try:
             update_user = self.model.get(uid, consistent_read=True)
-            update_user.custId = custId
+            update_user.cust_id = cust_id
             update_user.save()
             return True
         except DoesNotExist:
@@ -72,31 +72,31 @@ class SubHubAccount:
             return False
 
 
+def _create_webhook_model(table_name_, region_, host_):
+    class WebHookEventModel(Model):
+        class Meta:
+            table_name = table_name_
+            region = region_
+            if host_:
+                host = host_
+
+        event_id = UnicodeAttribute(hash_key=True)
+        sent_system = ListAttribute()
+
+    return WebHookEventModel
+
+
 class WebHookEventModel(Model):
-    eventId = UnicodeAttribute(hash_key=True)
+    event_id = UnicodeAttribute(hash_key=True)
     sent_system = ListAttribute(default=list)
 
 
 class WebHookEvent:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        _table = table_name
-        _region = region
-        _host = host
-
-        class WebHookEventModel(Model):
-            class Meta:
-                table_name = _table
-                region = _region
-                if _host:
-                    host = _host
-
-            eventId = UnicodeAttribute(hash_key=True)
-            sent_system = ListAttribute()
-
-        self.model = WebHookEventModel
+        self.model = _create_webhook_model(table_name, region, host)
 
     def new_event(self, event_id: str, sent_system: list) -> WebHookEventModel:
-        return self.model(eventId=event_id, sent_system=[sent_system])
+        return self.model(event_id=event_id, sent_system=[sent_system])
 
     def get_event(self, event_id: str) -> Optional[WebHookEventModel]:
         try:

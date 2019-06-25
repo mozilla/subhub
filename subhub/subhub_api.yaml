@@ -127,7 +127,7 @@ paths:
         - application/json
       responses:
         201:
-          description: Subscription successful
+          description: Subscription successful.
           schema:
             $ref: '#/definitions/Subscriptions'
         400:
@@ -135,11 +135,11 @@ paths:
           schema:
             $ref: '#/definitions/Errormessage'
         402:
-          description: Token not valid
+          description: Token not valid.
           schema:
             $ref: '#/definitions/Errormessage'
         409:
-          description: Already subscribed
+          description: Already subscribed.
           schema:
             $ref: '#/definitions/Errormessage'
       parameters:
@@ -169,7 +169,7 @@ paths:
                 example: user@gmail.com
               orig_system:
                 type: string
-                description: Originating System
+                description: Originating System.
                 example: Firefox
               display_name:
                 type: string
@@ -204,14 +204,14 @@ paths:
         - application/json
       responses:
         '200':
-          description: Subscription already active
+          description: Subscription already active.
           schema:
             type: object
             properties:
               message:
                 type: string
         '201':
-          description: Subscription reactivation successful
+          description: Subscription reactivation successful.
           schema:
             type: object
             properties:
@@ -259,7 +259,7 @@ paths:
       tags:
         - Subscriptions
       summary: Customer Update
-      description: Get updated customer subscription data
+      description: Get updated customer subscription data.
       security:
         - PayApiKey: []
       produces:
@@ -290,7 +290,7 @@ paths:
                 items:
                   $ref: '#/definitions/Subscriptions'
         400:
-          description: Customer user ID does not match
+          description: Customer user ID does not match.
           schema:
             $ref: '#/definitions/Errormessage'
         404:
@@ -304,7 +304,7 @@ paths:
       tags:
         - Subscriptions
       summary: Update Payment Method
-      description: Update the credit card on file for a user's account
+      description: Update the credit card on file for a user's account.
       security:
         - PayApiKey: []
       produces:
@@ -373,7 +373,7 @@ paths:
       tags:
         - Webhooks
       summary: Receives webhook calls
-      description: Receives webhook calls
+      description: Receives webhook calls.
       produces:
         - application/json
       responses:
@@ -416,7 +416,7 @@ definitions:
           example: pro_basic
         product_name:
           type: string
-          example: Moz_Sub
+          example: Moz Sub
         interval:
           type: string
           example: month
@@ -463,7 +463,7 @@ definitions:
           example: 1557361022
         status:
           type: string
-          description: Subscription status
+          description: Subscription status.
           example: active
         cancel_at_period_end:
           type: boolean
@@ -482,7 +482,7 @@ definitions:
     properties:
       message:
         type: string
-        example: The resource is not available
+        example: The resource is not available.
       code:
         type: number
         example: 404

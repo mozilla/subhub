@@ -223,11 +223,11 @@ resources:
       Properties:
         AttributeDefinitions:
           -
-            AttributeName: userId
+            AttributeName: user_id
             AttributeType: S
         KeySchema:
           -
-            AttributeName: userId
+            AttributeName: user_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
@@ -237,11 +237,11 @@ resources:
       Properties:
         AttributeDefinitions:
           -
-            AttributeName: eventId
+            AttributeName: event_id
             AttributeType: S
         KeySchema:
           -
-            AttributeName: eventId
+            AttributeName: event_id
             KeyType: HASH
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
