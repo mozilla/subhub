@@ -51,7 +51,7 @@ def create_customer(
             )
     # Link the Stripe customer to the origin system id
     db_account = subhub_account.new_user(
-        uid=user_id, origin_system=origin_system, custId=customer.id
+        uid=user_id, origin_system=origin_system, cust_id=customer.id
     )
 
     if not subhub_account.save_user(db_account):
@@ -74,7 +74,7 @@ def existing_or_new_customer(
         return create_customer(
             subhub_accouunt, user_id, email, source_token, origin_system, display_name
         )
-    customer_id = db_account.custId
+    customer_id = db_account.cust_id
     return existing_payment_source(customer_id, source_token)
 
 

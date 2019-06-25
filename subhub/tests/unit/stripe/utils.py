@@ -36,4 +36,4 @@ class MockSubhubAccount:
 
 class MockSubhubUser:
     id = "123"
-    custId = "cust_123"
+    cust_id = "cust_123"
