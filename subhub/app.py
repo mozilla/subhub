@@ -19,15 +19,14 @@ logger = get_logger()
 def create_app(config=None):
     logger.info("creating flask app", config=config)
     if not CFG.AWS_EXECUTION_ENV:
-        options = {"swagger_ui": True}
         region = "localhost"
         host = f"http://localhost:{CFG.DYNALITE_PORT}"
         stripe.api_key = CFG.STRIPE_API_KEY
     else:
-        options = {"swagger_ui": False}
         region = "us-west-2"
         host = None
         stripe.api_key = CFG.STRIPE_API_KEY
+    options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
     app.add_api(

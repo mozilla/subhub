@@ -400,6 +400,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("AWS_EXECUTION_ENV", None)
 
     @property
+    def SWAGGER_UI(self):
+        """
+        boolean property to determine if we should swagger or not
+        """
+        return self.APP_DEPENV in ("stage", "qa", "dev")
+
+    @property
     def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
         """
         https://docs.newrelic.com/docs/serverless-function-monitoring/aws-lambda-monitoring/get-started/enable-new-relic-monitoring-aws-lambda
