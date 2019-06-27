@@ -338,6 +338,35 @@ paths:
                 type: string
                 description: Pay Token.
                 example: tok_KPte7942xySKBKyrBu11yEpf
+    delete:
+      operationId: subhub.api.payments.delete_customer
+      tags:
+        - Subscriptions
+      summary: Delete a customer
+      description: |
+        Delete customer records including database, payment providers, payment sources and active subscriptions
+      security:
+        - PayApiKey: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Customer deletion successful.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        '400':
+          description: Error - missing paramenter.
+          schema:
+            $ref: '#/definitions/Errormessage'
+        '404':
+          description: Customer not found.
+          schema:
+            $ref: '#/definitions/Errormessage'
+      parameters:
+        - $ref: '#/parameters/uidParam'
   /webhooks:
     post:
       operationId: subhub.api.webhooks.stripe.controller.view

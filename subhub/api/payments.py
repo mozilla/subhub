@@ -140,6 +140,24 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     return {"message": "Subscription not available."}, 400
 
 
+def delete_customer(uid) -> FlaskResponse:
+    """
+    Delete an existing customer, cancel active subscriptions
+    and delete from payment provider
+    :param uid:
+    :return: Success of failure message for the deletion
+    """
+    subscription_user = g.subhub_account.get_user(uid)
+    if not subscription_user:
+        return dict(message="Customer does not exist."), 404
+    deleted_payment_customer = stripe.Customer.delete(subscription_user.custId)
+    if deleted_payment_customer:
+        deleted_customer = g.subhub_account.remove_from_db(uid)
+        if deleted_customer:
+            return dict(message="Customer deleted successfully"), 200
+    return dict(message="Customer not available"), 400
+
+
 def reactivate_subscription(uid, sub_id):
     """
     Given a user's subscription that is flagged for cancellation, but is still active

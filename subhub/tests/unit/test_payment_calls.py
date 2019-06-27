@@ -258,6 +258,20 @@ def test_cancel_subscription_with_valid_data(app, create_subscription_for_proces
     g.subhub_account.remove_from_db("process_test")
 
 
+def test_delete_customer(app, create_subscription_for_processing):
+    """
+    GIVEN should cancel an active subscription,
+    delete customer from payment provider and database
+    WHEN provided a user id
+    THEN validate user is deleted from payment provider and database
+    """
+    # (subscription, code) = create_subscription_for_processing
+    (message, code) = payments.delete_customer("process_test")
+    assert message["message"] == "Customer deleted successfully"
+    deleted_message, code = payments.subscription_status("process_test")
+    assert deleted_message["message"] == "Customer does not exist."
+
+
 def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first():
     """
     GIVEN a user with multiple subscriptions
