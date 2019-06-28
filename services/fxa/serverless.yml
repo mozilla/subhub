@@ -144,6 +144,16 @@ custom:
         Principal: "*"
         Action: execute-api:Invoke
         Resource:
+          - execute-api:/*/*/swagger.json
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/ui/*
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
           - execute-api:/*/*/support/*
         Condition:
           IpAddress:
