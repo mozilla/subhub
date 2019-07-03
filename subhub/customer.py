@@ -83,9 +83,12 @@ def existing_or_new_customer(
 
 def existing_payment_source(customer_id: str, source_token: str) -> stripe.Customer:
     existing_customer = stripe.Customer.retrieve(customer_id)
-    if not existing_customer["sources"]["data"]:
-        existing_customer = stripe.Customer.modify(customer_id, source=source_token)
-        logger.info(f"add source {existing_customer}")
+    if not existing_customer.get("sources"):
+        if not existing_customer.get("deleted"):
+            existing_customer = stripe.Customer.modify(customer_id, source=source_token)
+            logger.info("add source", existing_customer=existing_customer)
+        else:
+            logger.info("existing source deleted")
     return existing_customer
 
 
@@ -96,7 +99,12 @@ def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscr
     :param plan:
     :return: Subscription Object
     """
-    return stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
+    try:
+        sub = stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
+        return sub
+    except Exception as e:
+        logger.error("sub error", error=e)
+        raise InvalidRequestError("Unable to create plan", param=plan_id)
 
 
 def has_existing_plan(user: stripe.Customer, plan_id: str) -> bool:
@@ -107,7 +115,11 @@ def has_existing_plan(user: stripe.Customer, plan_id: str) -> bool:
     :return: True if user has existing plan, otherwise False
     """
     customer = stripe.Customer.retrieve(user.id)
-    for item in customer["subscriptions"]["data"]:
-        if item["plan"]["id"] == plan_id and item["status"] in ["active", "trialing"]:
-            return True
+    if customer.get("subscriptions"):
+        for item in customer["subscriptions"]["data"]:
+            if item["plan"]["id"] == plan_id and item["status"] in [
+                "active",
+                "trialing",
+            ]:
+                return True
     return False

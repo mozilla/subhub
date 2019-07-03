@@ -19,6 +19,16 @@ class MockCustomer:
     object = "customer"
     subscriptions = [{"data": "somedata"}]
 
+    def properties(self, cls):
+        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
+
+    def get(self, key, default=None):
+        properties = self.properties(MockCustomer)
+        if key in properties:
+            return key
+        else:
+            return default
+
 
 def get_file(filename, path=THIS_PATH, **overrides):
     with open(f"{path}/{filename}") as f:

@@ -16,6 +16,16 @@ class MockCustomer:
     object = "customer"
     subscriptions = [{"data": "somedata"}]
 
+    def properties(self, cls):
+        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
+
+    def get(self, key, default=None):
+        properties = self.properties(MockCustomer)
+        if key in properties:
+            return key
+        else:
+            return default
+
 
 def test_subhub():
     """
@@ -95,12 +105,10 @@ def test_customer_signup_server_stripe_error_with_params(
         content_type="application/json",
     )
 
-    data = json.loads(response.data)
+    loaded_data = json.loads(response.data)
 
     assert response.status_code == 500
-    assert data["message"] == "No such plan: invalid"
-    assert data["params"] == "plan_id"
-    assert data["code"] == "invalid_plan"
+    assert "No such plan" in loaded_data["message"]
 
 
 @patch("stripe.Subscription")
