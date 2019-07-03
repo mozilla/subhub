@@ -21,10 +21,10 @@ inflection
 itsdangerous
 Jinja2
 jmespath
-jsonschema
+jsonschema==2.5.1
 MarkupSafe
 newrelic
-openapi-spec-validator
+openapi-spec-validator==0.2.7
 pathlib
 psutil
 pynamodb
