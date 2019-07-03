@@ -301,8 +301,8 @@ def task_venv():
         'actions': [
             f'virtualenv --python=$(which python3.7) {VENV}',
             f'{PIP3} install --upgrade pip',
-            f'[ -f "{appreqs}" ] && {PIP3} install -r "{appreqs}" || true',
-            f'[ -f "{testreqs}" ] && {PIP3} install -r "{testreqs}" || true',
+            f'[ -f "{appreqs}" ] && {PIP3} install -r "{appreqs}"',
+            f'[ -f "{testreqs}" ] && {PIP3} install -r "{testreqs}"',
         ]
     }
 
@@ -322,7 +322,7 @@ def task_dynalite():
             args = call(f'ps -p {pid} -o args=')[1].strip()
         except CalledProcessError:
             return None
-        if f'{cmd}' in args:
+        if cmd in args:
             return pid
         return None
     pid = running()
@@ -470,28 +470,46 @@ def task_remove():
             ],
         }
 
-def task_rmcache():
+def task_pip3list():
     '''
-    recursively delete python cache files
+    venv/bin/pip3.7 list
     '''
-    rmrf = 'rm -rf "{}" \;'
-    names_types = {
-        '__pycache__': 'd',
-        '.pytest_cache': 'd',
-        'node_modules': 'd',
-        '.serverless': 'd',
-        '.venv': 'd',
-        '.eggs': 'd',
-        '.tox': 'd',
-        '*.pyc': 'f',
-        '.coverage': 'f',
-        '.doit.db': 'f',
-    }
     return {
+        'task_dep': [
+            'venv',
+        ],
         'actions': [
-            f'sudo find {CFG.APP_REPOROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in names_types.items()
+            f'{PIP3} list',
         ],
     }
+
+def task_rmrf():
+    '''
+    delete cached files: pycache, pytest, node, venv, doitdb
+    '''
+    rmrf = 'rm -rf "{}" \;'
+    spec = '''
+    pycache:
+        __pycache__: d
+        '*.pyc': d
+    pytest:
+        .pytest_cache: d
+        .coverage: f
+        .tox: d
+    node:
+        node_modules: d
+    venv:
+        venv: d
+    doitdb:
+        .doit.db: f
+    '''
+    for name, targets in yaml.safe_load(spec).items():
+        yield {
+            'name': name,
+            'actions': [
+                f'sudo find {CFG.APP_REPOROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in targets.items()
+            ],
+        }
 
 def task_tidy():
     '''
