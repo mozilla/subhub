@@ -93,7 +93,13 @@ def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscr
     :param plan:
     :return: Subscription Object
     """
-    return stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
+    sub = None
+    try:
+        sub = stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
+    except Exception as e:
+        logger.error("sub error", error=e)
+        raise InvalidRequestError("Unable to create plan", param=plan_id)
+    return sub
 
 
 def has_existing_plan(user: stripe.Customer, plan_id: str) -> bool:
