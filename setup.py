@@ -1,49 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+from pip.req import parse_requirements
 from setuptools import setup, find_packages
 #from cfg import CFG #FIXME: this causes import errors
 
+install_reqs = parse_requirements("requirements.txt")
+reqs = [str(ir.req) for ir in install_reqs]
+
 with open("README.md", "r") as fh:
     long_description = fh.read()
-
-requirements = [
-    'attrdict',
-    'aws-wsgi',
-    'boto3',
-    'botocore',
-    'certifi',
-    'chardet',
-    'colorama',
-    'connexion',
-    'connexion[swagger-ui]',
-    'docutils',
-    'Flask',
-    'Flask-Cors',
-    'idna',
-    'inflection',
-    'itsdangerous',
-    'Jinja2',
-    'jmespath',
-    'jsonschema',
-    'MarkupSafe',
-    'newrelic',
-    'openapi-spec-validator',
-    'pathlib',
-    'psutil',
-    'pynamodb',
-    'python-dateutil',
-    'python-decouple',
-    'python-json-logger',
-    'PyYAML',
-    'requests',
-    's3transfer',
-    'six',
-    'stripe',
-    'structlog',
-    'urllib3',
-]
-
+    
 setup_requirements = [
     'pytest-runner',
     'setuptools>=40.5.0',
@@ -85,7 +52,7 @@ setup(
         'License :: OSI Approved :: Mozilla Public License',
         'Operating System :: OS Independent',
     ),
-    install_requires=requirements,
+    install_requires=reqs,
     license='Mozilla Public License 2.0',
     include_package_data=True,
     packages=find_packages(include=['subhub']),
