@@ -29,10 +29,17 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
         return {"message": "User already subscribed."}, 409
-    stripe.Subscription.create(customer=customer.id, items=[{"plan": data["plan_id"]}])
-    updated_customer = stripe.Customer.retrieve(customer.id)
-    newest_subscription = find_newest_subscription(updated_customer["subscriptions"])
-    return create_return_data(newest_subscription), 201
+    if not customer.get("deleted"):
+        stripe.Subscription.create(
+            customer=customer.id, items=[{"plan": data["plan_id"]}]
+        )
+        updated_customer = stripe.Customer.retrieve(customer.id)
+        newest_subscription = find_newest_subscription(
+            updated_customer["subscriptions"]
+        )
+        return create_return_data(newest_subscription), 201
+    else:
+        return dict(message=None), 400
 
 
 def find_newest_subscription(subscriptions):
@@ -118,7 +125,7 @@ def sources_to_remove(subscriptions: list, customer: str) -> None:
         raise ClientError(message=message) from ke
     except TypeError as te:
         message = "Source missing 'type' element"
-        logger.error(message, error=ke)
+        logger.error(message, error=te)
         raise ClientError(message=message) from te
 
 
@@ -157,7 +164,9 @@ def delete_customer(uid) -> FlaskResponse:
         return dict(message="Customer does not exist."), 404
     deleted_payment_customer = stripe.Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
-        deleted_customer = g.subhub_account.remove_from_db(uid)
+        deleted_customer = g.subhub_account.mark_deleted(uid)
+        user = g.subhub_account.get_user(uid)
+        logger.info("deleted customer", customer=user.customer_status)
         if deleted_customer:
             return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400

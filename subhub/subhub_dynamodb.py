@@ -30,16 +30,38 @@ class SubHubAccountModel(Model):
     user_id = UnicodeAttribute(hash_key=True)
     cust_id = UnicodeAttribute(null=True)
     origin_system = UnicodeAttribute()
+    customer_status = UnicodeAttribute()
 
 
 class SubHubAccount:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        self.model = _create_account_model(table_name, region, host)
+        _table = table_name
+        _region = region
+        _host = host
+
+        class SubHubAccountModel(Model):
+            class Meta:
+                table_name = _table
+                region = _region
+                if _host:
+                    host = _host
+
+            user_id = UnicodeAttribute(hash_key=True)
+            cust_id = UnicodeAttribute(null=True)
+            origin_system = UnicodeAttribute()
+            customer_status = UnicodeAttribute()
+
+        self.model = SubHubAccountModel
 
     def new_user(
         self, uid: str, origin_system: str, cust_id: Optional[str] = None
     ) -> SubHubAccountModel:
-        return self.model(user_id=uid, cust_id=cust_id, origin_system=origin_system)
+        return self.model(
+            user_id=uid,
+            cust_id=cust_id,
+            origin_system=origin_system,
+            customer_status="active",
+        )
 
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
         try:
@@ -74,6 +96,16 @@ class SubHubAccount:
             return True
         except DoesNotExist:
             logger.error("remove from db", uid=uid)
+            return False
+
+    def mark_deleted(self, uid: str) -> bool:
+        try:
+            delete_user = self.model.get(uid, consistent_read=True)
+            delete_user.customer_status = "deleted"
+            delete_user.save()
+            return True
+        except DoesNotExist:
+            logger.error("mark deleted", uid=uid)
             return False
 
 
