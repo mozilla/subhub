@@ -7,8 +7,10 @@
 
 import json
 import time
+from datetime import datetime
 
 import stripe
+from stripe.error import InvalidRequestError
 
 from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.webhooks.routes.static import StaticRoutes
@@ -21,9 +23,10 @@ logger = get_logger()
 
 class StripeCustomerCreated(AbstractStripeWebhookEvent):
     def run(self):
+        logger.info("customer created", payload=self.payload)
         cust_name = self.payload.data.object.name
         if not cust_name:
-            cust_name = " "
+            cust_name = ""
         data = self.create_data(
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
@@ -37,9 +40,10 @@ class StripeCustomerCreated(AbstractStripeWebhookEvent):
 
 class StripeCustomerDeleted(AbstractStripeWebhookEvent):
     def run(self):
+        logger.info("customer deleted", payload=self.payload)
         cust_name = self.payload.data.object.name
         if not cust_name:
-            cust_name = " "
+            cust_name = ""
         data = self.create_data(
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
@@ -53,9 +57,10 @@ class StripeCustomerDeleted(AbstractStripeWebhookEvent):
 
 class StripeCustomerUpdated(AbstractStripeWebhookEvent):
     def run(self):
+        logger.info("customer updated", payload=self.payload)
         cust_name = self.payload.data.object.name
         if not cust_name:
-            cust_name = " "
+            cust_name = ""
         data = self.create_data(
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
@@ -68,53 +73,91 @@ class StripeCustomerUpdated(AbstractStripeWebhookEvent):
 
 class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
     def run(self):
-        data = self.create_data(
-            customer_id=self.payload.data.object.customer,
-            last4=self.payload.data.object.last4,
-            brand=self.payload.data.object.brand,
-            exp_month=self.payload.data.object.exp_month,
-            exp_year=self.payload.data.object.exp_year,
-        )
-        routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
+        try:
+            logger.info("customer source expiring", payload=self.payload)
+            customer_id = self.payload.data.object.customer
+            logger.info("customer id", customer_id=customer_id)
+            updated_customer = stripe.Customer.retrieve(id=customer_id)
+            logger.info("updated customer", updated_customer=updated_customer)
+            email = updated_customer.email
+            logger.info("email", email=email)
+            nicknames = list()
+            logger.info("subs", updated_customer=updated_customer.subscriptions["data"])
+            for subs in updated_customer.subscriptions["data"]:
+                if subs["status"] in ["active", "trialing"]:
+                    nicknames.append(subs["plan"]["nickname"])
+            logger.info("expiring nickname", nickname=nicknames[0])
+            data = self.create_data(
+                email=email,
+                nickname=nicknames[0],
+                customer_id=self.payload.data.object.customer,
+                last4=self.payload.data.object.last4,
+                brand=self.payload.data.object.brand,
+                exp_month=self.payload.data.object.exp_month,
+                exp_year=self.payload.data.object.exp_year,
+            )
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+            self.send_to_routes(routes, json.dumps(data))
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise InvalidRequestError(message="Unable to find customer", param=str(e))
 
 
 class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
     def run(self):
-        user_id = self.payload.data.object.metadata.get("userid", None)
-        updated_customer = ""
-        if not user_id:
+        logger.info("customer subscription created", payload=self.payload)
+        try:
             customer_id = self.payload.data.object.customer
-            updated_customer = stripe.Customer.retrieve(customer_id)
+            updated_customer = stripe.Customer.retrieve(id=customer_id)
             user_id = updated_customer.metadata.get("userid")
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise InvalidRequestError(message="Unable to find customer", param=str(e))
         if user_id:
-            data = dict(
+            data = self.create_data(
                 uid=user_id,
                 active=self.is_active_or_trialing,
                 subscriptionId=self.payload.data.object.id,
+                subscription_id=self.payload.data.object.id,
                 productName=self.payload.data.object.plan.nickname,
                 eventId=self.payload.id,  # required by FxA
-                event_id=self.payload.id,  # required by SubHub
-                eventCreatedAt=self.payload.created,
-                messageCreatedAt=int(time.time()),
+                eventCreatedAt=self.payload.created,  # required by FxA
+                messageCreatedAt=int(time.time()),  # required by FxA
+                invoice_id=self.payload.data.object.latest_invoice,
+                plan_amount=self.payload.data.object.plan.amount,
+                customer_id=self.payload.data.object.customer,
+                nickname=self.payload.data.object.plan.nickname,
+                created=self.payload.data.object.plan.created,
+                canceled_at=self.payload.data.object.canceled_at,
+                cancel_at=self.payload.data.object.cancel_at,
+                cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
             )
             logger.info("customer subscription created", data=data)
-            routes = [StaticRoutes.FIREFOX_ROUTE]
+            routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
             self.send_to_routes(routes, json.dumps(data))
         else:
-            raise ClientError(f"userid is None for customer {updated_customer}")
+            logger.error(
+                "customer subscription created no userid",
+                error=self.payload.object.customer,
+                user_id=user_id,
+            )
+            raise ClientError(
+                f"userid is None for customer {self.payload.object.customer}"
+            )
 
 
 class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
     def run(self):
-        user_id = self.payload.data.object.metadata.get("userid", None)
-        if not user_id:
+        logger.info("customer subscription deleted", payload=self.payload)
+        try:
             customer_id = self.payload.data.object.customer
-            updated_customer = stripe.Customer.retrieve(customer_id)
+            updated_customer = stripe.Customer.retrieve(id=customer_id)
             user_id = updated_customer.metadata.get("userid")
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise InvalidRequestError(message="Unable to find customer", param=str(e))
         if user_id:
             data = dict(
-                uid=user_id,
                 active=self.is_active_or_trialing,
                 subscriptionId=self.payload.data.object.id,
                 productName=self.payload.data.object.plan.nickname,
@@ -127,6 +170,11 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
             routes = [StaticRoutes.FIREFOX_ROUTE]
             self.send_to_routes(routes, json.dumps(data))
         else:
+            logger.error(
+                "customer subscription deleted no userid",
+                error=self.payload.object.customer,
+                user_id=user_id,
+            )
             raise ClientError(
                 f"userid is None for customer {self.payload.object.customer}"
             )
@@ -134,20 +182,83 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeWebhookEvent):
     def run(self):
-        if self.payload.data.object.cancel_at_period_end:
-            data = self.create_data(
-                customer_id=self.payload.data.object.customer,
-                subscription_id=self.payload.data.object.id,
-                plan_amount=self.payload.data.object.plan.amount,
-                canceled_at=self.payload.data.object.canceled_at,
-                cancel_at=self.payload.data.object.cancel_at,
-                cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-            )
-            logger.info("customer subscription updated", data=data)
-            routes = [StaticRoutes.SALESFORCE_ROUTE]
-            self.send_to_routes(routes, json.dumps(data))
-        else:
+        logger.info("customer subscription updated", payload=self.payload)
+        try:
+            customer_id = self.payload.data.object.customer
+            updated_customer = stripe.Customer.retrieve(id=customer_id)
+            user_id = updated_customer.metadata.get("userid")
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise InvalidRequestError(message="Unable to find customer", param=str(e))
+        if user_id:
+            previous_attributes = dict()
+            try:
+                previous_attributes = self.payload.data.previous_attributes
+            except AttributeError:
+                logger.error("no previous attributes", data=self.payload.data)
+            logger.info("previous attributes", previous_attributes=previous_attributes)
             logger.info(
-                "cancel_at_period_end",
-                data=self.payload.data.object.cancel_at_period_end,
+                "previous cancel",
+                previous_cancel=previous_attributes.get("cancel_at_period_end"),
+            )
+            if self.payload.data.object.cancel_at_period_end:
+                logger.info(
+                    "cancel at period end",
+                    end=self.payload.data.object.cancel_at_period_end,
+                )
+                data = self.create_data(
+                    uid=user_id,
+                    customer_id=self.payload.data.object.customer,
+                    subscriptionId=self.payload.data.object.id,  # required by FxA
+                    subscription_id=self.payload.data.object.id,
+                    plan_amount=self.payload.data.object.plan.amount,
+                    canceled_at=self.payload.data.object.canceled_at,
+                    cancel_at=self.payload.data.object.cancel_at,
+                    cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+                    nickname=self.payload.data.object.plan.nickname,
+                    messageCreatedAt=int(time.time()),  # required by FxA
+                    invoice_id=self.payload.data.object.latest_invoice,
+                    eventId=self.payload.id,  # required by FxA
+                )
+                logger.info("customer subscription cancel at period end", data=data)
+                routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
+                self.send_to_routes(routes, json.dumps(data))
+            elif (
+                not self.payload.data.object.cancel_at_period_end
+                and self.payload.data.object.status == "active"
+                and not previous_attributes.get("cancel_at_period_end")
+            ):
+                data = self.create_data(
+                    uid=user_id,
+                    active=self.is_active_or_trialing,
+                    subscriptionId=self.payload.data.object.id,  # required by FxA
+                    subscription_id=self.payload.data.object.id,
+                    productName=self.payload.data.object.plan.nickname,
+                    nickname=self.payload.data.object.plan.nickname,
+                    eventCreatedAt=self.payload.created,  # required by FxA
+                    messageCreatedAt=int(time.time()),  # required by FxA
+                    invoice_id=self.payload.data.object.latest_invoice,
+                    customer_id=self.payload.data.object.customer,
+                    created=self.payload.data.object.plan.created,
+                    plan_amount=self.payload.data.object.plan.amount,
+                    eventId=self.payload.id,  # required by FxA
+                    canceled_at=self.payload.data.object.canceled_at,
+                    cancel_at=self.payload.data.object.cancel_at,
+                    cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+                )
+                logger.info("customer subscription new recurring", data=data)
+                routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
+                self.send_to_routes(routes, json.dumps(data))
+            else:
+                logger.info(
+                    "cancel_at_period_end false",
+                    data=self.payload.data.object.cancel_at_period_end,
+                )
+        else:
+            logger.error(
+                "customer subscription updated - no userid",
+                error=self.payload.object.customer,
+            )
+            raise ClientError(
+                f"userid is None for customer {self.payload.object.customer}"
             )
