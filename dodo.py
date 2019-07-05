@@ -413,6 +413,25 @@ def task_test():
         ],
     }
 
+def task_pytest():
+    '''
+    run pytest per test file
+    '''
+    for filename in Path('subhub/tests').glob('**/*.py'):
+        yield {
+            'name': filename,
+            'task_dep': [
+                'check',
+                'stripe',
+                'yarn',
+                'venv',
+                'dynalite:stop',
+            ],
+            'actions': [
+                f'{PYTHON3} -m pytest {filename} --disable-warnings -vxs',
+            ],
+        }
+
 def task_package():
     '''
     run serverless package -v for every service
