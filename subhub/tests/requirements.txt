@@ -2,7 +2,6 @@ flake8
 mock
 mockito
 mockito
-moto
 patch
 pytest
 pytest
