@@ -7,6 +7,7 @@
 
 import json
 
+from stripe.error import InvalidRequestError
 from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
 from subhub.webhooks.routes.static import StaticRoutes
 
@@ -18,18 +19,20 @@ logger = get_logger()
 class StripeInvoiceFinalized(AbstractStripeWebhookEvent):
     def run(self):
         data = self.create_data(
-            invoice_id=self.payload.data.object.id,
             customer_id=self.payload.data.object.customer,
             subscription_id=self.payload.data.object.subscription,
-            currency=self.payload.data.object.currency,
-            charge_id=self.payload.data.object.charge,
+            created=self.payload.data.object.created,
             period_start=self.payload.data.object.period_start,
             period_end=self.payload.data.object.period_end,
-            amount=self.payload.data.object.amount_paid,
+            amount_paid=self.payload.data.object.amount_paid,
+            currency=self.payload.data.object.currency,
+            charge_id=self.payload.data.object.charge,
             invoice_number=self.payload.data.object.number,
             description=self.payload.data.object.lines.data[0].description,
-            application_fee_amount=self.payload.data.object.application_fee_amount,
-            created=self.payload.data.object.created,
+            invoice_id=self.payload.data.object.id,
+            application_fee_amount=self.payload.data.object.get(
+                "application_fee_amount"
+            ),
         )
         logger.info("invoice finalized}", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
@@ -38,14 +41,22 @@ class StripeInvoiceFinalized(AbstractStripeWebhookEvent):
 
 class StripeInvoicePaymentFailed(AbstractStripeWebhookEvent):
     def run(self):
+        try:
+            nickname_list = self.payload.data.object.lines.data
+            nickname = nickname_list[0]["plan"]["nickname"]
+        except InvalidRequestError as e:
+            nickname = ""
+            logger.error("payment failed error", error=e)
         data = self.create_data(
             customer_id=self.payload.data.object.customer,
             subscription_id=self.payload.data.object.subscription,
             currency=self.payload.data.object.currency,
             charge_id=self.payload.data.object.charge,
-            number=self.payload.data.object.number,
+            invoice_number=self.payload.data.object.number,
             amount_due=self.payload.data.object.amount_due,
             created=self.payload.data.object.created,
+            nickname=nickname,
+            invoice_id=self.payload.data.object.id,
         )
         logger.info("invoice payment failed", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]

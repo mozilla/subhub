@@ -38,6 +38,7 @@
             "billing_thresholds": null,
             "created": 1519435009,
             "metadata": {
+              "userid": "tester123"
             },
             "plan": {
               "id": "subhub-plan-api_00000000000000",
@@ -69,7 +70,7 @@
         "total_count": 1,
         "url": "/v1/subscription_items?subscription=sub_CNcuSboLSixkQV"
       },
-      "latest_invoice": null,
+      "latest_invoice": "in_test123",
       "livemode": false,
       "metadata": {
       },
