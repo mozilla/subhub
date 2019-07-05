@@ -6,8 +6,6 @@ import requests
 import boto3
 import flask
 
-from moto import mock_sns
-
 from subhub.cfg import CFG
 
 from subhub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
@@ -119,22 +117,6 @@ def test_stripe_webhook_customer_subscription_created(mocker):
     mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer/customer-subscription-created.json"
     run_customer(mocker, data, filename)
-
-
-@mock_sns
-def test_firefox_route_customer_subscription_created(app):
-    data = {
-        "uid": "tester123",
-        "active": True,
-        "subscriptionId": "sub_00000000000000",
-        "productName": "subhub",
-        "eventId": "evt_00000000000000",
-        "event_id": "evt_00000000000000",
-        "eventCreatedAt": 1326853478,
-        "messageCreatedAt": int(time.time()),
-    }
-    firefox = FirefoxRoute(json.dumps(data)).route()
-    assert firefox["ResponseMetadata"]["HTTPStatusCode"] == 200
 
 
 def test_stripe_webhook_customer_subscription_deleted(mocker):
