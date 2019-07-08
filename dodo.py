@@ -303,7 +303,10 @@ def task_venv():
             f'{PIP3} install --upgrade pip',
             f'[ -f "{appreqs}" ] && {PIP3} install -r "{appreqs}"',
             f'[ -f "{testreqs}" ] && {PIP3} install -r "{testreqs}"',
-        ]
+        ],
+        'uptodate': [
+            lambda: os.environ.get('SKIP_VENV', None),
+        ],
     }
 
 def task_dynalite():
@@ -455,6 +458,8 @@ def task_deploy():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
+        curl = f'curl --silent https://{CFG.APP_DEPENV}.{svc}.mozilla-subhub.app/v1/version'
+        describe = 'git describe --abbrev=7'
         yield {
             'name': svc,
             'task_dep': [
@@ -466,8 +471,10 @@ def task_deploy():
             ],
             'actions': [
                 f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} --aws-s3-accelerate -v',
-                f'curl --silent https://{CFG.APP_DEPENV}.{svc}.mozilla-subhub.app/v1/version',
-                'git describe --abbrev=7',
+                f'echo "{curl}"',
+                f'{curl}',
+                f'echo "{describe}"',
+                f'{describe}',
             ],
         }
 
