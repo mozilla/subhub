@@ -406,6 +406,34 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         return self.APP_DEPENV in ("stage", "qa", "dev")
 
+    @property
+    def NEW_RELIC_ACCOUNT_ID(self):
+        """
+        NEW_RELIC_ACCOUNT_ID
+        """
+        return self("NEW_RELIC_ACCOUNT_ID", 2239138)
+
+    @property
+    def NEW_RELIC_TRUSTED_ACCOUNT_ID(self):
+        """
+        NEW_RELIC_TRUSTED_ACCOUNT_ID
+        """
+        return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2239138)
+
+    @property
+    def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
+        """
+        NEW_RELIC_SERVERLESS_MODE_ENABLED
+        """
+        return self("NEW_RELIC_SERVERLESS_MODE_ENABLED", True)
+
+    @property
+    def NEW_RELIC_DISTRIBUTED_TRACING_ENABLED(self):
+        """
+        NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
+        """
+        return self("NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", True)
+
     def __getattr__(self, attr):
         """
         getattr
