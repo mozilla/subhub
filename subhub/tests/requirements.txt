@@ -1,12 +1,9 @@
-flake8
-mock
-mockito
-mockito
-patch
-pytest
-pytest
-pytest-cov
-pytest-cov
-pytest-mock
-pytest-mock
-pytest-watch
+# requirements for subhub testing to run
+# do not add requirements for subhub, subhub/requirements.txt already handles that
+mockito==1.1.1
+pytest==5.0.1
+pytest-cov==2.7.1
+pytest-mock==1.10.4
+mock==3.0.5
+patch==1.16
+pytest-watch==4.2.0

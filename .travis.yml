@@ -16,7 +16,7 @@ before_install:
 - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
 - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL); print(flags&os.O_NONBLOCK);'
 - sudo rm -f /etc/boto.cfg
-- pip install -r requirements.txt
+- pip install -r automation_requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
 script:

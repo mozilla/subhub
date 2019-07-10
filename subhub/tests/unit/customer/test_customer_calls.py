@@ -61,7 +61,7 @@ def test_subscribe_to_plan_returns_newest(monkeypatch):
 
     test_customer = subscribe_to_plan(UID, json.loads(data))
 
-    assert test_customer[0]["subscriptions"][0]["current_period_start"] == 1516229999
+    assert test_customer[0]["subscriptions"][0]["current_period_start"] == 1_516_229_999
     updated_customer.assert_called()
 
 
