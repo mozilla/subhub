@@ -7,65 +7,15 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-requirements = [
-    'attrdict',
-    'aws-wsgi',
-    'boto3',
-    'botocore',
-    'certifi',
-    'chardet',
-    'colorama',
-    'connexion',
-    'connexion[swagger-ui]',
-    'docutils',
-    'Flask',
-    'Flask-Cors',
-    'idna',
-    'inflection',
-    'itsdangerous',
-    'Jinja2',
-    'jmespath',
-    'jsonschema==2.5.1',
-    'MarkupSafe',
-    'newrelic',
-    'openapi-spec-validator==0.2.7',
-    'pathlib',
-    'psutil',
-    'pynamodb',
-    'python-dateutil',
-    'python-decouple',
-    'python-json-logger',
-    'PyYAML==5.1.1',
-    'requests',
-    's3transfer',
-    'six',
-    'stripe',
-    'structlog',
-    'urllib3',
-]
+with open('subhub/requirements.txt') as f:
+    app_requirements = f.read().splitlines()
+
+with open('subhub/tests/requirements.txt') as f:
+    test_requirements = f.read().splitlines()
 
 setup_requirements = [
     'pytest-runner',
     'setuptools>=40.5.0',
-]
-
-test_requirements = [
-    'mockito',
-    'pytest',
-    'pytest-cov',
-    'pytest-mock',
-    'flake8',
-    'mock',
-    'mockito',
-    'mockito',
-    'patch',
-    'pytest',
-    'pytest',
-    'pytest-cov',
-    'pytest-cov',
-    'pytest-mock',
-    'pytest-mock',
-    'pytest-watch',
 ]
 
 extras = {'test': test_requirements}
@@ -84,7 +34,7 @@ setup(
         'License :: OSI Approved :: Mozilla Public License',
         'Operating System :: OS Independent',
     ),
-    install_requires=requirements,
+    install_requires=app_requirements,
     license='Mozilla Public License 2.0',
     include_package_data=True,
     packages=find_packages(include=['subhub']),

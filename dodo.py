@@ -188,7 +188,7 @@ def check_reqs():
     '''
     installed = call('python3 -m pip freeze')[1].strip().split('\n')
     installed = [tuple(item.split('==')) for item  in installed if '==' in item]
-    required = open('requirements.txt').read().strip().split('\n')
+    required = [line for line in open('automation_requirements.txt').read().strip().split('\n') if not line.startswith('#')]
     required = [tuple(item.split('==')) if '==' in item else (item, None) for item in required]
     @lru_cache(3)
     def check():
@@ -208,7 +208,7 @@ def check_reqs():
         'actions': [
             report(rname, rver) for rname, rver in check()
         ] + [
-            'echo "consider running \'./dodo.py\' or \'sudo pip install -r requirements.txt\'"',
+            'echo "consider running \'./dodo.py\' or \'sudo pip install -r automation_requirements.txt\'"',
             'false',
         ] if len(check()) else [],
         'uptodate': [
@@ -292,8 +292,8 @@ def task_venv():
     '''
     setup virtual env
     '''
-    appreqs = f'{CFG.APP_PROJPATH}/requirements.txt'
-    testreqs = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
+    app_requirements = f'{CFG.APP_PROJPATH}/requirements.txt'
+    test_requirements = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
     return {
         'task_dep': [
             'check',
@@ -301,8 +301,8 @@ def task_venv():
         'actions': [
             f'virtualenv --python=$(which python3.7) {VENV}',
             f'{PIP3} install --upgrade pip',
-            f'[ -f "{appreqs}" ] && {PIP3} install -r "{appreqs}"',
-            f'[ -f "{testreqs}" ] && {PIP3} install -r "{testreqs}"',
+            f'[ -f "{app_requirements}" ] && {PIP3} install -r "{app_requirements}"',
+            f'[ -f "{test_requirements}" ] && {PIP3} install -r "{test_requirements}"',
         ],
         'uptodate': [
             lambda: os.environ.get('SKIP_VENV', None),
@@ -554,9 +554,9 @@ def task_tidy():
     }
 
 if __name__ == '__main__':
-    cmd = 'sudo python3 -m pip install -r requirements.txt'
+    cmd = 'sudo python3 -m pip install -r automation_requirements.txt'
     answer = input(cmd + '[Y/n] ')
     if answer in ('', 'Y', 'y', 'Yes', 'YES', 'yes'):
         os.system(cmd)
     else:
-        print('requirements.txt NOT installed!')
+        print('automation_requirements.txt NOT installed!')
