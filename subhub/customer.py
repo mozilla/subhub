@@ -46,6 +46,7 @@ def create_customer(
             )
 
         except InvalidRequestError as e:
+            logger.error("create customer error", error=e)
             raise InvalidRequestError(
                 message="Unable to create customer.", param=str(e)
             )
@@ -57,7 +58,9 @@ def create_customer(
     if not subhub_account.save_user(db_account):
         # Clean-up the Stripe customer record since we can't link it
         stripe.Customer.delete(customer.id)
-        raise IntermittentError("error saving db record")
+        e = IntermittentError("error saving db record")
+        logger.error("unable to save user or link it", error=e)
+        raise e
     return customer
 
 
