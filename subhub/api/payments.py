@@ -93,7 +93,7 @@ def check_stripe_subscriptions(customer: str) -> list:
         sources_to_remove(customer_subscriptions, customer)
         return customer_subscriptions
     except NameError as ne:
-        logger.debug("check_stripe_subscriptions error", error=ne)
+        logger.error("error getting subscriptions", customer=customer, error=ne)
         return []
 
 
@@ -112,9 +112,13 @@ def sources_to_remove(subscriptions: list, customer: str) -> None:
             for source in sources.sources["data"]:
                 stripe.Customer.delete_source(customer, source["id"])
     except KeyError as ke:
-        raise ClientError(message="Source missing key element.") from ke
+        message = "Source missing 'key' element"
+        logger.error(message, error=ke)
+        raise ClientError(message=message) from ke
     except TypeError as te:
-        raise ClientError(message="Source missing type element.") from te
+        message = "Source missing 'type' element"
+        logger.error(message, error=ke)
+        raise ClientError(message=message) from te
 
 
 def cancel_subscription(uid, sub_id) -> FlaskResponse:
@@ -291,6 +295,7 @@ def customer_update(uid) -> tuple:
         else:
             return "Customer mismatch.", 400
     except KeyError as e:
+        logger.error("Customer does not exist", error=e)
         return {"message": f"Customer does not exist: missing {e}"}, 404
 
 

@@ -45,6 +45,7 @@ class SubHubAccount:
             subscription_user = self.model.get(uid, consistent_read=True)
             return subscription_user
         except DoesNotExist:
+            logger.error("get user", uid=uid)
             return None
 
     @staticmethod
@@ -53,6 +54,7 @@ class SubHubAccount:
             user.save()
             return True
         except PutError:
+            logger.error("save user", user=user)
             return False
 
     def append_custid(self, uid: str, cust_id: str) -> bool:
@@ -62,6 +64,7 @@ class SubHubAccount:
             update_user.save()
             return True
         except DoesNotExist:
+            logger.error("append custid", uid=uid, cust_id=cust_id)
             return False
 
     def remove_from_db(self, uid: str) -> bool:
@@ -69,6 +72,7 @@ class SubHubAccount:
             self.model.get(uid, consistent_read=True).delete()
             return True
         except DoesNotExist:
+            logger.error("remove from db", uid=uid)
             return False
 
 
@@ -103,6 +107,7 @@ class WebHookEvent:
             webhook_event = self.model.get(event_id, consistent_read=True)
             return webhook_event
         except DoesNotExist:
+            logger.error("get event", event_id=event_id)
             return None
 
     @staticmethod
@@ -111,6 +116,7 @@ class WebHookEvent:
             webhook_event.save()
             return True
         except PutError:
+            logger.error("save event", webhook_event=webhook_event)
             return False
 
     def append_event(self, event_id: str, sent_system: str) -> bool:
@@ -121,6 +127,7 @@ class WebHookEvent:
                 update_event.save()
                 return True
         except DoesNotExist:
+            logger.error("append event", event_id=event_id, sent_system=sent_system)
             return False
 
     def remove_from_db(self, event_id: str) -> bool:
@@ -128,4 +135,5 @@ class WebHookEvent:
             self.model.get(event_id, consistent_read=True).delete()
             return True
         except DoesNotExist:
+            logger.error("remove from db", event_id=event_id)
             return False
