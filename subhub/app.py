@@ -1,10 +1,12 @@
 import os
+import sys
 
 import connexion
 import stripe
 import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
+from flask import request
 
 from subhub import secrets
 from subhub.cfg import CFG
@@ -109,6 +111,22 @@ def create_app(config=None):
         g.subhub_account = current_app.subhub_account
         g.webhook_table = current_app.webhook_table
         g.app_system_id = None
+        if CFG.PROFILING_ENABLED:
+            if "profile" in request.args and not hasattr(sys, "_called_from_test"):
+                from pyinstrument import Profiler
+
+                g.profiler = Profiler()
+                g.profiler.start()
+
+    @app.app.after_request
+    def after_request(response):
+        if not hasattr(g, "profiler") or hasattr(sys, "_called_from_test"):
+            return response
+        if CFG.PROFILING_ENABLED:
+            g.profiler.stop()
+            output_html = g.profiler.output_html()
+            return app.app.make_response(output_html)
+        return response
 
     CORS(app.app)
     return app

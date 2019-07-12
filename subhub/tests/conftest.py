@@ -1,4 +1,5 @@
 import os
+import sys
 import signal
 import subprocess
 import uuid
@@ -34,6 +35,7 @@ def pytest_configure():
     os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
     os.environ["USER_TABLE"] = "users-testing"
     os.environ["EVENT_TABLE"] = "events-testing"
+    sys._called_from_test = True
 
     # Set stripe api key
     stripe.api_key = CFG.STRIPE_API_KEY
@@ -52,6 +54,7 @@ def pytest_configure():
 
 
 def pytest_unconfigure():
+    del sys._called_from_test
     global ddb_process
     """Called after all tests run and warnings displayed"""
     proc = psutil.Process(pid=ddb_process.pid)
