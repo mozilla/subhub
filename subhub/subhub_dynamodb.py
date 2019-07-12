@@ -3,6 +3,8 @@ from typing import Optional
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.models import Model, DoesNotExist
 from pynamodb.exceptions import PutError
+from subhub.tracing import timed, cprofiled
+
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -40,6 +42,7 @@ class SubHubAccount:
     ) -> SubHubAccountModel:
         return self.model(user_id=uid, cust_id=cust_id, origin_system=origin_system)
 
+    @timed
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
         try:
             subscription_user = self.model.get(uid, consistent_read=True)

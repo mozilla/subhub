@@ -5,10 +5,12 @@ from subhub.exceptions import IntermittentError, ServerError
 from stripe.error import InvalidRequestError
 from subhub.subhub_dynamodb import SubHubAccount
 from subhub.log import get_logger
+from subhub.tracing import timed
 
 logger = get_logger()
 
 
+@timed
 def create_customer(
     subhub_account: SubHubAccount,
     user_id: str,
@@ -64,6 +66,7 @@ def create_customer(
     return customer
 
 
+@timed
 def existing_or_new_customer(
     subhub_accouunt: SubHubAccount,
     user_id: str,
@@ -81,6 +84,7 @@ def existing_or_new_customer(
     return existing_payment_source(customer_id, source_token)
 
 
+@timed
 def existing_payment_source(customer_id: str, source_token: str) -> stripe.Customer:
     existing_customer = stripe.Customer.retrieve(customer_id)
     if not existing_customer["sources"]["data"]:
@@ -89,6 +93,7 @@ def existing_payment_source(customer_id: str, source_token: str) -> stripe.Custo
     return existing_customer
 
 
+@timed
 def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscription:
     """
     Subscribe Customer to Plan
@@ -99,6 +104,7 @@ def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscr
     return stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
 
 
+@timed
 def has_existing_plan(user: stripe.Customer, plan_id: str) -> bool:
     """
     Check if user has the existing plan in an active or trialing state.

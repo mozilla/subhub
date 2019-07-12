@@ -1,6 +1,5 @@
 from subhub.cfg import CFG
 from subhub.api.types import FlaskResponse
-
 from subhub.log import get_logger
 
 logger = get_logger()

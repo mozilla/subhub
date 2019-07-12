@@ -30,7 +30,6 @@ import structlog
 
 from subhub.cfg import CFG
 
-
 IS_CONFIGURED = False
 EVENT_UUID = str(uuid.uuid4())
 LOGGING_CONFIG = {
