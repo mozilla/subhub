@@ -122,3 +122,10 @@ node_modules/
 
 # out files
 *.out
+
+# Profiling
+*.prof
+
+# GraphViz
+*.png
+*.dot

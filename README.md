@@ -67,6 +67,9 @@ This is the 40 digit sha1 commit hash for the code.  This is available in the gi
 ### APP_VERSION
 This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the git repo as well as when deployed to AWS Lambda.
 
+### PROFILING_ENABLED
+This is the Boolean flag to indicate if profiling is enabled in the application.
+
 ## doit
 http://pydoit.org/
 
@@ -168,3 +171,8 @@ This run the `serverless deploy` command and requires the user to be logged into
 ```
 doit deploy
 ```
+
+## Postman
+
+A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning, 
+etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).

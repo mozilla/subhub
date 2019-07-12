@@ -2,7 +2,7 @@
 """
 config
 """
-
+import ast
 import os
 import re
 import pwd
@@ -411,14 +411,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         NEW_RELIC_ACCOUNT_ID
         """
-        return self("NEW_RELIC_ACCOUNT_ID", 2239138)
+        return self("NEW_RELIC_ACCOUNT_ID", 2_239_138)
 
     @property
     def NEW_RELIC_TRUSTED_ACCOUNT_ID(self):
         """
         NEW_RELIC_TRUSTED_ACCOUNT_ID
         """
-        return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2239138)
+        return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2_239_138)
 
     @property
     def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
@@ -433,6 +433,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
         """
         return self("NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", True)
+
+    @property
+    def PROFILING_ENABLED(self):
+        """
+        PROFILING_ENABLED
+        """
+        return ast.literal_eval(self("PROFILING_ENABLED", "False"))
 
     def __getattr__(self, attr):
         """

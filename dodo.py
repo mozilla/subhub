@@ -51,6 +51,7 @@ def envs(sep=' ', **kwargs):
         NEW_RELIC_TRUSTED_ACCOUNT_ID=CFG.NEW_RELIC_TRUSTED_ACCOUNT_ID,
         NEW_RELIC_SERVERLESS_MODE_ENABLED=CFG.NEW_RELIC_SERVERLESS_MODE_ENABLED,
         NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=CFG.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED,
+        PROFILING_ENABLED=CFG.PROFILING_ENABLED,
     )
     return sep.join([
         f'{key}={value}' for key, value in dict(envs, **kwargs).items()
