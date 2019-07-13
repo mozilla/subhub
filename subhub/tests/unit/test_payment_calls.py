@@ -4,7 +4,7 @@ import pytest
 import stripe
 from stripe.error import InvalidRequestError
 from flask import g
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock, PropertyMock
 
 from subhub.api import payments
 from subhub.customer import create_customer, subscribe_customer
@@ -420,7 +420,7 @@ def test_cancel_subscription_with_invalid_stripe_customer(
 
     exception = None
     try:
-        (cancelled, code) = payments.cancel_subscription(
+        cancelled, code = payments.cancel_subscription(
             "process_test", subscription["subscriptions"][0]["subscription_id"]
         )
     except Exception as e:
@@ -485,24 +485,26 @@ def test_update_payment_method_invalid_payment_token(
     assert "No such token:" in exception.user_message
 
 
-def test_update_payment_method_missing_stripe_customer(
-    app, create_subscription_for_processing
-):
+def test_update_payment_method_missing_stripe_customer(monkeypatch):
     """
     GIVEN api_token, userid, pmt_token
     WHEN provided user with missing stripe customer id
     THEN return missing customer
     """
-    subscription, code = create_subscription_for_processing
-    subhub_user = g.subhub_account.get_user("process_test")
-    subhub_user.cust_id = None
-    g.subhub_account.save_user(subhub_user)
+    subhub_account = MagicMock()
+
+    get_user = MagicMock()
+    user_id = PropertyMock(return_value="process_test")
+    cust_id = PropertyMock(return_value=None)
+    type(get_user).user_id = user_id
+    type(get_user).cust_id = cust_id
+
+    subhub_account.get_user = get_user
 
     updated_pmt, code = payments.update_payment_method(
         "process_test", {"pmt_token": "tok_invalid"}
     )
     assert 404 == code
-    g.subhub_account.remove_from_db("process_test")
 
 
 def test_update_payment_method_invalid_stripe_customer(
@@ -521,7 +523,7 @@ def test_update_payment_method_invalid_stripe_customer(
 
     exception = None
     try:
-        (updated_pmt, code) = payments.update_payment_method(
+        updated_pmt, code = payments.update_payment_method(
             "process_test", {"pmt_token": "tok_invalid"}
         )
     except Exception as e:
@@ -533,11 +535,40 @@ def test_update_payment_method_invalid_stripe_customer(
     assert "No such customer:" in exception.user_message
 
 
-def test_customer_update_success(create_subscription_for_processing):
-    subscription, code = create_subscription_for_processing
-    data, code = payments.customer_update("process_test")
+def test_customer_update_success(monkeypatch):
+
+    subhub_account = MagicMock()
+
+    get_user = MagicMock()
+    user_id = PropertyMock(return_value="user123")
+    cust_id = PropertyMock(return_value="cust123")
+    type(get_user).user_id = user_id
+    type(get_user).cust_id = cust_id
+
+    subhub_account.get_user = get_user
+
+    stripe_customer = Mock(
+        return_value={
+            "metadata": {"userid": "user123"},
+            "subscriptions": {"data": []},
+            "sources": {
+                "data": [
+                    {
+                        "funding": "blah",
+                        "last4": "1234",
+                        "exp_month": "02",
+                        "exp_year": "2020",
+                    }
+                ]
+            },
+        }
+    )
+
+    monkeypatch.setattr("flask.g.subhub_account", subhub_account)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
+
+    data, code = payments.customer_update("user123")
     assert 200 == code
-    g.subhub_account.remove_from_db("process_test")
 
 
 def test_reactivate_subscription_success(monkeypatch):
