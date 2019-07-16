@@ -441,6 +441,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         return ast.literal_eval(self("PROFILING_ENABLED", "False"))
 
+    @property
+    def DEPLOY_DOMAIN(self):
+        """
+        DEPLOY_DOMAIN
+        """
+        return self("DEPLOY_DOMAIN", "localhost")
+
     def __getattr__(self, attr):
         """
         getattr

@@ -52,6 +52,7 @@ def envs(sep=' ', **kwargs):
         NEW_RELIC_SERVERLESS_MODE_ENABLED=CFG.NEW_RELIC_SERVERLESS_MODE_ENABLED,
         NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=CFG.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED,
         PROFILING_ENABLED=CFG.PROFILING_ENABLED,
+        DEPLOY_DOMAIN=CFG.DEPLOY_DOMAIN,
     )
     return sep.join([
         f'{key}={value}' for key, value in dict(envs, **kwargs).items()
@@ -319,7 +320,7 @@ def task_dynalite():
     dynalite db for testing and local runs: start, stop
     '''
     cmd = f'{DYNALITE} --port {CFG.DYNALITE_PORT}'
-    msg = f'dyanlite server started on {CFG.DYNALITE_PORT} logging to {CFG.DYNALITE_FILE}'
+    msg = f'dynalite server started on {CFG.DYNALITE_PORT} logging to {CFG.DYNALITE_FILE}'
     def running():
         pid = None
         try:
@@ -399,6 +400,45 @@ def task_yarn():
         ],
     }
 
+def task_perf():
+    '''
+    run locustio performance tests
+    '''
+    ID='fake-id'
+    KEY='fake-key'
+    PP='.'
+    FLASK_PORT=5000
+    cmd = f'env {envs(LOCAL_FLASK_PORT=FLASK_PORT, AWS_ACCESS_KEY_ID=ID, AWS_SECRET_ACCESS_KEY=KEY, PYTHONPATH=PP)} {PYTHON3} subhub/app.py'
+    return {
+        'task_dep':[
+            'check',
+            'stripe',
+            'venv',
+            'dynalite:start'
+        ],
+        'actions':[
+            f'{PYTHON3} -m setup develop',
+            'echo $PATH',
+            LongRunning(f'nohup {cmd} > /dev/null &'),
+            f'locust -f subhub/tests/performance/locustfile.py --host=http://localhost:{FLASK_PORT}'
+        ]
+    }
+
+def task_remote_perf():
+    '''
+    run locustio performance tests
+    '''
+    return {
+        'task_dep':[
+            'check',
+            'stripe',
+            'venv',
+        ],
+        'actions':[
+            f'{PYTHON3} -m setup develop',
+            f'cd subhub/tests/performance && locust -f locustfile.py --host=http://{CFG.DEPLOY_DOMAIN}'
+        ]
+    }
 
 
 def task_test():
