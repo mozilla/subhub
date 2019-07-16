@@ -7,7 +7,6 @@ from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan
 from subhub.exceptions import ClientError
 from subhub.log import get_logger
-from subhub.tracing import timed
 
 logger = get_logger()
 
@@ -280,7 +279,6 @@ def update_payment_method(uid, data) -> FlaskResponse:
         return {"message": "Customer mismatch."}, 400
 
 
-@timed
 def customer_update(uid) -> tuple:
     """
     Provide latest data for a given user
@@ -302,7 +300,6 @@ def customer_update(uid) -> tuple:
         return {"message": f"Customer does not exist: missing {e}"}, 404
 
 
-@timed
 def create_update_data(customer) -> dict:
     """
     Provide readable data for customer update to display
