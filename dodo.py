@@ -435,7 +435,7 @@ def task_perf():
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
             LongRunning(f'nohup {cmd} > /dev/null &'),
-            f'locust -f subhub/tests/performance/locustfile.py --host=http://localhost:{FLASK_PORT}'
+            f'cd subhub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
         ]
     }
 
