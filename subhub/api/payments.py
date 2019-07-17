@@ -95,34 +95,10 @@ def check_stripe_subscriptions(customer: Customer) -> list:
         logger.debug("check stripe subscriptions", subscriptions=customer.subscriptions)
         customer_subscriptions_data = customer.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
-        sources_to_remove(customer_subscriptions, customer)
         return customer_subscriptions
     except NameError as ne:
         logger.error("error getting subscriptions", customer=customer, error=ne)
         return []
-
-
-def sources_to_remove(subscriptions: list, customer: Customer) -> None:
-    logger.debug("subscriptions", subscriptions=subscriptions)
-    active_subscriptions = []
-    try:
-        active_subscriptions = [
-            sub
-            for sub in subscriptions
-            if sub.get("status") in ["active", "trialing"]
-            and sub.get("cancel_at") is None
-        ]
-        if not bool(active_subscriptions):
-            for source in customer.sources["data"]:
-                Customer.delete_source(customer.id, source["id"])
-    except KeyError as ke:
-        message = "Source missing 'key' element"
-        logger.error(message, error=ke)
-        raise ClientError(message=message) from ke
-    except TypeError as te:
-        message = "Source missing 'type' element"
-        logger.error(message, error=te)
-        raise ClientError(message=message) from te
 
 
 def cancel_subscription(uid, sub_id) -> FlaskResponse:
@@ -310,12 +286,20 @@ def create_update_data(customer) -> dict:
     :param customer:
     :return: return_data dict
     """
+    payment_sources = customer["sources"]["data"]
     return_data = dict()
     return_data["subscriptions"] = []
-    return_data["payment_type"] = customer["sources"]["data"][0]["funding"]
-    return_data["last4"] = customer["sources"]["data"][0]["last4"]
-    return_data["exp_month"] = customer["sources"]["data"][0]["exp_month"]
-    return_data["exp_year"] = customer["sources"]["data"][0]["exp_year"]
+    if len(payment_sources) > 0:
+        first_payment_source = payment_sources[0]
+        return_data["payment_type"] = first_payment_source.get("funding")
+        return_data["last4"] = first_payment_source.get("last4")
+        return_data["exp_month"] = first_payment_source.get("exp_month")
+        return_data["exp_year"] = first_payment_source.get("exp_year")
+    else:
+        return_data["payment_type"] = ""
+        return_data["last4"] = ""
+        return_data["exp_month"] = ""
+        return_data["exp_year"] = ""
 
     for subscription in customer["subscriptions"]["data"]:
         if subscription["status"] == "incomplete":
