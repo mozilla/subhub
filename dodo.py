@@ -53,6 +53,8 @@ def envs(sep=' ', **kwargs):
         NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=CFG.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED,
         PROFILING_ENABLED=CFG.PROFILING_ENABLED,
         DEPLOY_DOMAIN=CFG.DEPLOY_DOMAIN,
+        DEPLOYED_BY=CFG.DEPLOYED_BY,
+        DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
     )
     return sep.join([
         f'{key}={value}' for key, value in dict(envs, **kwargs).items()
@@ -109,6 +111,19 @@ def task_count():
         ],
         'uptodate': [
             lambda: not check_hash('cloc'),
+        ],
+    }
+
+def task_envs():
+    '''
+    show which environment variabls will be used in package, deploy, etc
+    '''
+    return {
+        'task_dep': [
+            'check:noroot',
+        ],
+        'actions': [
+            lambda: print(envs('\n')),
         ],
     }
 
