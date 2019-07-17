@@ -2,7 +2,7 @@ import uuid
 import json
 from subhub.api.payments import subscribe_to_plan, customer_update, create_update_data
 from subhub.tests.unit.stripe.utils import MockSubhubAccount
-from unittest.mock import Mock, MagicMock, PropertyMock
+from unittest.mock import Mock, patch, PropertyMock
 import os
 
 from subhub.log import get_logger
@@ -10,7 +10,7 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
-UID = str(uuid.uuid4())
+UID = uuid.uuid4()
 THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))
 
 
@@ -37,15 +37,7 @@ def get_file(filename, path=THIS_PATH, **overrides):
 
 
 def test_subscribe_to_plan_returns_newest(monkeypatch):
-    subhub_account = MagicMock()
-
-    get_user = MagicMock()
-    user_id = PropertyMock(return_value=UID)
-    cust_id = PropertyMock(return_value="cust123")
-    type(get_user).user_id = user_id
-    type(get_user).cust_id = cust_id
-
-    subhub_account.get_user = get_user
+    subhub_account = Mock(return_value=MockSubhubAccount())
 
     customer = Mock(return_value=MockCustomer())
     none = Mock(return_value=None)
@@ -61,7 +53,7 @@ def test_subscribe_to_plan_returns_newest(monkeypatch):
         }
     )
 
-    monkeypatch.setattr("flask.g.subhub_account", subhub_account)
+    monkeypatch.setattr("flask.g", subhub_account)
     monkeypatch.setattr("subhub.api.payments.existing_or_new_customer", customer)
     monkeypatch.setattr("subhub.api.payments.has_existing_plan", none)
     monkeypatch.setattr("stripe.Subscription.create", Mock)

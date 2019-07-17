@@ -1,10 +1,10 @@
 from datetime import datetime
 
-from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
+import stripe
 from flask import g
 
 from subhub.api.types import JsonDict, FlaskResponse, FlaskListResponse
-from subhub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
+from subhub.customer import existing_or_new_customer, has_existing_plan
 from subhub.exceptions import ClientError
 from subhub.log import get_logger
 
@@ -30,8 +30,10 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     if existing_plan:
         return {"message": "User already subscribed."}, 409
     if not customer.get("deleted"):
-        Subscription.create(customer=customer.id, items=[{"plan": data["plan_id"]}])
-        updated_customer = fetch_customer(g.subhub_account, user_id=uid)
+        stripe.Subscription.create(
+            customer=customer.id, items=[{"plan": data["plan_id"]}]
+        )
+        updated_customer = stripe.Customer.retrieve(customer.id)
         newest_subscription = find_newest_subscription(
             updated_customer["subscriptions"]
         )
@@ -71,11 +73,11 @@ def list_all_plans() -> FlaskListResponse:
     List all available plans for a user to purchase.
     :return:
     """
-    plans = Plan.list(limit=100)
+    plans = stripe.Plan.list(limit=100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
     for plan in plans:
-        product = Product.retrieve(plan["product"])
+        product = stripe.Product.retrieve(plan["product"])
         stripe_plans.append(
             {
                 "plan_id": plan["id"],
@@ -90,10 +92,11 @@ def list_all_plans() -> FlaskListResponse:
     return stripe_plans, 200
 
 
-def check_stripe_subscriptions(customer: Customer) -> list:
+def check_stripe_subscriptions(customer: str) -> list:
+    customer_info = stripe.Customer.retrieve(id=customer)
+    logger.debug("check strip subscriptions", subscriptions=customer_info.subscriptions)
     try:
-        logger.debug("check stripe subscriptions", subscriptions=customer.subscriptions)
-        customer_subscriptions_data = customer.subscriptions
+        customer_subscriptions_data = customer_info.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
         sources_to_remove(customer_subscriptions, customer)
         return customer_subscriptions
@@ -102,7 +105,7 @@ def check_stripe_subscriptions(customer: Customer) -> list:
         return []
 
 
-def sources_to_remove(subscriptions: list, customer: Customer) -> None:
+def sources_to_remove(subscriptions: list, customer: str) -> None:
     logger.debug("subscriptions", subscriptions=subscriptions)
     active_subscriptions = []
     try:
@@ -113,8 +116,9 @@ def sources_to_remove(subscriptions: list, customer: Customer) -> None:
             and sub.get("cancel_at") is None
         ]
         if not bool(active_subscriptions):
-            for source in customer.sources["data"]:
-                Customer.delete_source(customer.id, source["id"])
+            sources = stripe.Customer.retrieve(id=customer)
+            for source in sources.sources["data"]:
+                stripe.Customer.delete_source(customer, source["id"])
     except KeyError as ke:
         message = "Source missing 'key' element"
         logger.error(message, error=ke)
@@ -132,20 +136,18 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     :param sub_id:
     :return: Success or failure message for the cancellation.
     """
-
-    customer = fetch_customer(g.subhub_account, uid)
-    if not customer:
+    subscription_user = g.subhub_account.get_user(uid)
+    if not subscription_user:
         return {"message": "Customer does not exist."}, 404
-
+    customer = stripe.Customer.retrieve(subscription_user.cust_id)
     for item in customer["subscriptions"]["data"]:
         if item["id"] == sub_id and item["status"] in [
             "active",
             "trialing",
             "incomplete",
         ]:
-            Subscription.modify(sub_id, cancel_at_period_end=True)
-            updated_customer = fetch_customer(g.subhub_account, uid)
-            check_stripe_subscriptions(updated_customer)
+            stripe.Subscription.modify(sub_id, cancel_at_period_end=True)
+            check_stripe_subscriptions(subscription_user.cust_id)
             return {"message": "Subscription cancellation successful"}, 201
     return {"message": "Subscription not available."}, 400
 
@@ -160,7 +162,7 @@ def delete_customer(uid) -> FlaskResponse:
     subscription_user = g.subhub_account.get_user(uid)
     if not subscription_user:
         return dict(message="Customer does not exist."), 404
-    deleted_payment_customer = Customer.delete(subscription_user.cust_id)
+    deleted_payment_customer = stripe.Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
         deleted_customer = g.subhub_account.mark_deleted(uid)
         user = g.subhub_account.get_user(uid)
@@ -178,16 +180,17 @@ def reactivate_subscription(uid, sub_id):
     :param sub_id: Subscription ID
     :return: Success or failure message for the activation
     """
-
-    customer = fetch_customer(g.subhub_account, uid)
-    if not customer:
+    subscription_user = g.subhub_account.get_user(uid)
+    if not subscription_user:
         return {"message": "Customer does not exist."}, 404
+
+    customer = stripe.Customer.retrieve(subscription_user.cust_id)
     active_subscriptions = customer["subscriptions"]["data"]
 
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
-                Subscription.modify(sub_id, cancel_at_period_end=False)
+                stripe.Subscription.modify(sub_id, cancel_at_period_end=False)
                 return {"message": "Subscription reactivation was successful."}, 201
             return {"message": "Subscription is already active."}, 200
     return {"message": "Current subscription not found."}, 404
@@ -206,7 +209,9 @@ def subscription_status(uid) -> FlaskResponse:
     items = g.subhub_account.get_user(uid)
     if not items or not items.cust_id:
         return {"message": "Customer does not exist."}, 404
-    subscriptions = Subscription.list(customer=items.cust_id, limit=100, status="all")
+    subscriptions = stripe.Subscription.list(
+        customer=items.cust_id, limit=100, status="all"
+    )
     if not subscriptions:
         return {"message": "No subscriptions for this customer."}, 403
     return_data = create_return_data(subscriptions)
@@ -223,9 +228,9 @@ def create_return_data(subscriptions) -> JsonDict:
     return_data["subscriptions"] = []
     for subscription in subscriptions["data"]:
         if subscription["status"] == "incomplete":
-            invoice = Invoice.retrieve(subscription["latest_invoice"])
+            invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = Charge.retrieve(invoice["charge"])
+                intents = stripe.Charge.retrieve(invoice["charge"])
                 logger.debug("intents", intents=intents)
                 return_data["subscriptions"].append(
                     {
@@ -272,12 +277,12 @@ def update_payment_method(uid, data) -> FlaskResponse:
     :param data:
     :return: Success or failure message.
     """
-    customer = fetch_customer(g.subhub_account, uid)
-    if not customer:
+    items = g.subhub_account.get_user(uid)
+    if not items or not items.cust_id:
         return {"message": "Customer does not exist."}, 404
-
+    customer = stripe.Customer.retrieve(items.cust_id)
     if customer["metadata"]["userid"] == uid:
-        customer.modify(customer.id, source=data["pmt_token"])
+        customer.modify(items.cust_id, source=data["pmt_token"])
         return {"message": "Payment method updated successfully."}, 201
     else:
         return {"message": "Customer mismatch."}, 400
@@ -289,11 +294,11 @@ def customer_update(uid) -> tuple:
     :param uid:
     :return: return_data dict with credit card info and subscriptions
     """
+    items = g.subhub_account.get_user(uid)
+    if not items or not items.cust_id:
+        return "Customer does not exist.", 404
     try:
-        customer = fetch_customer(g.subhub_account, uid)
-        if not customer:
-            return "Customer does not exist.", 404
-
+        customer = stripe.Customer.retrieve(items.cust_id)
         if customer["metadata"]["userid"] == uid:
             return_data = create_update_data(customer)
             return return_data, 200
@@ -319,9 +324,9 @@ def create_update_data(customer) -> dict:
 
     for subscription in customer["subscriptions"]["data"]:
         if subscription["status"] == "incomplete":
-            invoice = Invoice.retrieve(subscription["latest_invoice"])
+            invoice = stripe.Invoice.retrieve(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = Charge.retrieve(invoice["charge"])
+                intents = stripe.Charge.retrieve(invoice["charge"])
                 return_data["subscriptions"].append(
                     {
                         "current_period_end": subscription["current_period_end"],

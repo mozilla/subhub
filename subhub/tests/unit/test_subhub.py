@@ -4,6 +4,7 @@ import json
 from unittest.mock import Mock, patch
 
 import connexion
+from flask import g
 import stripe.error
 
 from subhub.app import create_app
@@ -34,7 +35,10 @@ def test_subhub():
     assert isinstance(app, connexion.FlaskApp)
 
 
-def test_update_customer_payment_server_stripe_error_with_params(app, monkeypatch):
+@patch("stripe.Customer")
+def test_update_customer_payment_server_stripe_error_with_params(
+    customer_mock, app, monkeypatch
+):
     """
     GIVEN the route POST v1/customer/{id} is called
     WHEN the payment token provided is invalid
@@ -42,17 +46,12 @@ def test_update_customer_payment_server_stripe_error_with_params(app, monkeypatc
     """
     client = app.app.test_client()
 
-    user = Mock(return_value=MockSubhubUser())
+    subhub_user = Mock(return_value=MockSubhubUser())
 
-    retrieve = Mock(
-        side_effect=stripe.error.InvalidRequestError(
-            message="Customer instance has invalid ID",
-            param="customer_id",
-            code="invalid",
-        )
+    customer_mock.retrieve.side_effect = stripe.error.InvalidRequestError(
+        message="Customer instance has invalid ID", param="customer_id", code="invalid"
     )
-    monkeypatch.setattr("flask.g.subhub_account.get_user", user)
-    monkeypatch.setattr("stripe.Customer.retrieve", retrieve)
+    monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
 
     path = "v1/customer/123"
     data = {"pmt_token": "token"}
@@ -70,7 +69,10 @@ def test_update_customer_payment_server_stripe_error_with_params(app, monkeypatc
     assert data["message"] == "Customer instance has invalid ID"
 
 
-def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
+@patch("stripe.Subscription")
+def test_customer_signup_server_stripe_error_with_params(
+    subscription_mock, app, monkeypatch
+):
     """
     GIVEN the route POST v1/customer/{id}/subcriptions is called
     WHEN the plan id provided is invalid
@@ -81,14 +83,11 @@ def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
     customer = Mock(return_value=MockCustomer())
     none = Mock(return_value=None)
 
-    create = Mock(
-        side_effect=stripe.error.InvalidRequestError(
-            message="No such plan: invalid", param="plan_id", code="invalid_plan"
-        )
+    subscription_mock.create.side_effect = stripe.error.InvalidRequestError(
+        message="No such plan: invalid", param="plan_id", code="invalid_plan"
     )
     monkeypatch.setattr("subhub.api.payments.has_existing_plan", none)
     monkeypatch.setattr("subhub.api.payments.existing_or_new_customer", customer)
-    monkeypatch.setattr("stripe.Subscription.create", create)
 
     path = "v1/customer/process_test/subscriptions"
     data = {
@@ -112,7 +111,8 @@ def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
     assert "No such plan" in loaded_data["message"]
 
 
-def test_subscribe_card_declined_error_handler(app, monkeypatch):
+@patch("stripe.Subscription")
+def test_subscribe_card_declined_error_handler(subscription_mock, app, monkeypatch):
     """
     GIVEN a route that attempts to make a stripe payment
     WHEN the card is declined
@@ -124,14 +124,11 @@ def test_subscribe_card_declined_error_handler(app, monkeypatch):
     customer = Mock(return_value=MockCustomer())
     none = Mock(return_value=None)
 
-    create = Mock(
-        side_effect=stripe.error.CardError(
-            message="card declined", param="", code="generic_decline"
-        )
+    subscription_mock.create.side_effect = stripe.error.CardError(
+        message="card declined", param="", code="generic_decline"
     )
     monkeypatch.setattr("subhub.api.payments.has_existing_plan", none)
     monkeypatch.setattr("subhub.api.payments.existing_or_new_customer", customer)
-    monkeypatch.setattr("stripe.Subscription.create", create)
 
     path = "v1/customer/subtest/subscriptions"
     data = {
@@ -152,7 +149,10 @@ def test_subscribe_card_declined_error_handler(app, monkeypatch):
     assert response.status_code == 402
 
 
-def test_customer_unsubscribe_server_stripe_error_with_params(app, monkeypatch):
+@patch("stripe.Customer")
+def test_customer_unsubscribe_server_stripe_error_with_params(
+    customer_mock, app, monkeypatch
+):
     """
     GIVEN the route DELETE v1/customer/{id}/subcriptions/{sub_id} is called
     WHEN the stripe customer id on the user object is invalid
@@ -162,15 +162,10 @@ def test_customer_unsubscribe_server_stripe_error_with_params(app, monkeypatch):
 
     subhub_user = Mock(return_value=MockSubhubUser())
 
-    retrieve = Mock(
-        side_effect=stripe.error.InvalidRequestError(
-            message="Customer instance has invalid ID",
-            param="customer_id",
-            code="invalid",
-        )
+    customer_mock.retrieve.side_effect = stripe.error.InvalidRequestError(
+        message="Customer instance has invalid ID", param="customer_id", code="invalid"
     )
     monkeypatch.setattr("flask.g.subhub_account.get_user", subhub_user)
-    monkeypatch.setattr("stripe.Customer.retrieve", retrieve)
 
     path = f"v1/customer/testuser/subscriptions/sub_123"
 

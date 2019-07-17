@@ -1,9 +1,8 @@
 """Customer functions"""
-from stripe import Customer, Subscription
 import stripe
-from stripe.error import InvalidRequestError
 
 from subhub.exceptions import IntermittentError, ServerError
+from stripe.error import InvalidRequestError
 from subhub.subhub_dynamodb import SubHubAccount
 from subhub.log import get_logger
 
@@ -17,11 +16,11 @@ def create_customer(
     source_token: str,
     origin_system: str,
     display_name: str,
-) -> Customer:
+) -> stripe.Customer:
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
     customer = None
-    customers = Customer.list(email=email)
+    customers = stripe.Customer.list(email=email)
     for possible_customer in customers.data:
         if possible_customer.email == email:
             # If the userid doesn't match, the system is damaged.
@@ -32,13 +31,13 @@ def create_customer(
             # If we have a mis-match on the source_token, overwrite with the
             # new one.
             if customer.default_source != source_token:
-                Customer.modify(customer.id, source=source_token)
+                stripe.Customer.modify(customer.id, source=source_token)
             break
 
     # No existing Stripe customer, create one.
     if not customer:
         try:
-            customer = Customer.create(
+            customer = stripe.Customer.create(
                 source=source_token,
                 email=email,
                 description=user_id,
@@ -58,7 +57,7 @@ def create_customer(
 
     if not subhub_account.save_user(db_account):
         # Clean-up the Stripe customer record since we can't link it
-        Customer.delete(customer.id)
+        stripe.Customer.delete(customer.id)
         e = IntermittentError("error saving db record")
         logger.error("unable to save user or link it", error=e)
         raise e
@@ -66,45 +65,34 @@ def create_customer(
 
 
 def existing_or_new_customer(
-    subhub_account: SubHubAccount,
+    subhub_accouunt: SubHubAccount,
     user_id: str,
     email: str,
     source_token: str,
     origin_system: str,
     display_name: str,
-) -> Customer:
-    customer = fetch_customer(subhub_account, user_id)
-    if not customer:
+) -> stripe.Customer:
+    db_account = subhub_accouunt.get_user(user_id)
+    if not db_account:
         return create_customer(
-            subhub_account, user_id, email, source_token, origin_system, display_name
+            subhub_accouunt, user_id, email, source_token, origin_system, display_name
         )
-    return existing_payment_source(customer, source_token)
+    customer_id = db_account.cust_id
+    return existing_payment_source(customer_id, source_token)
 
 
-def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
-    customer = None
-    db_account = subhub_account.get_user(user_id)
-    if db_account:
-        customer = Customer.retrieve(db_account.cust_id)
-        if "deleted" in customer and customer["deleted"]:
-            subhub_account.remove_from_db(user_id)
-            customer = None
-    return customer
-
-
-def existing_payment_source(existing_customer: Customer, source_token: str) -> Customer:
+def existing_payment_source(customer_id: str, source_token: str) -> stripe.Customer:
+    existing_customer = stripe.Customer.retrieve(customer_id)
     if not existing_customer.get("sources"):
         if not existing_customer.get("deleted"):
-            existing_customer = Customer.modify(
-                existing_customer["id"], source=source_token
-            )
+            existing_customer = stripe.Customer.modify(customer_id, source=source_token)
             logger.info("add source", existing_customer=existing_customer)
         else:
             logger.info("existing source deleted")
     return existing_customer
 
 
-def subscribe_customer(customer: Customer, plan_id: str) -> Subscription:
+def subscribe_customer(customer: stripe.Customer, plan_id: str) -> stripe.Subscription:
     """
     Subscribe Customer to Plan
     :param customer:
@@ -112,20 +100,21 @@ def subscribe_customer(customer: Customer, plan_id: str) -> Subscription:
     :return: Subscription Object
     """
     try:
-        sub = Subscription.create(customer=customer, items=[{"plan": plan_id}])
+        sub = stripe.Subscription.create(customer=customer, items=[{"plan": plan_id}])
         return sub
     except Exception as e:
         logger.error("sub error", error=e)
         raise InvalidRequestError("Unable to create plan", param=plan_id)
 
 
-def has_existing_plan(customer: Customer, plan_id: str) -> bool:
+def has_existing_plan(user: stripe.Customer, plan_id: str) -> bool:
     """
     Check if user has the existing plan in an active or trialing state.
-    :param customer:
+    :param user:
     :param plan_id:
     :return: True if user has existing plan, otherwise False
     """
+    customer = stripe.Customer.retrieve(user.id)
     if customer.get("subscriptions"):
         for item in customer["subscriptions"]["data"]:
             if item["plan"]["id"] == plan_id and item["status"] in [
