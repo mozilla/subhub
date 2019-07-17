@@ -184,3 +184,11 @@ doit deploy
 
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning, 
 etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).
+
+## Behave Tests
+
+The `behave` tests for this project are located in the `subhub/tests/behave` directory.  The
+steps that are available presently are available in the `steps`subdirectory.  You can run this in a 
+few ways:
+  * Jetbrain's PyCharm: A runtime configuration is loaded in that allows for debugging and running of the feature files.
+  * Command line: `cd subhub/tests/behave && behave` after satisfying the `requirements.txt` in that directory.
