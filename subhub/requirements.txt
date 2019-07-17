@@ -7,7 +7,7 @@ botocore==1.12.184
 certifi==2019.6.16
 chardet==3.0.4
 colorama==0.4.1
-connexion==2.3.0
+connexion>=2.3.0
 connexion[swagger-ui]
 docutils==0.14
 Flask==1.1.0

@@ -177,6 +177,10 @@ This run the `serverless deploy` command and requires the user to be logged into
 doit deploy
 ```
 
+### Docker
+* build: `docker build -t mozilla/subhub .`
+* run: `docker run -it mozilla/subhub`
+
 ## Postman
 
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning, 
