@@ -2,12 +2,15 @@
 """
 config
 """
-import ast
 import os
 import re
+import ast
 import pwd
 import sys
 import time
+import platform
+
+from datetime import datetime
 from decouple import UndefinedValueError, AutoConfig, config
 from subprocess import Popen, CalledProcessError, PIPE
 
@@ -447,6 +450,32 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         DEPLOY_DOMAIN
         """
         return self("DEPLOY_DOMAIN", "localhost")
+
+    @property
+    def DEPLOYED_BY(self):
+        """
+        DEPLOYED_BY
+        """
+        deployed_by = self("DEPLOYED_BY", None)
+        if deployed_by is None:
+            try:
+                deployed_by = f"{os.getlogin()}@{platform.node()}"
+            except:
+                deployed_by = "unknown"
+        return deployed_by
+
+    @property
+    def DEPLOYED_WHEN(self):
+        """
+        DEPLOYED_WHEN
+        """
+        deployed_when = self("DEPLOYED_WHEN", None)
+        if deployed_when is None:
+            try:
+                deployed_when = datetime.utcnow().isoformat()
+            except:
+                deployed_when = "unknown"
+        return deployed_when
 
     def __getattr__(self, attr):
         """
