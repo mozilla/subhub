@@ -56,3 +56,9 @@ class ServerError(SubHubError):
         super().__init__(
             message, status_code=status_code or ServerError.status_code, payload=payload
         )
+
+
+class SecretStringMissingError(Exception):
+    def __init__(self, secret):
+        message = f"SecretString missing from secret={secret}"
+        super().__init__(message)
