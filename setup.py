@@ -22,7 +22,7 @@ extras = {'test': test_requirements}
 
 setup(
     name='subhub',
-    #version=CFG.APP_VERSION, #FIXME: would be nice to have this
+    #version=CFG.VERSION, #FIXME: would be nice to have this
     version='v0.1',
     author='Scott Idler',
     author_email='sidler@mozilla.com',

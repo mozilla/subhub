@@ -96,35 +96,35 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     """
 
     @property
-    def APP_UID(self):
+    def UID(self):
         """
         uid
         """
         return os.getuid()
 
     @property
-    def APP_GID(self):
+    def GID(self):
         """
         gid
         """
-        return pwd.getpwuid(self.APP_UID).pw_gid
+        return pwd.getpwuid(self.UID).pw_gid
 
     @property
-    def APP_USER(self):
+    def USER(self):
         """
         user
         """
-        return pwd.getpwuid(self.APP_UID).pw_name
+        return pwd.getpwuid(self.UID).pw_name
 
     @property
-    def APP_PORT(self):
+    def PORT(self):
         """
         port
         """
-        return self("APP_PORT", 5000, cast=int)
+        return self("PORT", 5000, cast=int)
 
     @property
-    def APP_JOBS(self):
+    def JOBS(self):
         """
         jobs
         """
@@ -135,35 +135,35 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return int(result)
 
     @property
-    def APP_TIMEOUT(self):
+    def TIMEOUT(self):
         """
         timeout
         """
-        return self("APP_TIMEOUT", 120, cast=int)
+        return self("TIMEOUT", 120, cast=int)
 
     @property
-    def APP_WORKERS(self):
+    def WORKERS(self):
         """
         workers
         """
-        return self("APP_WORKERS", 2, cast=int)
+        return self("WORKERS", 2, cast=int)
 
     @property
-    def APP_MODULE(self):
+    def MODULE(self):
         """
         module
         """
-        return self("APP_MODULE", "main:app")
+        return self("MODULE", "main:app")
 
     @property
-    def APP_REPOROOT(self):
+    def REPO_ROOT(self):
         """
-        reporoot
+        repo_root
         """
         return git("rev-parse --show-toplevel")
 
     @property
-    def APP_LOG_LEVEL(self):
+    def LOG_LEVEL(self):
         """
         log level
         """
@@ -172,38 +172,38 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             "stage": "INFO",
             "qa": "INFO",
             "dev": "DEBUG",
-        }.get(self.APP_DEPENV, "NOTSET")
+        }.get(self.DEPLOY_ENV, "NOTSET")
         try:
-            return self("APP_LOG_LEVEL", default_level)
+            return self("LOG_LEVEL", default_level)
         except:
             pass
 
     @property
-    def APP_VERSION(self):
+    def VERSION(self):
         """
         version
         """
         try:
             return git("describe --abbrev=7 --always")
         except (NotGitRepoError, GitCommandNotFoundError):
-            return self("APP_VERSION")
+            return self("VERSION")
 
     @property
-    def APP_BRANCH(self):
+    def BRANCH(self):
         """
         branch
         """
         try:
             return git("rev-parse --abbrev-ref HEAD")
         except (NotGitRepoError, GitCommandNotFoundError):
-            return self("APP_BRANCH")
+            return self("BRANCH")
 
     @property
-    def APP_DEPENV(self):
+    def DEPLOY_ENV(self):
         """
         deployment environment
         """
-        branch = self.APP_BRANCH
+        branch = self.BRANCH
         if branch == "master":
             return "prod"
         elif branch.startswith("stage/"):
@@ -213,63 +213,63 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return "dev"
 
     @property
-    def APP_REVISION(self):
+    def REVISION(self):
         """
         revision
         """
         try:
             return git("rev-parse HEAD")
         except (NotGitRepoError, GitCommandNotFoundError):
-            return self("APP_REVISION")
+            return self("REVISION")
 
     @property
-    def APP_REMOTE_ORIGIN_URL(self):
+    def REMOTE_ORIGIN_URL(self):
         """
         remote origin url
         """
         try:
             return git("config --get remote.origin.url")
         except (NotGitRepoError, GitCommandNotFoundError):
-            return self("APP_REMOTE_ORIGIN_URL")
+            return self("REMOTE_ORIGIN_URL")
 
     @property
-    def APP_REPONAME(self):
+    def REPO_NAME(self):
         """
-        reponame
+        repo_name
         """
-        pattern = r"((ssh|https)://)?(git@)?github.com[:/](?P<reponame>[A-Za-z0-9\/\-_]+)(.git)?"
-        match = re.search(pattern, self.APP_REMOTE_ORIGIN_URL)
-        return match.group("reponame")
+        pattern = r"((ssh|https)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?"
+        match = re.search(pattern, self.REMOTE_ORIGIN_URL)
+        return match.group("repo_name")
 
     @property
-    def APP_PROJNAME(self):
+    def PROJECT_NAME(self):
         """
-        projname
+        project_name
         """
-        return os.path.basename(self.APP_REPONAME)
+        return os.path.basename(self.REPO_NAME)
 
     @property
-    def APP_PROJPATH(self):
+    def PROJECT_PATH(self):
         """
-        projpath
+        project_path
         """
-        return os.path.join(self.APP_REPOROOT, self.APP_PROJNAME)
+        return os.path.join(self.REPO_ROOT, self.PROJECT_NAME)
 
     @property
-    def APP_LS_REMOTE(self):
+    def LS_REMOTE(self):
         """
         ls-remote
         """
-        reponame = self.APP_REPONAME
-        logger.info(f"reponame={reponame}")
-        result = git(f"ls-remote https://github.com/{reponame}")
+        repo_name = self.REPO_NAME
+        logger.info(f"repo_name={repo_name}")
+        result = git(f"ls-remote https://github.com/{repo_name}")
         return {
             refname: revision
             for revision, refname in [line.split() for line in result.split("\n")]
         }
 
     @property
-    def APP_GSM_STATUS(self):
+    def GSM_STATUS(self):
         """
         gsm status
         """
@@ -407,7 +407,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         boolean property to determine if we should swagger or not
         """
-        return self.APP_DEPENV in ("stage", "qa", "dev")
+        return self.DEPLOY_ENV in ("stage", "qa", "dev")
 
     @property
     def NEW_RELIC_ACCOUNT_ID(self):

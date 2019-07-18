@@ -30,23 +30,23 @@ DOIT_CONFIG = {
 
 SPACE = ' '
 NEWLINE = '\n'
-VENV = f'{CFG.APP_REPOROOT}/venv'
+VENV = f'{CFG.REPO_ROOT}/venv'
 PYTHON3 = f'{VENV}/bin/python3.7'
 PIP3 = f'{PYTHON3} -m pip'
-NODE_MODULES = f'{CFG.APP_REPOROOT}/node_modules'
+NODE_MODULES = f'{CFG.REPO_ROOT}/node_modules'
 SLS = f'{NODE_MODULES}/serverless/bin/serverless'
 DYNALITE = f'{NODE_MODULES}/.bin/dynalite'
 SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
 
 def envs(sep=' ', **kwargs):
     envs = dict(
-        APP_DEPENV=CFG.APP_DEPENV,
-        APP_PROJNAME=CFG.APP_PROJNAME,
-        APP_BRANCH=CFG.APP_BRANCH,
-        APP_REVISION=CFG.APP_REVISION,
-        APP_VERSION=CFG.APP_VERSION,
-        APP_REMOTE_ORIGIN_URL=CFG.APP_REMOTE_ORIGIN_URL,
-        APP_LOG_LEVEL=CFG.APP_LOG_LEVEL,
+        DEPLOY_ENV=CFG.DEPLOY_ENV,
+        PROJECT_NAME=CFG.PROJECT_NAME,
+        BRANCH=CFG.BRANCH,
+        REVISION=CFG.REVISION,
+        VERSION=CFG.VERSION,
+        REMOTE_ORIGIN_URL=CFG.REMOTE_ORIGIN_URL,
+        LOG_LEVEL=CFG.LOG_LEVEL,
         NEW_RELIC_ACCOUNT_ID=CFG.NEW_RELIC_ACCOUNT_ID,
         NEW_RELIC_TRUSTED_ACCOUNT_ID=CFG.NEW_RELIC_TRUSTED_ACCOUNT_ID,
         NEW_RELIC_SERVERLESS_MODE_ENABLED=CFG.NEW_RELIC_SERVERLESS_MODE_ENABLED,
@@ -188,7 +188,7 @@ def check_black():
     '''
     run black --check in subhub directory
     '''
-    black_check = f'black --check {CFG.APP_PROJPATH}'
+    black_check = f'black --check {CFG.PROJECT_PATH}'
     return {
         'name': 'black',
         'task_dep': [
@@ -305,7 +305,7 @@ def task_black():
     '''
     return {
         'actions': [
-            f'black {CFG.APP_PROJPATH}',
+            f'black {CFG.PROJECT_PATH}',
         ],
     }
 
@@ -313,8 +313,8 @@ def task_venv():
     '''
     setup virtual env
     '''
-    app_requirements = f'{CFG.APP_PROJPATH}/requirements.txt'
-    test_requirements = f'{CFG.APP_PROJPATH}/tests/requirements.txt'
+    app_requirements = f'{CFG.PROJECT_PATH}/requirements.txt'
+    test_requirements = f'{CFG.PROJECT_PATH}/tests/requirements.txt'
     return {
         'task_dep': [
             'check',
@@ -469,7 +469,7 @@ def task_test():
             'dynalite:stop',
         ],
         'actions': [
-            f'cd {CFG.APP_REPOROOT} && tox',
+            f'cd {CFG.REPO_ROOT} && tox',
         ],
         'uptodate': [
             lambda: os.environ.get('SKIP_TESTS', None),
@@ -508,7 +508,7 @@ def task_package():
                 'test',
             ],
             'actions': [
-                f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.APP_DEPENV} -v',
+                f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.DEPLOY_ENV} -v',
             ],
         }
 
@@ -518,7 +518,7 @@ def task_deploy():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        curl = f'curl --silent https://{CFG.APP_DEPENV}.{svc}.mozilla-subhub.app/v1/version'
+        curl = f'curl --silent https://{CFG.DEPLOY_ENV}.{svc}.mozilla-subhub.app/v1/version'
         describe = 'git describe --abbrev=7'
         yield {
             'name': svc,
@@ -530,7 +530,7 @@ def task_deploy():
                 'test',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.APP_DEPENV} --aws-s3-accelerate -v',
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOY_ENV} --aws-s3-accelerate -v',
                 f'echo "{curl}"',
                 f'{curl}',
                 f'echo "{describe}"',
@@ -593,7 +593,7 @@ def task_rmrf():
         yield {
             'name': name,
             'actions': [
-                f'sudo find {CFG.APP_REPOROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in targets.items()
+                f'sudo find {CFG.REPO_ROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in targets.items()
             ],
         }
 

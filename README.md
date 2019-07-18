@@ -42,29 +42,29 @@ This is the support api key.  Defaults to `fake_support_api_key`
 ## Other Important CFG Properties
 These values are calculated and not to be set by a user.  They are mentioned here for clarity.
 
-### APP_DEPENV
+### DEPLOY_ENV
 The deployment environment is determined by the branch name:
 - master: `prod`
 - stage/*: `stage`
 - qa/*: `qa`
 - *: `dev`
 
-### APP_REPOROOT
+### REPO_ROOT
 This is the path to the root of the checked out `mozilla/subhub` git repo.  This value only makes sense in the git repo, not in the AWS Lambda environment.
 
-### APP_PROJNAME
+### PROJECT_NAME
 This is the project's name, `subhub`, as determined by the second part of the reposlug `mozilla/subhub`.
 
-### APP_PROJPATH
-This is the path to the project code in the git repo.  It is `APP_REPOPATH + APP_PROJNAME`.  It is only valid in the git repo, not in the AWS Lambda environment.
+### PROJECT_PATH
+This is the path to the project code in the git repo.  It is `REPO_PATH + PROJECT_NAME`.  It is only valid in the git repo, not in the AWS Lambda environment.
 
-### APP_BRANCH
+### BRANCH
 This is the branch name of the deployed code.  Should be available locally as well as when deployed to AWS Lambda.
 
-### APP_REVISION
+### REVISION
 This is the 40 digit sha1 commit hash for the code.  This is available in the git repo as well as when deployed to AWS Lambda.
 
-### APP_VERSION
+### VERSION
 This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the git repo as well as when deployed to AWS Lambda.
 
 ### PROFILING_ENABLED
