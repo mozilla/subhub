@@ -12,7 +12,7 @@ Feature:  /v1/version
       And the JSON should be
             """
             {
-                "message": "v0.0.2-170-ga176b6d"
+                "message": "v0.0.2-171-ge22201b"
             }
             """
 
