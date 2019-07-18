@@ -18,16 +18,44 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
+# Setup Stripe Error handlers
+def intermittent_stripe_error(e):
+    logger.error("intermittent stripe error", error=e)
+    return jsonify({"message": f"{e.user_message}"}), 503
+
+
+def server_stripe_error(e):
+    logger.error("server stripe error", error=e)
+    return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 500
+
+
+def server_stripe_error_with_params(e):
+    logger.error("server stripe error with params", error=e)
+    return (
+        jsonify(
+            {
+                "message": f"{e.user_message}",
+                "params": f"{e.param}",
+                "code": f"{e.code}",
+            }
+        ),
+        500,
+    )
+
+
+def server_stripe_card_error(e):
+    logger.error("server stripe card error", error=e)
+    return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
+
+
 def create_app(config=None):
     logger.info("creating flask app", config=config)
-    if not CFG.AWS_EXECUTION_ENV:
-        region = "localhost"
-        host = f"http://localhost:{CFG.DYNALITE_PORT}"
-        stripe.api_key = CFG.STRIPE_API_KEY
-    else:
+    region = "localhost"
+    host = f"http://localhost:{CFG.DYNALITE_PORT}"
+    stripe.api_key = CFG.STRIPE_API_KEY
+    if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
         host = None
-        stripe.api_key = CFG.STRIPE_API_KEY
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
@@ -35,16 +63,12 @@ def create_app(config=None):
         "subhub_api.yaml", pass_context_arg_name="request", strict_validation=True
     )
 
-    if host:
-        app.app.subhub_account = SubHubAccount(
-            table_name=CFG.USER_TABLE, region=region, host=host
-        )
-        app.app.webhook_table = WebHookEvent(
-            table_name=CFG.EVENT_TABLE, region=region, host=host
-        )
-    else:
-        app.app.subhub_account = SubHubAccount(table_name=CFG.USER_TABLE, region=region)
-        app.app.webhook_table = WebHookEvent(table_name=CFG.EVENT_TABLE, region=region)
+    app.app.subhub_account = SubHubAccount(
+        table_name=CFG.USER_TABLE, region=region, host=host
+    )
+    app.app.webhook_table = WebHookEvent(
+        table_name=CFG.EVENT_TABLE, region=region, host=host
+    )
     if not app.app.subhub_account.model.exists():
         app.app.subhub_account.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
@@ -58,53 +82,30 @@ def create_app(config=None):
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
         if e.status_code == 500:
-            # TODO: Log this error to Sentry
-            pass
+            logger.error("display subhub errors", error=e)
         response = jsonify(e.to_dict())
         response.status_code = e.status_code
         return response
 
-    # Setup Stripe Error handlers
-    def intermittent_stripe_error(e):
-        return jsonify({"message": f"{e.user_message}"}), 503
-
-    for err in (
+    for error in (
         stripe.error.APIConnectionError,
         stripe.error.APIError,
         stripe.error.RateLimitError,
         stripe.error.IdempotencyError,
     ):
-        app.app.errorhandler(err)(intermittent_stripe_error)
+        app.app.errorhandler(error)(intermittent_stripe_error)
 
-    def server_stripe_error(e):
-        return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 500
+    for error in (stripe.error.AuthenticationError,):
+        app.app.errorhandler(error)(server_stripe_error)
 
-    for err in (stripe.error.AuthenticationError,):
-        app.app.errorhandler(err)(server_stripe_error)
-
-    def server_stripe_error_with_params(e):
-        return (
-            jsonify(
-                {
-                    "message": f"{e.user_message}",
-                    "params": f"{e.param}",
-                    "code": f"{e.code}",
-                }
-            ),
-            500,
-        )
-
-    for err in (
+    for error in (
         stripe.error.InvalidRequestError,
         stripe.error.StripeErrorWithParamCode,
     ):
-        app.app.errorhandler(err)(server_stripe_error_with_params)
+        app.app.errorhandler(error)(server_stripe_error_with_params)
 
-    def server_stripe_card_error(e):
-        return (jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402)
-
-    for err in (stripe.error.CardError,):
-        app.app.errorhandler(err)(server_stripe_card_error)
+    for error in (stripe.error.CardError,):
+        app.app.errorhandler(error)(server_stripe_card_error)
 
     @app.app.before_request
     def before_request():

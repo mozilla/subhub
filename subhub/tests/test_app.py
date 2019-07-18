@@ -1,0 +1,45 @@
+from flask import jsonify
+from stripe.error import StripeError, CardError
+
+from subhub.app import create_app
+from subhub.app import server_stripe_error
+from subhub.app import intermittent_stripe_error
+from subhub.app import server_stripe_error_with_params
+from subhub.app import server_stripe_card_error
+
+
+def test_create_app():
+    app = create_app()
+    assert app
+
+
+def test_intermittent_stripe_error():
+    expected = jsonify({"message": "something"}), 503
+    error = StripeError("something")
+    actual = intermittent_stripe_error(error)
+    assert actual[0].json == expected[0].json
+    assert actual[1] == expected[1]
+
+
+def test_server_stripe_error():
+    expected = jsonify({"message": "something", "code": "500"}), 500
+    error = StripeError("something", code="500")
+    actual = server_stripe_error(error)
+    assert actual[0].json == expected[0].json
+    assert actual[1] == expected[1]
+
+
+def test_server_stripe_error_with_params():
+    expected = jsonify({"message": "something", "params": "param1", "code": "500"}), 500
+    error = CardError("something", "param1", "500")
+    actual = server_stripe_error_with_params(error)
+    assert actual[0].json == expected[0].json
+    assert actual[1] == expected[1]
+
+
+def test_server_stripe_card_error():
+    expected = jsonify({"message": "something", "code": "402"}), 402
+    error = CardError("something", "param1", "402")
+    actual = server_stripe_card_error(error)
+    assert actual[0].json == expected[0].json
+    assert actual[1] == expected[1]
