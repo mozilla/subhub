@@ -188,7 +188,7 @@ def reactivate_subscription(uid, sub_id):
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
                 Subscription.modify(sub_id, cancel_at_period_end=False)
-                return {"message": "Subscription reactivation was successful."}, 201
+                return {"message": "Subscription reactivation was successful."}, 200
             return {"message": "Subscription is already active."}, 200
     return {"message": "Current subscription not found."}, 404
 

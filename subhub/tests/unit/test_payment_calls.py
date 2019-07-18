@@ -608,7 +608,7 @@ def test_reactivate_subscription_success(monkeypatch):
 
     response, code = payments.reactivate_subscription(uid, sub_id)
 
-    assert 201 == code
+    assert 200 == code
     assert "Subscription reactivation was successful." == response["message"]
 
 
