@@ -378,6 +378,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", True)
 
     @property
+    def ALLOWED_ORIGIN_SYSTEMS(self):
+        """
+        ALLOWED_ORIGIN_SYSTEMS
+        """
+        return self("ALLOWED_ORIGIN_SYSTEMS", "").split(",")
+
+    @property
     def PROFILING_ENABLED(self):
         """
         PROFILING_ENABLED

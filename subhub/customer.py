@@ -3,6 +3,7 @@ from stripe import Customer, Subscription
 import stripe
 from stripe.error import InvalidRequestError
 
+from subhub.cfg import CFG
 from subhub.exceptions import IntermittentError, ServerError
 from subhub.subhub_dynamodb import SubHubAccount
 from subhub.log import get_logger
@@ -20,6 +21,10 @@ def create_customer(
 ) -> Customer:
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
+    if not origin_system in CFG.ALLOWED_ORIGIN_SYSTEMS:
+        raise InvalidRequestError(
+            message="Invalid origin_system provided", param=str(origin_system)
+        )
     customer = None
     customers = Customer.list(email=email)
     for possible_customer in customers.data:
@@ -73,6 +78,10 @@ def existing_or_new_customer(
     origin_system: str,
     display_name: str,
 ) -> Customer:
+    if not origin_system in CFG.ALLOWED_ORIGIN_SYSTEMS:
+        raise InvalidRequestError(
+            message="Invalid origin_system provided", param=str(origin_system)
+        )
     customer = fetch_customer(subhub_account, user_id)
     if not customer:
         return create_customer(

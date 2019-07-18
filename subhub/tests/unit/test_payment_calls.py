@@ -7,11 +7,49 @@ from flask import g
 from unittest.mock import Mock, MagicMock, PropertyMock
 
 from subhub.api import payments
-from subhub.customer import create_customer, subscribe_customer
+from subhub.customer import (
+    create_customer,
+    subscribe_customer,
+    existing_or_new_customer,
+)
 from subhub.tests.unit.stripe.utils import MockSubhubUser
 from subhub.log import get_logger
 
 logger = get_logger()
+
+
+def test_create_customer_invalid_origin_system():
+    """
+    GIVEN create a stripe customer
+    WHEN An invalid origin system is provided
+    THEN An exception should be raiseds
+    """
+    with pytest.raises(InvalidRequestError):
+        create_customer(
+            g.subhub_account,
+            user_id="test_mozilla",
+            source_token="tok_visa",
+            email="test_visa@tester.com",
+            origin_system="NOT_VALID",
+            display_name="John Tester",
+        )
+
+
+def test_existing_or_new_customer_invalid_origin_system():
+    """
+    GIVEN create a stripe customer
+    WHEN An invalid origin system is provided
+    THEN An exception should be raised
+    """
+    with pytest.raises(InvalidRequestError):
+        existing_or_new_customer(
+            g.subhub_account,
+            user_id="test_mozilla",
+            source_token="tok_visa",
+            email="test_visa@tester.com",
+            origin_system="NOT_VALID",
+            display_name="John Tester",
+        )
 
 
 def test_create_customer_tok_visa():
