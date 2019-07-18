@@ -35,9 +35,9 @@ EVENT_UUID = str(uuid.uuid4())
 LOGGING_CONFIG = {
     "version": 1,
     "disable_existing_loggers": False,
-    "handlers": {"console": {"()": logging.StreamHandler, "level": CFG.APP_LOG_LEVEL}},
+    "handlers": {"console": {"()": logging.StreamHandler, "level": CFG.LOG_LEVEL}},
     "loggers": {
-        CFG.APP_PROJNAME: {
+        CFG.PROJECT_NAME: {
             "propagate": False,
             "handlers": ["console"],
             "level": "DEBUG",
@@ -114,13 +114,13 @@ def _setup_once():
     logger = get_logger(__name__)
     logger.info(
         "logging initialized",
-        APP_DEPENV=CFG.APP_DEPENV,
-        APP_PROJNAME=CFG.APP_PROJNAME,
-        APP_BRANCH=CFG.APP_BRANCH,
-        APP_REVISION=CFG.APP_REVISION,
-        APP_VERSION=CFG.APP_VERSION,
-        APP_REMOTE_ORIGIN_URL=CFG.APP_REMOTE_ORIGIN_URL,
-        APP_LOG_LEVEL=CFG.APP_LOG_LEVEL,
+        DEPLOY_ENV=CFG.DEPLOY_ENV,
+        PROJECT_NAME=CFG.PROJECT_NAME,
+        BRANCH=CFG.BRANCH,
+        REVISION=CFG.REVISION,
+        VERSION=CFG.VERSION,
+        REMOTE_ORIGIN_URL=CFG.REMOTE_ORIGIN_URL,
+        LOG_LEVEL=CFG.LOG_LEVEL,
         DEPLOYED_BY=CFG.DEPLOYED_BY,
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
     )
@@ -133,7 +133,7 @@ def get_logger(logger_name=None):
         _setup_once()
     if logger_name is None:
         logger_name = inspect.currentframe().f_back.f_globals["__name__"]
-    logger_name = CFG.APP_PROJNAME if logger_name == "__main__" else logger_name
+    logger_name = CFG.PROJECT_NAME if logger_name == "__main__" else logger_name
     return structlog.wrap_logger(logging.getLogger(logger_name))
 
 

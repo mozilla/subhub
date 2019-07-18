@@ -41,7 +41,7 @@ def pytest_configure():
     stripe.api_key = CFG.STRIPE_API_KEY
 
     # Locate absolute path of dynalite
-    dynalite = f"{CFG.APP_REPOROOT}/node_modules/.bin/dynalite"
+    dynalite = f"{CFG.REPO_ROOT}/node_modules/.bin/dynalite"
 
     cmd = f"{dynalite} --port {CFG.DYNALITE_PORT}"
     ddb_process = subprocess.Popen(

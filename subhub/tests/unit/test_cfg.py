@@ -39,176 +39,176 @@ def test_NotGitRepoError():
     assert result
 
 
-def test_APP_UID():
+def test_UID():
     """
     uid
     """
-    assert CFG.APP_UID == os.getuid()
+    assert CFG.UID == os.getuid()
 
 
-def test_APP_GID():
+def test_GID():
     """
     gid
     """
-    assert CFG.APP_GID == pwd.getpwuid(os.getuid()).pw_gid
+    assert CFG.GID == pwd.getpwuid(os.getuid()).pw_gid
 
 
-def test_APP_USER():
+def test_USER():
     """
     user
     """
-    assert CFG.APP_USER == pwd.getpwuid(os.getuid()).pw_name
+    assert CFG.USER == pwd.getpwuid(os.getuid()).pw_name
 
 
-def test_APP_PORT():
+def test_PORT():
     """
     port
     """
-    assert CFG.APP_PORT == 5000
+    assert CFG.PORT == 5000
 
 
-def test_APP_JOBS():
+def test_JOBS():
     """
     jobs
     """
-    assert CFG.APP_JOBS != 0
+    assert CFG.JOBS != 0
 
 
-def test_APP_TIMEOUT():
+def test_TIMEOUT():
     """
     timeout
     """
-    assert CFG.APP_TIMEOUT == 120
+    assert CFG.TIMEOUT == 120
 
 
-def test_APP_WORKERS():
+def test_WORKERS():
     """
     workers
     """
-    assert CFG.APP_WORKERS == 2
+    assert CFG.WORKERS == 2
 
 
-def test_APP_MODULE():
+def test_MODULE():
     """
     module
     """
-    assert CFG.APP_MODULE == "main:app"
+    assert CFG.MODULE == "main:app"
 
 
-def test_APP_REPOROOT():
+def test_REPO_ROOT():
     """
-    reporoot
+    repo_root
     """
-    assert CFG.APP_REPOROOT == git("rev-parse --show-toplevel")
+    assert CFG.REPO_ROOT == git("rev-parse --show-toplevel")
 
 
-def test_APP_VERSION():
+def test_VERSION():
     """
     version
     """
-    assert CFG.APP_VERSION == git("describe --abbrev=7 --always")
+    assert CFG.VERSION == git("describe --abbrev=7 --always")
     with cd(NON_GIT_REPO_PATH):
-        os.environ["APP_VERSION"] = "APP_VERSION"
-        assert CFG.APP_VERSION == "APP_VERSION"
+        os.environ["VERSION"] = "VERSION"
+        assert CFG.VERSION == "VERSION"
 
 
-def test_APP_BRANCH():
+def test_BRANCH():
     """
     branch
     """
-    assert CFG.APP_BRANCH == git("rev-parse --abbrev-ref HEAD")
+    assert CFG.BRANCH == git("rev-parse --abbrev-ref HEAD")
     with cd(NON_GIT_REPO_PATH):
-        os.environ["APP_BRANCH"] = "APP_BRANCH"
-        assert CFG.APP_BRANCH == "APP_BRANCH"
+        os.environ["BRANCH"] = "BRANCH"
+        assert CFG.BRANCH == "BRANCH"
 
 
-def test_DEPENV():
+def test_DEPLOY_ENV():
     """
     deployment environment
     """
     with cd(NON_GIT_REPO_PATH):
-        os.environ["APP_BRANCH"] = "master"
-        assert CFG.APP_DEPENV == "prod"
-        os.environ["APP_BRANCH"] = "stage/example"
-        assert CFG.APP_DEPENV == "stage"
-        os.environ["APP_BRANCH"] = "qa/example"
-        assert CFG.APP_DEPENV == "qa"
-        os.environ["APP_BRANCH"] = "example"
-        assert CFG.APP_DEPENV == "dev"
+        os.environ["BRANCH"] = "master"
+        assert CFG.DEPLOY_ENV == "prod"
+        os.environ["BRANCH"] = "stage/example"
+        assert CFG.DEPLOY_ENV == "stage"
+        os.environ["BRANCH"] = "qa/example"
+        assert CFG.DEPLOY_ENV == "qa"
+        os.environ["BRANCH"] = "example"
+        assert CFG.DEPLOY_ENV == "dev"
 
 
-def test_APP_REVISION():
+def test_REVISION():
     """
     version
     """
-    assert CFG.APP_REVISION == git("rev-parse HEAD")
+    assert CFG.REVISION == git("rev-parse HEAD")
     with cd(NON_GIT_REPO_PATH):
-        os.environ["APP_REVISION"] = "APP_REVISION"
-        assert CFG.APP_REVISION == "APP_REVISION"
+        os.environ["REVISION"] = "REVISION"
+        assert CFG.REVISION == "REVISION"
 
 
-def test_APP_REMOTE_ORIGIN_URL():
+def test_REMOTE_ORIGIN_URL():
     """
     remote origin url
     """
-    assert CFG.APP_REMOTE_ORIGIN_URL == git("config --get remote.origin.url")
+    assert CFG.REMOTE_ORIGIN_URL == git("config --get remote.origin.url")
     with cd(NON_GIT_REPO_PATH):
-        os.environ["APP_REMOTE_ORIGIN_URL"] = "APP_REMOTE_ORIGIN_URL"
-        assert CFG.APP_REMOTE_ORIGIN_URL == "APP_REMOTE_ORIGIN_URL"
+        os.environ["REMOTE_ORIGIN_URL"] = "REMOTE_ORIGIN_URL"
+        assert CFG.REMOTE_ORIGIN_URL == "REMOTE_ORIGIN_URL"
 
 
-def test_APP_REPONAME():
+def test_REPO_NAME():
     """
-    reponame
+    repo_name
     """
     pattern = (
-        r"((ssh|https)://)?(git@)?github.com[:/](?P<reponame>[A-Za-z0-9\/\-_]+)(.git)?"
+        r"((ssh|https)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?"
     )
-    match = re.search(pattern, CFG.APP_REMOTE_ORIGIN_URL)
-    reponame = match.group("reponame")
-    assert CFG.APP_REPONAME == reponame
+    match = re.search(pattern, CFG.REMOTE_ORIGIN_URL)
+    repo_name = match.group("repo_name")
+    assert CFG.REPO_NAME == repo_name
 
 
-def test_APP_PROJNAME():
+def test_PROJECT_NAME():
     """
-    projname
+    project_name
     """
-    assert CFG.APP_PROJNAME == os.path.basename(CFG.APP_REPONAME)
+    assert CFG.PROJECT_NAME == os.path.basename(CFG.REPO_NAME)
 
 
-def test_APP_PROJPATH():
+def test_PROJECT_PATH():
     """
-    projpath
+    project_path
     """
-    assert CFG.APP_PROJPATH == os.path.join(CFG.APP_REPOROOT, CFG.APP_PROJNAME)
+    assert CFG.PROJECT_PATH == os.path.join(CFG.REPO_ROOT, CFG.PROJECT_NAME)
 
 
-def test_APP_LS_REMOTE():
+def test_LS_REMOTE():
     """
     ls-remote
     """
-    result = git(f"ls-remote https://github.com/{CFG.APP_REPONAME}")
-    assert CFG.APP_LS_REMOTE == {
+    result = git(f"ls-remote https://github.com/{CFG.REPO_NAME}")
+    assert CFG.LS_REMOTE == {
         refname: revision
         for revision, refname in [line.split() for line in result.split("\n")]
     }
     with cd(NON_GIT_REPO_PATH):
         try:
-            os.environ["APP_REPONAME"] = "mozilla/subhub"
-            CFG.APP_LS_REMOTE
+            os.environ["REPO_NAME"] = "mozilla/subhub"
+            CFG.LS_REMOTE
             assert False
         except Exception as ex:
             assert isinstance(ex, NotGitRepoError)
 
 
-def test_APP_GSM_STATUS():
+def test_GSM_STATUS():
     """
     gsm status
     """
-    assert CFG.APP_GSM_STATUS != None
+    assert CFG.GSM_STATUS != None
     with cd(NON_GIT_REPO_PATH):
         try:
-            CFG.APP_GSM_STATUS
+            CFG.GSM_STATUS
             assert False
         except Exception as ex:
             assert isinstance(ex, NotGitRepoError)

@@ -6,5 +6,5 @@ logger = get_logger()
 
 
 def get_version() -> FlaskResponse:
-    logger.debug("version", version=CFG.APP_VERSION)
-    return {"message": CFG.APP_VERSION}, 200
+    logger.debug("version", version=CFG.VERSION)
+    return {"message": CFG.VERSION}, 200

@@ -6,4 +6,4 @@ def test_get_version():
     """
     test get_version
     """
-    assert get_version() == ({"message": CFG.APP_VERSION}, 200)
+    assert get_version() == ({"message": CFG.VERSION}, 200)
