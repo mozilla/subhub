@@ -204,14 +204,7 @@ paths:
         - application/json
       responses:
         '200':
-          description: Subscription already active.
-          schema:
-            type: object
-            properties:
-              message:
-                type: string
-        '201':
-          description: Subscription reactivation successful.
+          description: Subscription already active or reactivation successful.
           schema:
             type: object
             properties:
