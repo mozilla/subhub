@@ -96,66 +96,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     """
 
     @property
-    def UID(self):
-        """
-        uid
-        """
-        return os.getuid()
-
-    @property
-    def GID(self):
-        """
-        gid
-        """
-        return pwd.getpwuid(self.UID).pw_gid
-
-    @property
-    def USER(self):
-        """
-        user
-        """
-        return pwd.getpwuid(self.UID).pw_name
-
-    @property
-    def PORT(self):
-        """
-        port
-        """
-        return self("PORT", 5000, cast=int)
-
-    @property
-    def JOBS(self):
-        """
-        jobs
-        """
-        try:
-            result = call("nproc")[1]
-        except:
-            result = 1
-        return int(result)
-
-    @property
-    def TIMEOUT(self):
-        """
-        timeout
-        """
-        return self("TIMEOUT", 120, cast=int)
-
-    @property
-    def WORKERS(self):
-        """
-        workers
-        """
-        return self("WORKERS", 2, cast=int)
-
-    @property
-    def MODULE(self):
-        """
-        module
-        """
-        return self("MODULE", "main:app")
-
-    @property
     def REPO_ROOT(self):
         """
         repo_root
