@@ -39,62 +39,6 @@ def test_NotGitRepoError():
     assert result
 
 
-def test_UID():
-    """
-    uid
-    """
-    assert CFG.UID == os.getuid()
-
-
-def test_GID():
-    """
-    gid
-    """
-    assert CFG.GID == pwd.getpwuid(os.getuid()).pw_gid
-
-
-def test_USER():
-    """
-    user
-    """
-    assert CFG.USER == pwd.getpwuid(os.getuid()).pw_name
-
-
-def test_PORT():
-    """
-    port
-    """
-    assert CFG.PORT == 5000
-
-
-def test_JOBS():
-    """
-    jobs
-    """
-    assert CFG.JOBS != 0
-
-
-def test_TIMEOUT():
-    """
-    timeout
-    """
-    assert CFG.TIMEOUT == 120
-
-
-def test_WORKERS():
-    """
-    workers
-    """
-    assert CFG.WORKERS == 2
-
-
-def test_MODULE():
-    """
-    module
-    """
-    assert CFG.MODULE == "main:app"
-
-
 def test_REPO_ROOT():
     """
     repo_root
