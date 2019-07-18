@@ -4,6 +4,7 @@ import base64
 import json
 
 from subhub.cfg import CFG
+from subhub.exceptions import SecretStringMissingError
 
 
 def get_secret(secret_id):
@@ -14,11 +15,7 @@ def get_secret(secret_id):
     if "SecretString" in get_secret_value_response:
         secret = get_secret_value_response["SecretString"]
         return json.loads(secret)
-    else:
-        decoded_binary_secret = base64.b64decode(
-            get_secret_value_response["SecretBinary"]
-        )
-        return decoded_binary_secret
+    raise SecretStringMissingError(secret)
 
 
 if CFG.AWS_EXECUTION_ENV:
