@@ -364,6 +364,28 @@ def test_DEPLOY_DOMAIN():
         assert False
 
 
+def test_USER():
+    """
+    user
+    """
+    try:
+        CFG.USER
+        assert True
+    except:
+        assert False
+
+
+def test_HOSTNAME():
+    """
+    hostname
+    """
+    try:
+        CFG.HOSTNAME
+        assert True
+    except:
+        assert False
+
+
 def test_DEPLOYED_BY():
     """
     deployed by
