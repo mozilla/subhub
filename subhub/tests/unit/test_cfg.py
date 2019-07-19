@@ -7,7 +7,7 @@ import pwd
 import sys
 import tempfile
 import contextlib
-from subhub.cfg import CFG, call, git, NotGitRepoError
+from subhub.cfg import CFG, call, git, NotGitRepoError, GitCommandNotFoundError
 
 from subhub.log import get_logger
 
@@ -36,6 +36,18 @@ def test_NotGitRepoError():
             result = False
         except NotGitRepoError:
             result = True
+    assert result
+
+
+def test_GitCommandNotFoundError():
+    """
+    GitCommandNotFoundError
+    """
+    try:
+        git("blah")
+        result = False
+    except GitCommandNotFoundError:
+        result = True
     assert result
 
 
@@ -202,6 +214,50 @@ def test_DYNALITE_FILE():
         assert False
 
 
+def test_SALESFORCE_BASKET_URI():
+    """
+    salesforce basket uri
+    """
+    try:
+        CFG.SALESFORCE_BASKET_URI
+        assert True
+    except:
+        assert False
+
+
+def test_BASKET_API_KEY():
+    """
+    basket api key
+    """
+    try:
+        CFG.BASKET_API_KEY
+        assert True
+    except:
+        assert False
+
+
+def test_FXA_SQS_URI():
+    """
+    fxa sqs uri
+    """
+    try:
+        CFG.FXA_SQS_URI
+        assert True
+    except:
+        assert False
+
+
+def test_AWS_REGION():
+    """
+    aws region
+    """
+    try:
+        CFG.AWS_REGION
+        assert True
+    except:
+        assert False
+
+
 def test_PAYMENT_API_KEY():
     """
     payment api key
@@ -230,6 +286,105 @@ def test_AWS_EXECUTION_ENV():
     """
     try:
         CFG.AWS_EXECUTION_ENV
+        assert True
+    except:
+        assert False
+
+
+def test_SWAGGER_UI():
+    """
+    swagger ui
+    """
+    try:
+        CFG.SWAGGER_UI
+        assert True
+    except:
+        assert False
+
+
+def test_NEW_RELIC_ACCOUNT_ID():
+    """
+    new relic account id
+    """
+    try:
+        CFG.NEW_RELIC_ACCOUNT_ID
+        assert True
+    except:
+        assert False
+
+
+def test_NEW_RELIC_TRUSTED_ACCOUNT_ID():
+    """
+    new relic trusted account id
+    """
+    try:
+        CFG.NEW_RELIC_TRUSTED_ACCOUNT_ID
+        assert True
+    except:
+        assert False
+
+
+def test_NEW_RELIC_SERVERLESS_MODE_ENABLED():
+    """
+    new relic serverless mode enabled
+    """
+    try:
+        CFG.NEW_RELIC_SERVERLESS_MODE_ENABLED
+        assert True
+    except:
+        assert False
+
+
+def test_NEW_RELIC_DISTRIBUTED_TRACING_ENABLED():
+    """
+    new relic distributed tracing enabled
+    """
+    try:
+        CFG.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
+        assert True
+    except:
+        assert False
+
+
+def test_PROFILING_ENABLED():
+    """
+    profiling enabled
+    """
+    try:
+        CFG.PROFILING_ENABLED
+        assert True
+    except:
+        assert False
+
+
+def test_DEPLOY_DOMAIN():
+    """
+    deploy domain
+    """
+    try:
+        CFG.DEPLOY_DOMAIN
+        assert True
+    except:
+        assert False
+
+
+def test_DEPLOYED_BY():
+    """
+    deployed by
+    """
+    try:
+        CFG.DEPLOYED_BY
+        assert True
+    except:
+        assert False
+
+
+def test_DEPLOYED_WHEN():
+    """
+    deployed when
+    """
+    try:
+        CFG.DEPLOYED_WHEN
         assert True
     except:
         assert False
