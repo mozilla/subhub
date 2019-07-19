@@ -391,11 +391,31 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("DEPLOY_DOMAIN", "localhost")
 
     @property
+    def USER(self):
+        """
+        user
+        """
+        try:
+            return pwd.getpwuid(os.getuid()).pw_name
+        except:
+            return "unknown"
+
+    @property
+    def HOSTNAME(self):
+        """
+        hostname
+        """
+        try:
+            return platform.node()
+        except:
+            return "unknown"
+
+    @property
     def DEPLOYED_BY(self):
         """
         DEPLOYED_BY
         """
-        return self("DEPLOYED_BY", f"{os.getlogin()}@{platform.node()}")
+        return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
 
     @property
     def DEPLOYED_WHEN(self):
