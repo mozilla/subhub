@@ -73,16 +73,6 @@ class SubHubAccount:
             logger.error("save user", user=user)
             return False
 
-    def append_custid(self, uid: str, cust_id: str) -> bool:
-        try:
-            update_user = self.model.get(uid, consistent_read=True)
-            update_user.cust_id = cust_id
-            update_user.save()
-            return True
-        except DoesNotExist:
-            logger.error("append custid", uid=uid, cust_id=cust_id)
-            return False
-
     def remove_from_db(self, uid: str) -> bool:
         try:
             conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
