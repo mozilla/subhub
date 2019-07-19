@@ -1,3 +1,4 @@
+import functools
 import time
 import cProfile
 from subhub.cfg import CFG
@@ -76,12 +77,20 @@ Calling syntax;
 
 
 def timed(function):
+    from inspect import isfunction
+
     def timer(*args, **kwargs):
         if not CFG.PROFILING_ENABLED:
-            return function(*args, **kwargs)
+            result = function(*args, **kwargs)
+            if isfunction(result):
+                return result.__wrapped__
+            else:
+                return result
         else:
             start = time.time()
             result = function(*args, **kwargs)
+            if isfunction(result):
+                result = result.__wrapped__
             end = time.time()
             print(function.__name__, "took", end - start, "time")
             return result
