@@ -49,7 +49,8 @@ def call(
     cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False
 ):
     if verbose or nerf:
-        logger.info("verbose", cmd=cmd)
+        logger.info(f"verbose cmd={cmd}")
+        pass
     if nerf:
         return (None, "nerfed", "nerfed")
     process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
@@ -57,9 +58,10 @@ def call(
     exitcode = process.poll()
     if verbose:
         if _stdout:
-            logger.info("verbose", stdout=_stdout)
+            logger.info(f"verbose stdout={_stdout}")
         if _stderr:
-            logger.info("verbose", stderr=_stderr)
+            logger.info(f"verbose stderr={_stderr}")
+            pass
     if throw and exitcode:
         raise CalledProcessError(
             exitcode, f"cmd={cmd}; stdout={_stdout}; stderr={_stderr}"
@@ -75,18 +77,20 @@ def git(args, strip=True, **kwargs):
         _, stdout, stderr = call("git rev-parse --is-inside-work-tree")
     except CalledProcessError as ex:
         if "not a git repository" in str(ex):
-            raise NotGitRepoError
-        elif "git: command not found" in str(ex):
-            raise GitCommandNotFoundError
-        else:
-            logger.error("failed repo check but NOT a NotGitRepoError???", ex=ex)
+            raise NotGitRepoError from ex
+        msg = f"failed repo check but NOT NotGitRepoError ex={ex}"
+        logger.error(msg)
+        raise ex
     try:
         _, result, _ = call(f"git {args}", **kwargs)
         if result:
             result = result.strip()
         return result
     except CalledProcessError as ex:
-        logger.error(ex)
+        if "is not a git command" in str(ex):
+            raise GitCommandNotFoundError from ex
+        msg = f"failed git command but NOT GitCommandNotFoundError ex={ex}"
+        logger.error(msg)
         raise ex
 
 
@@ -113,10 +117,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             "qa": "INFO",
             "dev": "DEBUG",
         }.get(self.DEPLOY_ENV, "NOTSET")
-        try:
-            return self("LOG_LEVEL", default_level)
-        except:
-            pass
+        return self("LOG_LEVEL", default_level)
 
     @property
     def VERSION(self):
@@ -396,26 +397,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         DEPLOYED_BY
         """
-        deployed_by = self("DEPLOYED_BY", None)
-        if deployed_by is None:
-            try:
-                deployed_by = f"{os.getlogin()}@{platform.node()}"
-            except:
-                deployed_by = "unknown"
-        return deployed_by
+        return self("DEPLOYED_BY", f"{os.getlogin()}@{platform.node()}")
 
     @property
     def DEPLOYED_WHEN(self):
         """
         DEPLOYED_WHEN
         """
-        deployed_when = self("DEPLOYED_WHEN", None)
-        if deployed_when is None:
-            try:
-                deployed_when = datetime.utcnow().isoformat()
-            except:
-                deployed_when = "unknown"
-        return deployed_when
+        return self("DEPLOYED_WHEN", datetime.utcnow().isoformat())
 
     def __getattr__(self, attr):
         """
