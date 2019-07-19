@@ -78,6 +78,8 @@ def git(args, strip=True, **kwargs):
     except CalledProcessError as ex:
         if "not a git repository" in str(ex):
             raise NotGitRepoError from ex
+        elif "is not a git command" in str(ex):
+            raise GitCommandNotFoundError from ex
         msg = f"failed repo check but NOT NotGitRepoError ex={ex}"
         logger.error(msg)
         raise ex
