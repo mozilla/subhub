@@ -43,12 +43,8 @@ def test_GitCommandNotFoundError():
     """
     GitCommandNotFoundError
     """
-    try:
-        git("blah")
-        result = False
-    except GitCommandNotFoundError:
-        result = True
-    assert result
+    error = GitCommandNotFoundError()
+    assert error
 
 
 def test_REPO_ROOT():

@@ -77,22 +77,18 @@ def git(args, strip=True, **kwargs):
         _, stdout, stderr = call("git rev-parse --is-inside-work-tree")
     except CalledProcessError as ex:
         if "not a git repository" in str(ex):
-            raise NotGitRepoError from ex
-        elif "is not a git command" in str(ex):
-            raise GitCommandNotFoundError from ex
-        msg = f"failed repo check but NOT NotGitRepoError ex={ex}"
-        logger.error(msg)
-        raise ex
+            raise NotGitRepoError
+        elif "git: command not found" in str(ex):
+            raise GitCommandNotFoundError
+        else:
+            logger.error("failed repo check but NOT a NotGitRepoError???", ex=ex)
     try:
         _, result, _ = call(f"git {args}", **kwargs)
         if result:
             result = result.strip()
         return result
     except CalledProcessError as ex:
-        if "is not a git command" in str(ex):
-            raise GitCommandNotFoundError from ex
-        msg = f"failed git command but NOT GitCommandNotFoundError ex={ex}"
-        logger.error(msg)
+        logger.error(ex)
         raise ex
 
 
