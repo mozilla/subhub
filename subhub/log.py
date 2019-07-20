@@ -135,8 +135,3 @@ def get_logger(logger_name=None):
         logger_name = inspect.currentframe().f_back.f_globals["__name__"]
     logger_name = CFG.PROJECT_NAME if logger_name == "__main__" else logger_name
     return structlog.wrap_logger(logging.getLogger(logger_name))
-
-
-if __name__ == "__main__":
-    logger = get_logger()
-    logger.debug("test")
