@@ -342,6 +342,13 @@ def test_NEW_RELIC_DISTRIBUTED_TRACING_ENABLED():
         assert False
 
 
+def test_ALLOWED_ORIGIN_SYSTEMS():
+    """
+    allowed origin systems
+    """
+    assert isinstance(CFG.ALLOWED_ORIGIN_SYSTEMS, list)
+
+
 def test_PROFILING_ENABLED():
     """
     profiling enabled

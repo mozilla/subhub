@@ -3,6 +3,7 @@ from stripe import Customer, Subscription
 import stripe
 from stripe.error import InvalidRequestError
 
+from subhub.cfg import CFG
 from subhub.exceptions import IntermittentError, ServerError
 from subhub.subhub_dynamodb import SubHubAccount
 from subhub.log import get_logger
@@ -18,6 +19,7 @@ def create_customer(
     origin_system: str,
     display_name: str,
 ) -> Customer:
+    _validate_origin_system(origin_system)
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
     customer = None
@@ -73,6 +75,7 @@ def existing_or_new_customer(
     origin_system: str,
     display_name: str,
 ) -> Customer:
+    _validate_origin_system(origin_system)
     customer = fetch_customer(subhub_account, user_id)
     if not customer:
         return create_customer(
@@ -134,3 +137,14 @@ def has_existing_plan(customer: Customer, plan_id: str) -> bool:
             ]:
                 return True
     return False
+
+
+def _validate_origin_system(origin_system: str):
+    """
+    This function validates a request's origin_system to validate that is permitted.  This
+    allows us to ensure that callers are permitted by configuration to interact with this application.
+    :param origin_system: The originating system in Mozilla
+    """
+    if origin_system not in CFG.ALLOWED_ORIGIN_SYSTEMS:
+        msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+        raise InvalidRequestError(message=msg, param=str(origin_system))
