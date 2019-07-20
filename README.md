@@ -1,5 +1,8 @@
 # SubHub
-payment subscription REST api for customers:
+
+[![Build Status](https://travis-ci.org/mozilla/subhub.svg?branch=master)](https://travis-ci.org/mozilla/subhub)
+
+Payment subscription REST api for customers:
 - FxA (Firefox Accounts)
 
 ## Required Software

@@ -1,17 +1,63 @@
+import os
 import uuid
-
 import pytest
 import stripe
-from stripe.error import InvalidRequestError
+
 from flask import g
+from stripe.error import InvalidRequestError
 from unittest.mock import Mock, MagicMock, PropertyMock
 
 from subhub.api import payments
-from subhub.customer import create_customer, subscribe_customer
+from subhub.customer import (
+    create_customer,
+    subscribe_customer,
+    existing_or_new_customer,
+)
 from subhub.tests.unit.stripe.utils import MockSubhubUser
 from subhub.log import get_logger
+from subhub.cfg import CFG
 
 logger = get_logger()
+
+
+def test_create_customer_invalid_origin_system():
+    """
+    GIVEN create a stripe customer
+    WHEN An invalid origin system is provided
+    THEN An exception should be raised
+    """
+    origin_system = "NOT_VALID"
+    with pytest.raises(InvalidRequestError) as request_error:
+        create_customer(
+            g.subhub_account,
+            user_id="test_mozilla",
+            source_token="tok_visa",
+            email="test_visa@tester.com",
+            origin_system=origin_system,
+            display_name="John Tester",
+        )
+    msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+    assert msg == str(request_error.value)
+
+
+def test_existing_or_new_customer_invalid_origin_system():
+    """
+    GIVEN create a stripe customer
+    WHEN An invalid origin system is provided
+    THEN An exception should be raised
+    """
+    origin_system = "NOT_VALID"
+    with pytest.raises(InvalidRequestError) as request_error:
+        existing_or_new_customer(
+            g.subhub_account,
+            user_id="test_mozilla",
+            source_token="tok_visa",
+            email="test_visa@tester.com",
+            origin_system=origin_system,
+            display_name="John Tester",
+        )
+    msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+    assert msg == str(request_error.value)
 
 
 def test_create_customer_tok_visa():
