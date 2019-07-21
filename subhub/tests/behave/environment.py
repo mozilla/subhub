@@ -1,5 +1,11 @@
+from subhub.tests.behave.utils.stripe_utils import StripeUtils
+
+
+def before_all(context):
+    context.stripe_utils = StripeUtils(context)
+
+
 def before_scenario(context, scenario):
-    """Seed empty HTTP headers to steps do not need to check and create."""
     context.headers = {}
     context.data = u""
     context.query = {}

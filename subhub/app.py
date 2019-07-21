@@ -56,6 +56,9 @@ def create_app(config=None):
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
         host = None
+        stripe.api_key = CFG.STRIPE_API_KEY
+    if CFG.STRIPE_API_BASE:
+        stripe.api_base = CFG.STRIPE_API_BASE
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
