@@ -66,8 +66,8 @@ def view() -> tuple:
         payload = request.data
         sig_header = request.headers["Stripe-Signature"]
         event = stripe.Webhook.construct_event(payload, sig_header, CFG.WEBHOOK_API_KEY)
-        p = StripeWebhookEventPipeline(event)
-        p.run()
+        pipeline = StripeWebhookEventPipeline(event)
+        pipeline.run()
     except ValueError as e:
         # Invalid payload
         logger.error("ValueError", error=e)
