@@ -146,5 +146,5 @@ def _validate_origin_system(origin_system: str):
     :param origin_system: The originating system in Mozilla
     """
     if origin_system not in CFG.ALLOWED_ORIGIN_SYSTEMS:
-        msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+        msg = f"origin_system={origin_system} not one of allowed origin system values, please contact a system administrator in the #subscription-platform channel."
         raise InvalidRequestError(message=msg, param=str(origin_system))
