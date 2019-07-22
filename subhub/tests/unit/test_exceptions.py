@@ -6,6 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from subhub.exceptions import SubHubError, IntermittentError, ClientError, ServerError
+from subhub.exceptions import SecretStringMissingError
 
 
 def test_SubHubError():
@@ -68,3 +69,9 @@ def test_ServerError():
     assert ex2.payload == payload
     assert ex2.status_code == status_code
     assert ex2.to_dict() == dict(message=message, some="payload")
+
+
+def test_SecretStringMissingError():
+    secret = {"foo": "bar", "baz": "qux"}
+    error = SecretStringMissingError(secret)
+    assert error

@@ -12,7 +12,7 @@ from stripe.error import InvalidRequestError
 
 from subhub.cfg import CFG
 from subhub.exceptions import IntermittentError, ServerError
-from subhub.subhub_dynamodb import SubHubAccount
+from subhub.db import SubHubAccount
 from subhub.log import get_logger
 
 logger = get_logger()

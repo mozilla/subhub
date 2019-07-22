@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 import requests
 from attrdict import AttrDict
-from subhub.api.webhooks.routes.pipeline import RoutesPipeline
+from subhub.webhooks.routes.pipeline import RoutesPipeline
 from subhub.cfg import CFG
 
 from subhub.log import get_logger

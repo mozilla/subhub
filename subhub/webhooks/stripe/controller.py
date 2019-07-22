@@ -9,18 +9,18 @@ from flask import request, Response
 
 import stripe
 from subhub.cfg import CFG
-from subhub.api.webhooks.stripe.customer import StripeCustomerCreated
-from subhub.api.webhooks.stripe.charge import StripeChargeSucceededEvent
-from subhub.api.webhooks.stripe.customer import StripeCustomerDeleted
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionCreated
-from subhub.api.webhooks.stripe.customer import StripeCustomerUpdated
-from subhub.api.webhooks.stripe.subscription import StripeSubscriptionCreated
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionUpdated
-from subhub.api.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
-from subhub.api.webhooks.stripe.customer import StripeCustomerSourceExpiring
-from subhub.api.webhooks.stripe.invoices import StripeInvoiceFinalized
-from subhub.api.webhooks.stripe.invoices import StripeInvoicePaymentFailed
-from subhub.api.webhooks.stripe.payment_intents import StripePaymentIntentSucceeded
+from subhub.webhooks.stripe.customer import StripeCustomerCreated
+from subhub.webhooks.stripe.charge import StripeChargeSucceededEvent
+from subhub.webhooks.stripe.customer import StripeCustomerDeleted
+from subhub.webhooks.stripe.customer import StripeCustomerSubscriptionCreated
+from subhub.webhooks.stripe.customer import StripeCustomerUpdated
+from subhub.webhooks.stripe.subscription import StripeSubscriptionCreated
+from subhub.webhooks.stripe.customer import StripeCustomerSubscriptionUpdated
+from subhub.webhooks.stripe.customer import StripeCustomerSubscriptionDeleted
+from subhub.webhooks.stripe.customer import StripeCustomerSourceExpiring
+from subhub.webhooks.stripe.invoices import StripeInvoiceFinalized
+from subhub.webhooks.stripe.invoices import StripeInvoicePaymentFailed
+from subhub.webhooks.stripe.intents import StripePaymentIntentSucceeded
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -66,8 +66,8 @@ def view() -> tuple:
         payload = request.data
         sig_header = request.headers["Stripe-Signature"]
         event = stripe.Webhook.construct_event(payload, sig_header, CFG.WEBHOOK_API_KEY)
-        p = StripeWebhookEventPipeline(event)
-        p.run()
+        pipeline = StripeWebhookEventPipeline(event)
+        pipeline.run()
     except ValueError as e:
         # Invalid payload
         logger.error("ValueError", error=e)

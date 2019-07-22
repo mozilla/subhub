@@ -10,7 +10,7 @@ import json
 
 from subhub.cfg import CFG
 from subhub import secrets
-from subhub.api.webhooks.stripe.controller import StripeWebhookEventPipeline
+from subhub.webhooks.stripe.controller import StripeWebhookEventPipeline
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 
