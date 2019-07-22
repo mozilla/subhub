@@ -8,7 +8,7 @@
 import json
 import requests
 
-from subhub.api.webhooks.routes.abstract import AbstractRoute
+from subhub.webhooks.routes.abstract import AbstractRoute
 from subhub.cfg import CFG
 
 from subhub.log import get_logger

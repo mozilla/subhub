@@ -20,21 +20,21 @@ securityDefinitions:
       Ops issued token.
       An example of the Authorization header would be:
       ```Authorization: Bearer 00secret00```
-    x-apikeyInfoFunc: subhub.auth_validation.payment_auth
+    x-apikeyInfoFunc: subhub.authentication.payment_auth
   WebhookApiKey:
     type: apiKey
     in: header
     name: Authorization
     description: |
       Webhook validation
-    x-apikeyInfoFunc: subhub.auth_validation.webhook_auth
+    x-apikeyInfoFunc: subhub.authentication.webhook_auth
   SupportApiKey:
     type: apiKey
     in: header
     name: Authorization
     description: |
       Sending application identifier
-    x-apikeyInfoFunc: subhub.auth_validation.support_auth
+    x-apikeyInfoFunc: subhub.authentication.support_auth
 parameters:
   uidParam:
     in: path
@@ -362,7 +362,7 @@ paths:
         - $ref: '#/parameters/uidParam'
   /webhooks:
     post:
-      operationId: subhub.api.webhooks.stripe.controller.view
+      operationId: subhub.webhooks.stripe.controller.view
       tags:
         - Webhooks
       summary: Receives webhook calls

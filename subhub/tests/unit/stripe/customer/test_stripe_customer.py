@@ -16,7 +16,7 @@ import flask
 from subhub.cfg import CFG
 
 from subhub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
-from subhub.api.webhooks.routes.firefox import FirefoxRoute
+from subhub.webhooks.routes.firefox import FirefoxRoute
 
 
 def run_customer(mocker, data, filename):

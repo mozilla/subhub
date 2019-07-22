@@ -8,8 +8,8 @@
 import json
 
 from attrdict import AttrDict
-from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
-from subhub.api.webhooks.routes.static import StaticRoutes
+from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
+from subhub.webhooks.routes.static import StaticRoutes
 from subhub.log import get_logger
 
 logger = get_logger()
