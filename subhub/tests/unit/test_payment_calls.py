@@ -43,7 +43,7 @@ def test_create_customer_invalid_origin_system():
             origin_system=origin_system,
             display_name="John Tester",
         )
-    msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+    msg = f"origin_system={origin_system} not one of allowed origin system values, please contact a system administrator in the #subscription-platform channel."
     assert msg == str(request_error.value)
 
 
@@ -63,7 +63,7 @@ def test_existing_or_new_customer_invalid_origin_system():
             origin_system=origin_system,
             display_name="John Tester",
         )
-    msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+    msg = f"origin_system={origin_system} not one of allowed origin system values, please contact a system administrator in the #subscription-platform channel."
     assert msg == str(request_error.value)
 
 

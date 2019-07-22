@@ -430,6 +430,16 @@ definitions:
           example: Monthly Rocket Launches
   Subscriptions:
     type: array
+    required: [
+      "subscription_id",
+      "status",
+      "plan_name",
+      "plan_id",
+      "ended_at",
+      "current_period_start",
+      "current_period_end",
+      "cancel_at_period_end"
+    ]
     items:
       type: object
       properties:

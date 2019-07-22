@@ -388,7 +388,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         ALLOWED_ORIGIN_SYSTEMS
         """
-        return self("ALLOWED_ORIGIN_SYSTEMS", "").split(",")
+        return self("ALLOWED_ORIGIN_SYSTEMS", "fake_origin1, fake_origin2").split(",")
 
     @property
     def PROFILING_ENABLED(self):
