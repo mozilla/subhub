@@ -157,10 +157,6 @@ doit test
 ```
 Note: The `test` task is a dependency of `package`, `local` and `deploy` tasks, however you can skip them by setting `SKIP_TESTS=<something>`.
 
-## run performance tests
-This runs a [locust.io](https://locust.io/) based test.  It 
-initially targets `localhost` but can be extended to 
-target other environments.
 
 ## run package
 This runs the `serverless package` command to zip up the `subhub` code and its dependencies.
@@ -184,6 +180,8 @@ doit deploy
 
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning, 
 etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).
+
+## [Performance Tests](./subhub/tests/performance/README.md)
 
 ## Behave Tests
 
