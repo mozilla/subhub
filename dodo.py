@@ -69,7 +69,7 @@ def envs(sep=' ', **kwargs):
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
     )
     return sep.join([
-        f'{key}={value}' for key, value in dict(envs, **kwargs).items()
+        f'{key}={value}' for key, value in sorted(dict(envs, **kwargs).items())
     ])
 
 def globs(*patterns, **kwargs):
@@ -431,9 +431,11 @@ def task_local():
     '''
     run local deployment
     '''
-    ID='fake-id'
-    KEY='fake-key'
-    PP='.'
+    ENVS=envs(
+        AWS_ACCESS_KEY_ID='fake-id',
+        AWS_SECRET_ACCESS_KEY='fake-key',
+        PYTHONPATH='.'
+    )
     return {
         'task_dep': [
             'check',
@@ -445,7 +447,7 @@ def task_local():
         'actions': [
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {envs(AWS_ACCESS_KEY_ID=ID,AWS_SECRET_ACCESS_KEY=KEY,PYTHONPATH=PP)} {PYTHON3} subhub/app.py',
+            f'env {ENVS} {PYTHON3} subhub/app.py',
         ],
     }
 
@@ -467,11 +469,14 @@ def task_perf_local():
     '''
     run locustio performance tests on local deployment
     '''
-    ID='fake-id'
-    KEY='fake-key'
-    PP='.'
     FLASK_PORT=5000
-    cmd = f'env {envs(LOCAL_FLASK_PORT=FLASK_PORT, AWS_ACCESS_KEY_ID=ID, AWS_SECRET_ACCESS_KEY=KEY, PYTHONPATH=PP)} {PYTHON3} subhub/app.py'
+    ENVS=envs(
+        LOCAL_FLASK_PORT=FLASK_PORT,
+        AWS_ACCESS_KEY_ID='fake-id',
+        AWS_SECRET_ACCESS_KEY='fake-key',
+        PYTHONPATH='.'
+    )
+    cmd = f'env {ENVS} {PYTHON3} subhub/app.py'
     return {
         'basename': 'perf-local',
         'task_dep':[
@@ -483,7 +488,7 @@ def task_perf_local():
         'actions':[
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            LongRunning(f'nohup {cmd} > /dev/null &'),
+            LongRunning(f'nohup env {envs} {PYTHON3} subhub/app.py > /dev/null &'),
             f'cd subhub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
         ]
     }
