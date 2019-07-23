@@ -429,7 +429,7 @@ def task_dynalite():
 
 def task_local():
     '''
-    run locally
+    run local deployment
     '''
     ID='fake-id'
     KEY='fake-key'
@@ -463,9 +463,9 @@ def task_yarn():
         ],
     }
 
-def task_perf():
+def task_perf_local():
     '''
-    run locustio performance tests
+    run locustio performance tests on local deployment
     '''
     ID='fake-id'
     KEY='fake-key'
@@ -473,6 +473,7 @@ def task_perf():
     FLASK_PORT=5000
     cmd = f'env {envs(LOCAL_FLASK_PORT=FLASK_PORT, AWS_ACCESS_KEY_ID=ID, AWS_SECRET_ACCESS_KEY=KEY, PYTHONPATH=PP)} {PYTHON3} subhub/app.py'
     return {
+        'basename': 'perf-local',
         'task_dep':[
             'check',
             'stripe',
@@ -487,11 +488,12 @@ def task_perf():
         ]
     }
 
-def task_remote_perf():
+def task_perf_remote():
     '''
-    run locustio performance tests
+    run locustio performance tests on remote deployment
     '''
     return {
+        'basename': 'perf-remote',
         'task_dep':[
             'check',
             'stripe',
