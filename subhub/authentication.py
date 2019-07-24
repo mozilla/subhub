@@ -26,8 +26,8 @@ def support_auth(api_token, required_scopes=None):
     return None
 
 
-def webhook_auth(api_token, required_scopes=None):
+def hub_auth(api_token, required_scopes=None):
     logger.info(f"api token {api_token}")
-    if api_token in (CFG.WEBHOOK_API_KEY,):
+    if api_token in (CFG.HUB_API_KEY,):
         return {"value": True}
     return None

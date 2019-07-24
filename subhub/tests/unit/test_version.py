@@ -6,7 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from subhub.cfg import CFG
-from subhub.api.version import get_version
+from subhub.sub.version import get_version
 
 
 def test_get_version():

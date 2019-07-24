@@ -11,7 +11,7 @@ import json
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 
-from subhub.webhooks.routes.abstract import AbstractRoute
+from subhub.hub.routes.abstract import AbstractRoute
 from subhub.cfg import CFG
 from subhub.log import get_logger
 

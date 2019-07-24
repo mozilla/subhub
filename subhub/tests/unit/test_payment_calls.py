@@ -14,7 +14,7 @@ from flask import g
 from stripe.error import InvalidRequestError
 from unittest.mock import Mock, MagicMock, PropertyMock
 
-from subhub.api import payments
+from subhub.sub import payments
 from subhub.customer import (
     create_customer,
     subscribe_customer,

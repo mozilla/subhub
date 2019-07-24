@@ -21,13 +21,13 @@ securityDefinitions:
       An example of the Authorization header would be:
       ```Authorization: Bearer 00secret00```
     x-apikeyInfoFunc: subhub.authentication.payment_auth
-  WebhookApiKey:
+  HubApiKey:
     type: apiKey
     in: header
     name: Authorization
     description: |
-      Webhook validation
-    x-apikeyInfoFunc: subhub.authentication.webhook_auth
+      Hub validation
+    x-apikeyInfoFunc: subhub.authentication.hub_auth
   SupportApiKey:
     type: apiKey
     in: header
@@ -51,7 +51,7 @@ parameters:
 paths:
   /version:
     get:
-      operationId: subhub.api.version.get_version
+      operationId: subhub.sub.version.get_version
       tags:
         - Version
       summary: SubHub version
@@ -65,7 +65,7 @@ paths:
             $ref: '#/definitions/Version'
   /support/{uid}/subscriptions:
     get:
-      operationId: subhub.api.payments.support_status
+      operationId: subhub.sub.payments.support_status
       tags:
         - Support
       summary: Support view of user Subscriptions
@@ -91,7 +91,7 @@ paths:
         - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
     get:
-      operationId: subhub.api.payments.subscription_status
+      operationId: subhub.sub.payments.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
@@ -116,7 +116,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.api.payments.subscribe_to_plan
+      operationId: subhub.sub.payments.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
@@ -177,7 +177,7 @@ paths:
                 example: Joe User
   /plans:
     get:
-      operationId: subhub.api.payments.list_all_plans
+      operationId: subhub.sub.payments.list_all_plans
       tags:
         - Subscriptions
       summary: List all Stripe Plans
@@ -193,7 +193,7 @@ paths:
             $ref: '#/definitions/Plans'
   /customer/{uid}/subscriptions/{sub_id}:
     post:
-      operationId: subhub.api.payments.reactivate_subscription
+      operationId: subhub.sub.payments.reactivate_subscription
       tags:
         - Subscriptions
       summary: Reactivate a Subscription
@@ -218,7 +218,7 @@ paths:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
     delete:
-      operationId: subhub.api.payments.cancel_subscription
+      operationId: subhub.sub.payments.cancel_subscription
       tags:
         - Subscriptions
       summary: Cancel a Subscription
@@ -248,7 +248,7 @@ paths:
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: subhub.api.payments.customer_update
+      operationId: subhub.sub.payments.customer_update
       tags:
         - Subscriptions
       summary: Customer Update
@@ -293,7 +293,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: subhub.api.payments.update_payment_method
+      operationId: subhub.sub.payments.update_payment_method
       tags:
         - Subscriptions
       summary: Update Payment Method
@@ -332,7 +332,7 @@ paths:
                 description: Pay Token.
                 example: tok_KPte7942xySKBKyrBu11yEpf
     delete:
-      operationId: subhub.api.payments.delete_customer
+      operationId: subhub.sub.payments.delete_customer
       tags:
         - Subscriptions
       summary: Delete a customer
@@ -360,18 +360,18 @@ paths:
             $ref: '#/definitions/Errormessage'
       parameters:
         - $ref: '#/parameters/uidParam'
-  /webhooks:
+  /hub:
     post:
-      operationId: subhub.webhooks.stripe.controller.view
+      operationId: subhub.hub.stripe.controller.view
       tags:
-        - Webhooks
-      summary: Receives webhook calls
-      description: Receives webhook calls.
+        - Hub
+      summary: Receives hub calls
+      description: Receives hub calls.
       produces:
         - application/json
       responses:
         200:
-          description: Webhook call received successfully.
+          description: Hub call received successfully.
           schema:
             type: object
             properties:

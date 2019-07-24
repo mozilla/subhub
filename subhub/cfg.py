@@ -335,11 +335,11 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("AWS_SECRET_ACCESS_KEY", "fake_aws_secret_access_key")
 
     @property
-    def WEBHOOK_API_KEY(self):
+    def HUB_API_KEY(self):
         """
-        webhook api key
+        hub api key
         """
-        return self("WEBHOOK_API_KEY", "fake_webhook_api_key")
+        return self("HUB_API_KEY", "fake_hub_api_key")
 
     @property
     def AWS_EXECUTION_ENV(self):

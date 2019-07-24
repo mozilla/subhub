@@ -6,7 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from subhub.cfg import CFG
-from subhub.api.types import FlaskResponse
+from subhub.sub.types import FlaskResponse
 from subhub.log import get_logger
 
 logger = get_logger()

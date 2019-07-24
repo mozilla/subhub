@@ -19,7 +19,7 @@ EXPECTED = {
     "STRIPE_API_KEY": "stripe_api_key_fake",
     "PAYMENT_API_KEY": "payment_api_key_fake",
     "SUPPORT_API_KEY": "support_api_key_fake",
-    "WEBHOOK_API_KEY": "webhook_api_key_fake",
+    "HUB_API_KEY": "hub_api_key_fake",
     "SALESFORCE_BASKET_URI": "salesforce_basket_uri_fake",
     "FXA_SQS_URI": "fxa_sqs_uri_fake",
     "TOPIC_ARN_KEY": "topic_arn_key_fake",

@@ -12,8 +12,8 @@ from datetime import datetime
 import stripe
 from stripe.error import InvalidRequestError
 
-from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
-from subhub.webhooks.routes.static import StaticRoutes
+from subhub.hub.stripe.abstract import AbstractStripeHubEvent
+from subhub.hub.routes.static import StaticRoutes
 from subhub.exceptions import ClientError
 
 from subhub.log import get_logger
@@ -21,7 +21,7 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
-class StripeCustomerCreated(AbstractStripeWebhookEvent):
+class StripeCustomerCreated(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer created", payload=self.payload)
         cust_name = self.payload.data.object.name
@@ -38,7 +38,7 @@ class StripeCustomerCreated(AbstractStripeWebhookEvent):
         self.send_to_routes(routes, json.dumps(data))
 
 
-class StripeCustomerDeleted(AbstractStripeWebhookEvent):
+class StripeCustomerDeleted(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer deleted", payload=self.payload)
         cust_name = self.payload.data.object.name
@@ -55,7 +55,7 @@ class StripeCustomerDeleted(AbstractStripeWebhookEvent):
         self.send_to_routes(routes, json.dumps(data))
 
 
-class StripeCustomerUpdated(AbstractStripeWebhookEvent):
+class StripeCustomerUpdated(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer updated", payload=self.payload)
         cust_name = self.payload.data.object.name
@@ -71,7 +71,7 @@ class StripeCustomerUpdated(AbstractStripeWebhookEvent):
         self.send_to_routes(routes, json.dumps(data))
 
 
-class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
+class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
     def run(self):
         try:
             logger.info("customer source expiring", payload=self.payload)
@@ -103,7 +103,7 @@ class StripeCustomerSourceExpiring(AbstractStripeWebhookEvent):
             raise InvalidRequestError(message="Unable to find customer", param=str(e))
 
 
-class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
+class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer subscription created", payload=self.payload)
         try:
@@ -146,7 +146,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeWebhookEvent):
             )
 
 
-class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
+class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer subscription deleted", payload=self.payload)
         try:
@@ -180,7 +180,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeWebhookEvent):
             )
 
 
-class StripeCustomerSubscriptionUpdated(AbstractStripeWebhookEvent):
+class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
     def run(self):
         logger.info("customer subscription updated", payload=self.payload)
         try:
