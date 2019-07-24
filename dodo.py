@@ -528,8 +528,8 @@ def task_behave():
         ],
         'actions':[
             LongRunning(f'nohup {cmd} > /dev/null &'),
-            f'pip install -r subhub/tests/requirements.txt',
-            f'behave subhub/tests/behave/version.feature'
+            f'pip3 install -r subhub/tests/requirements.txt',
+            f'behave subhub/tests/bdd/version.feature'
         ]
     }
 
