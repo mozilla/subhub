@@ -1,10 +1,17 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import boto3
 import json
 
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 
-from subhub.api.webhooks.routes.abstract import AbstractRoute
+from subhub.webhooks.routes.abstract import AbstractRoute
 from subhub.cfg import CFG
 from subhub.log import get_logger
 

@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import sys
 
@@ -11,7 +18,7 @@ from flask import request
 from subhub import secrets
 from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
-from subhub.subhub_dynamodb import SubHubAccount, WebHookEvent
+from subhub.db import SubHubAccount, WebHookEvent
 
 from subhub.log import get_logger
 
@@ -59,9 +66,7 @@ def create_app(config=None):
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
-    app.add_api(
-        "subhub_api.yaml", pass_context_arg_name="request", strict_validation=True
-    )
+    app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
     app.app.subhub_account = SubHubAccount(
         table_name=CFG.USER_TABLE, region=region, host=host

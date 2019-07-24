@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 """Customer functions"""
 from stripe import Customer, Subscription
 import stripe
@@ -5,7 +12,7 @@ from stripe.error import InvalidRequestError
 
 from subhub.cfg import CFG
 from subhub.exceptions import IntermittentError, ServerError
-from subhub.subhub_dynamodb import SubHubAccount
+from subhub.db import SubHubAccount
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -146,5 +153,5 @@ def _validate_origin_system(origin_system: str):
     :param origin_system: The originating system in Mozilla
     """
     if origin_system not in CFG.ALLOWED_ORIGIN_SYSTEMS:
-        msg = f"origin_system={origin_system} not one of {CFG.ALLOWED_ORIGIN_SYSTEMS}"
+        msg = f"origin_system={origin_system} not one of allowed origin system values, please contact a system administrator in the #subscription-platform channel."
         raise InvalidRequestError(message=msg, param=str(origin_system))

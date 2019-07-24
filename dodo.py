@@ -28,6 +28,15 @@ DOIT_CONFIG = {
     'verbosity': 2,
 }
 
+HEADER = '''
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+'''
+
 SPACE = ' '
 NEWLINE = '\n'
 VENV = f'{CFG.REPO_ROOT}/venv'
@@ -36,7 +45,10 @@ PIP3 = f'{PYTHON3} -m pip'
 NODE_MODULES = f'{CFG.REPO_ROOT}/node_modules'
 SLS = f'{NODE_MODULES}/serverless/bin/serverless'
 DYNALITE = f'{NODE_MODULES}/.bin/dynalite'
-SVCS = [svc for svc in os.listdir('services') if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')]
+SVCS = [
+    svc for svc in os.listdir('services')
+    if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')
+]
 
 def envs(sep=' ', **kwargs):
     envs = dict(
@@ -57,7 +69,7 @@ def envs(sep=' ', **kwargs):
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
     )
     return sep.join([
-        f'{key}={value}' for key, value in dict(envs, **kwargs).items()
+        f'{key}={value}' for key, value in sorted(dict(envs, **kwargs).items())
     ])
 
 def globs(*patterns, **kwargs):
@@ -88,6 +100,9 @@ def get_pkgmgr():
     elif check_hash('brew'):
         return 'brew'
     raise UnknownPkgmgrError
+
+def has_header(content):
+    return content.startswith(HEADER.lstrip())
 
 def pyfiles(path, exclude=None):
     pyfiles = set(Path(path).rglob('*.py')) - set(Path(exclude).rglob('*.py') if exclude else [])
@@ -160,7 +175,7 @@ def gen_prog_check(name, program=None):
         ]
     }
 
-def gen_file_check(name, func, *patterns):
+def gen_file_check(name, func, *patterns, message=None):
     filenames = globs(*patterns, recursive=True)
     def load_test(func, filename):
         try:
@@ -178,7 +193,10 @@ def gen_file_check(name, func, *patterns):
         ],
         'actions': [
             f'echo "{func.__module__}.{func.__name__} failed on {filename}"' for filename in failed_loads()
-        ] + ['false'] if len(failed_loads()) else [],
+        ] + [
+            f'echo "{message}"',
+            'false'
+        ] if len(failed_loads()) else [],
         'uptodate': [
             lambda: len(failed_loads()) == 0,
         ]
@@ -237,6 +255,13 @@ def check_reqs():
         ],
     }
 
+def check_header(f):
+    content = f.read()
+    if has_header(content):
+        return
+    msg = f'filename={f.name} does contain header; consider running doit header:{f.name}'
+    raise Exception(msg)
+
 def task_check():
     '''
     checks: noroot, python3.7, yarn, awscli, json, yaml, black, reqs
@@ -248,6 +273,8 @@ def task_check():
         yield gen_prog_check('awscli', 'aws')
     yield gen_file_check('json', json.load, 'services/**/*.json')
     yield gen_file_check('yaml', yaml.safe_load, 'services/**/*.yaml', 'services/**/*.yml')
+    header_message = "consider running 'doit header:<filename>'"
+    yield gen_file_check('header', check_header, 'subhub/**/*.py', message=header_message)
     yield check_black()
     yield check_reqs()
 
@@ -306,6 +333,27 @@ def task_black():
     return {
         'actions': [
             f'black {CFG.PROJECT_PATH}',
+        ],
+    }
+
+def task_header():
+    '''
+    apply the HEADER to all the py files under subhub/
+    '''
+    def ensure_headers():
+        for pyfile in pyfiles('subhub/'):
+            with open(pyfile, 'r') as old:
+                content = old.read()
+                if has_header(content):
+                    continue
+                with open(f'{pyfile}.new', 'w') as new:
+                    new.write(HEADER.lstrip())
+                    new.write('\n')
+                    new.write(content.lstrip())
+                    os.rename(f'{pyfile}.new', pyfile)
+    return {
+        'actions': [
+            ensure_headers,
         ],
     }
 
@@ -381,11 +429,13 @@ def task_dynalite():
 
 def task_local():
     '''
-    run locally
+    run local deployment
     '''
-    ID='fake-id'
-    KEY='fake-key'
-    PP='.'
+    ENVS=envs(
+        AWS_ACCESS_KEY_ID='fake-id',
+        AWS_SECRET_ACCESS_KEY='fake-key',
+        PYTHONPATH='.'
+    )
     return {
         'task_dep': [
             'check',
@@ -397,7 +447,7 @@ def task_local():
         'actions': [
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {envs(AWS_ACCESS_KEY_ID=ID,AWS_SECRET_ACCESS_KEY=KEY,PYTHONPATH=PP)} {PYTHON3} subhub/app.py',
+            f'env {ENVS} {PYTHON3} subhub/app.py',
         ],
     }
 
@@ -415,16 +465,20 @@ def task_yarn():
         ],
     }
 
-def task_perf():
+def task_perf_local():
     '''
-    run locustio performance tests
+    run locustio performance tests on local deployment
     '''
-    ID='fake-id'
-    KEY='fake-key'
-    PP='.'
     FLASK_PORT=5000
-    cmd = f'env {envs(LOCAL_FLASK_PORT=FLASK_PORT, AWS_ACCESS_KEY_ID=ID, AWS_SECRET_ACCESS_KEY=KEY, PYTHONPATH=PP)} {PYTHON3} subhub/app.py'
+    ENVS=envs(
+        LOCAL_FLASK_PORT=FLASK_PORT,
+        AWS_ACCESS_KEY_ID='fake-id',
+        AWS_SECRET_ACCESS_KEY='fake-key',
+        PYTHONPATH='.'
+    )
+    cmd = f'env {ENVS} {PYTHON3} subhub/app.py'
     return {
+        'basename': 'perf-local',
         'task_dep':[
             'check',
             'stripe',
@@ -434,16 +488,17 @@ def task_perf():
         'actions':[
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            LongRunning(f'nohup {cmd} > /dev/null &'),
+            LongRunning(f'nohup env {envs} {PYTHON3} subhub/app.py > /dev/null &'),
             f'cd subhub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
         ]
     }
 
-def task_remote_perf():
+def task_perf_remote():
     '''
-    run locustio performance tests
+    run locustio performance tests on remote deployment
     '''
     return {
+        'basename': 'perf-remote',
         'task_dep':[
             'check',
             'stripe',

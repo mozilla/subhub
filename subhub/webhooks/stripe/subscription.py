@@ -1,7 +1,14 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import json
 
-from subhub.api.webhooks.stripe.abstract import AbstractStripeWebhookEvent
-from subhub.api.webhooks.routes.static import StaticRoutes
+from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
+from subhub.webhooks.routes.static import StaticRoutes
 
 from subhub.log import get_logger
 

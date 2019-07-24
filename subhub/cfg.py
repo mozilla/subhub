@@ -1,3 +1,10 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 # -*- coding: utf-8 -*-
 """
 config
@@ -381,7 +388,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         ALLOWED_ORIGIN_SYSTEMS
         """
-        return self("ALLOWED_ORIGIN_SYSTEMS", "").split(",")
+        return self("ALLOWED_ORIGIN_SYSTEMS", "fake_origin1, fake_origin2").split(",")
 
     @property
     def PROFILING_ENABLED(self):

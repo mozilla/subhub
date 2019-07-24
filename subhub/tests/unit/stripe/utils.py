@@ -1,9 +1,16 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import json
 
 from subhub.cfg import CFG
 from subhub import secrets
-from subhub.api.webhooks.stripe.controller import StripeWebhookEventPipeline
+from subhub.webhooks.stripe.controller import StripeWebhookEventPipeline
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 

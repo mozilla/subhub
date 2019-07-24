@@ -5,6 +5,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from subhub import cfg
 
-__all__ = [cfg]
+class StaticRoutes:
+    FIREFOX_ROUTE = "firefox_route"
+    SALESFORCE_ROUTE = "salesforce_route"
