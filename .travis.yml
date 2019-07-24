@@ -39,8 +39,8 @@ script:
   - |
     echo "starting stripe-mock"
     stripe-mock -http-port 80 -https-port 443 &
-  - doit behave
   - doit test
+  - doit behave
 addons:
   hosts:
     - stripe.com
