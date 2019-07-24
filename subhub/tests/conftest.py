@@ -17,7 +17,7 @@ import pytest
 import stripe
 from flask import g
 
-from subhub.api import payments
+from subhub.sub import payments
 from subhub.app import create_app
 from subhub.cfg import CFG
 from subhub.customer import create_customer
@@ -77,7 +77,7 @@ def app():
     app = create_app()
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
-        g.webhook_table = app.app.webhook_table
+        g.hub_table = app.app.hub_table
         yield app
 
 

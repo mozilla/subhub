@@ -9,7 +9,7 @@ import stripe
 
 from mockito import when, mock, unstub, ANY
 
-from subhub.api import payments
+from subhub.sub import payments
 from subhub.log import get_logger
 
 logger = get_logger()

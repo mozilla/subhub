@@ -116,8 +116,8 @@ class SubHubAccount:
             return False
 
 
-def _create_webhook_model(table_name_, region_, host_):
-    class WebHookEventModel(Model):
+def _create_hub_model(table_name_, region_, host_):
+    class HubEventModel(Model):
         class Meta:
             table_name = table_name_
             region = region_
@@ -127,36 +127,36 @@ def _create_webhook_model(table_name_, region_, host_):
         event_id = UnicodeAttribute(hash_key=True)
         sent_system = ListAttribute()
 
-    return WebHookEventModel
+    return HubEventModel
 
 
-class WebHookEventModel(Model):
+class HubEventModel(Model):
     event_id = UnicodeAttribute(hash_key=True)
     sent_system = ListAttribute(default=list)
 
 
-class WebHookEvent:
+class HubEvent:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        self.model = _create_webhook_model(table_name, region, host)
+        self.model = _create_hub_model(table_name, region, host)
 
-    def new_event(self, event_id: str, sent_system: list) -> WebHookEventModel:
+    def new_event(self, event_id: str, sent_system: list) -> HubEventModel:
         return self.model(event_id=event_id, sent_system=[sent_system])
 
-    def get_event(self, event_id: str) -> Optional[WebHookEventModel]:
+    def get_event(self, event_id: str) -> Optional[HubEventModel]:
         try:
-            webhook_event = self.model.get(event_id, consistent_read=True)
-            return webhook_event
+            hub_event = self.model.get(event_id, consistent_read=True)
+            return hub_event
         except DoesNotExist:
             logger.error("get event", event_id=event_id)
             return None
 
     @staticmethod
-    def save_event(webhook_event: WebHookEventModel) -> bool:
+    def save_event(hub_event: HubEventModel) -> bool:
         try:
-            webhook_event.save()
+            hub_event.save()
             return True
         except PutError:
-            logger.error("save event", webhook_event=webhook_event)
+            logger.error("save event", hub_event=hub_event)
             return False
 
     def append_event(self, event_id: str, sent_system: str) -> bool:

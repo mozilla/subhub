@@ -29,11 +29,11 @@ def test_support_auth_bad_token():
     assert support_auth is None
 
 
-def test_webhook_auth():
-    webhook_auth = authentication.webhook_auth("fake_webhook_api_key", None)
-    assert webhook_auth["value"] is True
+def test_hub_auth():
+    hub_auth = authentication.hub_auth("fake_hub_api_key", None)
+    assert hub_auth["value"] is True
 
 
-def test_webhook_auth_bad_token():
-    webhook_auth = authentication.webhook_auth("bad_webhook_api_key", None)
-    assert webhook_auth is None
+def test_hub_auth_bad_token():
+    hub_auth = authentication.hub_auth("bad_hub_api_key", None)
+    assert hub_auth is None

@@ -8,15 +8,15 @@
 import json
 
 from stripe.error import InvalidRequestError
-from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
-from subhub.webhooks.routes.static import StaticRoutes
 
+from subhub.hub.stripe.abstract import AbstractStripeHubEvent
+from subhub.hub.routes.static import StaticRoutes
 from subhub.log import get_logger
 
 logger = get_logger()
 
 
-class StripeInvoiceFinalized(AbstractStripeWebhookEvent):
+class StripeInvoiceFinalized(AbstractStripeHubEvent):
     def run(self):
         data = self.create_data(
             customer_id=self.payload.data.object.customer,
@@ -39,7 +39,7 @@ class StripeInvoiceFinalized(AbstractStripeWebhookEvent):
         self.send_to_routes(routes, json.dumps(data))
 
 
-class StripeInvoicePaymentFailed(AbstractStripeWebhookEvent):
+class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
     def run(self):
         try:
             nickname_list = self.payload.data.object.lines.data

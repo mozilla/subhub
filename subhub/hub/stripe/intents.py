@@ -10,15 +10,14 @@ import json
 import stripe
 from stripe.error import InvalidRequestError
 
-from subhub.webhooks.stripe.abstract import AbstractStripeWebhookEvent
-from subhub.webhooks.routes.static import StaticRoutes
-
+from subhub.hub.stripe.abstract import AbstractStripeHubEvent
+from subhub.hub.routes.static import StaticRoutes
 from subhub.log import get_logger
 
 logger = get_logger()
 
 
-class StripePaymentIntentSucceeded(AbstractStripeWebhookEvent):
+class StripePaymentIntentSucceeded(AbstractStripeHubEvent):
     def run(self):
         logger.info("payment intent succeeded", payload=self.payload)
         try:

@@ -178,10 +178,10 @@ custom:
         Principal: "*"
         Action: execute-api:Invoke
         Resource:
-          - execute-api:/*/*/webhooks
+          - execute-api:/*/*/hub
         Condition:
           IpAddress:
-            aws:SourceIp: ${file(./whitelist.yml):webhook}
+            aws:SourceIp: ${file(./whitelist.yml):hub}
 
 functions:
   subhub:

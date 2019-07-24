@@ -14,7 +14,7 @@ from subhub.cfg import CFG
 from subhub.tests.unit.stripe.utils import run_test, MockSqsClient
 
 
-def test_stripe_webhook_succeeded(mocker):
+def test_stripe_hub_succeeded(mocker):
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     data = {
         "event_id": "evt_00000000000000",
@@ -46,13 +46,13 @@ def test_stripe_webhook_succeeded(mocker):
     # using pytest mock
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""
-    flask.g.webhook_table.get_event.return_value = ""
+    flask.g.hub_table.get_event.return_value = ""
 
     # run the test
     run_test("charge/charge-succeeded.json")
 
 
-def test_stripe_webhook_badpayload():
+def test_stripe_hub_badpayload():
     try:
         run_test("charge/badpayload.json")
     except ValueError as e:

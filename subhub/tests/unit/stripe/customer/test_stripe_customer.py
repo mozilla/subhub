@@ -7,14 +7,15 @@
 
 import time
 
-from mockito import when, mock, unstub
-import requests
 import boto3
 import flask
 import stripe
+import requests
 
-from subhub.cfg import CFG
+from mockito import when, mock, unstub
+
 from subhub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
+from subhub.cfg import CFG
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -28,7 +29,7 @@ def run_customer(mocker, data, filename):
     run_test(filename)
 
 
-def test_stripe_webhook_customer_created(mocker):
+def test_stripe_hub_customer_created(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.created",
@@ -45,7 +46,7 @@ def test_stripe_webhook_customer_created(mocker):
     run_customer(mocker, data, filename)
 
 
-def test_stripe_webhook_customer_deleted(mocker):
+def test_stripe_hub_customer_deleted(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.deleted",
@@ -67,7 +68,7 @@ def test_stripe_webhook_customer_deleted(mocker):
     run_customer(mocker, data, filename)
 
 
-def test_stripe_webhook_customer_updated(mocker):
+def test_stripe_hub_customer_updated(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.updated",
@@ -84,7 +85,7 @@ def test_stripe_webhook_customer_updated(mocker):
     run_customer(mocker, data, filename)
 
 
-def test_stripe_webhook_customer_source_expiring(mocker):
+def test_stripe_hub_customer_source_expiring(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.source.expiring",
@@ -125,7 +126,7 @@ def test_stripe_webhook_customer_source_expiring(mocker):
     run_customer(mocker, data, filename)
 
 
-def test_stripe_webhook_customer_subscription_created(mocker):
+def test_stripe_hub_customer_subscription_created(mocker):
     customer_response = mock(
         {
             "id": "cus_00000000000000",
@@ -170,7 +171,7 @@ def test_stripe_webhook_customer_subscription_created(mocker):
     unstub()
 
 
-def test_stripe_webhook_customer_subscription_updated_cancel(mocker):
+def test_stripe_hub_customer_subscription_updated_cancel(mocker):
 
     data = {
         "event_id": "evt_00000000000000",
@@ -212,7 +213,7 @@ def test_stripe_webhook_customer_subscription_updated_cancel(mocker):
     unstub()
 
 
-def test_stripe_webhook_customer_subscription_updated_no_cancel(mocker):
+def test_stripe_hub_customer_subscription_updated_no_cancel(mocker):
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.subscription.updated",
@@ -258,7 +259,7 @@ def test_stripe_webhook_customer_subscription_updated_no_cancel(mocker):
     unstub()
 
 
-def test_stripe_webhook_customer_subscription_deleted(mocker):
+def test_stripe_hub_customer_subscription_deleted(mocker):
     data = dict(
         active=False,
         subscriptionId="sub_00000000000000",

@@ -8,7 +8,7 @@
 from abc import ABC, abstractmethod
 import requests
 from attrdict import AttrDict
-from subhub.webhooks.routes.pipeline import RoutesPipeline
+from subhub.hub.routes.pipeline import RoutesPipeline
 from subhub.cfg import CFG
 
 from subhub.log import get_logger
@@ -16,7 +16,7 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
-class AbstractStripeWebhookEvent(ABC):
+class AbstractStripeHubEvent(ABC):
     def __init__(self, payload):
         self.payload = AttrDict(payload)
 
