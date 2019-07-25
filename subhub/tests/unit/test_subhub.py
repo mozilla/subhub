@@ -99,7 +99,7 @@ def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
     data = {
         "pmt_token": "tok_visa",
         "plan_id": "invalid",
-        "orig_system": "Test_system",
+        "origin_system": "Test_system",
         "email": "subtest@example.com",
         "display_name": "John Tester",
     }
@@ -142,7 +142,7 @@ def test_subscribe_card_declined_error_handler(app, monkeypatch):
     data = {
         "pmt_token": "tok_visa",
         "plan_id": "plan",
-        "orig_system": "Test_system",
+        "origin_system": "Test_system",
         "email": "subtest@example.com",
         "display_name": "John Tester",
     }

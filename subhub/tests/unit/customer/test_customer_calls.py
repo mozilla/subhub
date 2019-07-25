@@ -78,7 +78,7 @@ def test_subscribe_to_plan_returns_newest(monkeypatch):
         {
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "email": "subtest@tester.com",
             "display_name": "John Tester",
         }

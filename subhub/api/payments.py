@@ -30,7 +30,7 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
         user_id=uid,
         email=data["email"],
         source_token=data["pmt_token"],
-        origin_system=data["orig_system"],
+        origin_system=data["origin_system"],
         display_name=data["display_name"],
     )
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])

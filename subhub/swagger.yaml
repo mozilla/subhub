@@ -152,7 +152,7 @@ paths:
               - pmt_token
               - plan_id
               - email
-              - orig_system
+              - origin_system
               - display_name
             properties:
               pmt_token:
@@ -167,7 +167,7 @@ paths:
                 type: string
                 description: Email address.
                 example: user@gmail.com
-              orig_system:
+              origin_system:
                 type: string
                 description: Originating System.
                 example: Firefox
