@@ -129,3 +129,6 @@ node_modules/
 # GraphViz
 *.png
 *.dot
+
+# Behave, JUnit reporting
+reports

@@ -419,6 +419,18 @@ def test_DEPLOYED_WHEN():
         assert False
 
 
+def test_STRIPE_API_BASE():
+    """
+
+    :return:
+    """
+    try:
+        CFG.STRIPE_API_BASE
+        assert True
+    except:
+        assert False
+
+
 def test_default():
     """
     default
