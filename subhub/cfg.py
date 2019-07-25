@@ -360,14 +360,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         NEW_RELIC_ACCOUNT_ID
         """
-        return self("NEW_RELIC_ACCOUNT_ID", 2_239_138)
+        return self("NEW_RELIC_ACCOUNT_ID", 2_423_519)
 
     @property
     def NEW_RELIC_TRUSTED_ACCOUNT_ID(self):
         """
         NEW_RELIC_TRUSTED_ACCOUNT_ID
         """
-        return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2_239_138)
+        return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2_423_519)
 
     @property
     def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
