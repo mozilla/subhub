@@ -392,6 +392,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("ALLOWED_ORIGIN_SYSTEMS", "fake_origin1, fake_origin2").split(",")
 
     @property
+    def PAYMENT_EVENT_LIST(self):
+        """"
+        PAYMENT_EVENT_LIST
+        """
+        return self("PAYMENT_EVENT_LIST", "test.system, test.event").split(",")
+
+    @property
     def PROFILING_ENABLED(self):
         """
         PROFILING_ENABLED

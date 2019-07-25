@@ -74,19 +74,14 @@ class StripeCustomerUpdated(AbstractStripeHubEvent):
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
     def run(self):
         try:
-            logger.info("customer source expiring", payload=self.payload)
+            logger.info("customer source expiring")
             customer_id = self.payload.data.object.customer
-            logger.info("customer id", customer_id=customer_id)
             updated_customer = stripe.Customer.retrieve(id=customer_id)
-            logger.info("updated customer", updated_customer=updated_customer)
             email = updated_customer.email
-            logger.info("email", email=email)
             nicknames = list()
-            logger.info("subs", updated_customer=updated_customer.subscriptions["data"])
             for subs in updated_customer.subscriptions["data"]:
                 if subs["status"] in ["active", "trialing"]:
                     nicknames.append(subs["plan"]["nickname"])
-            logger.info("expiring nickname", nickname=nicknames[0])
             data = self.create_data(
                 email=email,
                 nickname=nicknames[0],
