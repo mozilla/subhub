@@ -193,7 +193,7 @@ def test_create_subscription_with_valid_data():
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": "valid@{}customer.com".format(uid),
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -217,7 +217,7 @@ def test_subscribe_customer_existing(create_customer_for_processing):
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -227,7 +227,7 @@ def test_subscribe_customer_existing(create_customer_for_processing):
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -252,7 +252,7 @@ def test_create_subscription_with_invalid_payment_token():
                 "pmt_token": "tok_invalid",
                 "plan_id": "plan_EtMcOlFMNWW4nd",
                 "email": "invalid_test@test.com",
-                "orig_system": "Test_system",
+                "origin_system": "Test_system",
                 "display_name": "Jon Tester",
             },
         )
@@ -279,7 +279,7 @@ def test_create_subscription_with_invalid_plan_id(app):
                 "pmt_token": "tok_visa",
                 "plan_id": "plan_abc123",
                 "email": "invalid_plan@tester.com",
-                "orig_system": "Test_system",
+                "origin_system": "Test_system",
                 "display_name": "Jon Tester",
             },
         )
@@ -345,7 +345,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -355,7 +355,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first
             "pmt_token": "tok_visa",
             "plan_id": "plan_F4G9jB3x5i6Dpj",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -389,7 +389,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_secon
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
@@ -399,7 +399,7 @@ def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_secon
             "pmt_token": "tok_visa",
             "plan_id": "plan_F4G9jB3x5i6Dpj",
             "email": f"valid@{uid}customer.com",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )

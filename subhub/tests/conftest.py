@@ -103,7 +103,7 @@ def create_subscription_for_processing():
         {
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
-            "orig_system": "Test_system",
+            "origin_system": "Test_system",
             "email": "subtest@{}tester.com".format(uid),
             "display_name": "John Tester",
         },
