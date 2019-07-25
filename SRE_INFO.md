@@ -19,16 +19,8 @@ uses decouple to load them as fields.
 [subhub](https://github.com/mozilla/subhub)
 
 ## Monitoring
-[New Relic APM](https://rpm.newrelic.com/accounts/2239138/applications/153639011)
 
 ### SSL Expiry checks in New Relic
-[dev.fxa.mozilla-subhub.app](https://synthetics.newrelic.com/accounts/2239138/monitors/4ad6af80-a18e-44c2-8da9-a2b2ec50997d)
-
-[prod.fxa.mozilla-subhub.app](https://synthetics.newrelic.com/accounts/2239138/monitors/c44b53f1-8fd4-4f0c-a844-5a1e82eb7560)
-
-[qa.fxa.mozilla-subhub.app](https://synthetics.newrelic.com/accounts/2239138/monitors/a36774d9-4017-49b7-bd3d-e19c317b5e6c)
-
-[stage.fxa.mozilla-subhub.app](https://synthetics.newrelic.com/accounts/2239138/monitors/41da8e65-daa0-4bdf-809f-11b679bccf28)
 
 ## Cloud Account
 AWS account mozilla-subhub 903937621340
