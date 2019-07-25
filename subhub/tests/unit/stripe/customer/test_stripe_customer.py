@@ -169,6 +169,7 @@ def test_stripe_webhook_customer_subscription_created(mocker):
     run_customer(mocker, data, filename)
     unstub()
 
+
 def test_stripe_webhook_customer_subscription_updated_cancel(mocker):
 
     data = {
