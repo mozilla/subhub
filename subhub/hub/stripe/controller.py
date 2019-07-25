@@ -10,7 +10,6 @@ from flask import request, Response
 import stripe
 from subhub.cfg import CFG
 from subhub.hub.stripe.customer import StripeCustomerCreated
-from subhub.hub.stripe.charge import StripeChargeSucceededEvent
 from subhub.hub.stripe.customer import StripeCustomerDeleted
 from subhub.hub.stripe.customer import StripeCustomerSubscriptionCreated
 from subhub.hub.stripe.customer import StripeCustomerUpdated
@@ -47,8 +46,6 @@ class StripeHubEventPipeline:
             StripeCustomerDeleted(self.payload).run()
         elif event_type == "customer.source.expiring":
             StripeCustomerSourceExpiring(self.payload).run()
-        # elif event_type == "charge.succeeded":
-        #     StripeChargeSucceededEvent(self.payload).run()
         elif event_type == "subscription.created":
             StripeSubscriptionCreated(self.payload).run()
         elif event_type == "invoice.finalized":
@@ -78,6 +75,22 @@ def view() -> tuple:
         # Invalid signature
         logger.error("SignatureVerificationError", error=e)
         return Response(status=400)
+    except Exception as e:
+        logger.error("General Exception", error=e)
+        return Response(e, status=500)
+
+    return Response("Success", status=200)
+
+
+def event_process(missing_event):
+    logger.info("event process", missing_event=missing_event)
+    try:
+        payload = missing_event
+        if not isinstance(payload, dict):
+            raise Exception
+        logger.info("check payload", payload=payload)
+        pipeline = StripeHubEventPipeline(payload)
+        pipeline.run()
     except Exception as e:
         logger.error("General Exception", error=e)
         return Response(e, status=500)

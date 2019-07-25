@@ -353,6 +353,14 @@ def test_ALLOWED_ORIGIN_SYSTEMS():
     assert isinstance(CFG.ALLOWED_ORIGIN_SYSTEMS, list)
 
 
+def test_PAYMENT_EVENT_LIST():
+    """
+    payment event list
+    :return:
+    """
+    assert isinstance(CFG.PAYMENT_EVENT_LIST, list)
+
+
 def test_PROFILING_ENABLED():
     """
     profiling enabled
