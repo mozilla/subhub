@@ -121,7 +121,7 @@ def _setup_once():
     logger = get_logger(__name__)
     logger.info(
         "logging initialized",
-        DEPLOY_ENV=CFG.DEPLOY_ENV,
+        DEPLOYED_ENV=CFG.DEPLOYED_ENV,
         PROJECT_NAME=CFG.PROJECT_NAME,
         BRANCH=CFG.BRANCH,
         REVISION=CFG.REVISION,

@@ -26,4 +26,4 @@ def get_secret(secret_id):
 
 
 if CFG.AWS_EXECUTION_ENV:
-    os.environ.update(get_secret(f"{CFG.DEPLOY_ENV}/{CFG.PROJECT_NAME}"))
+    os.environ.update(get_secret(f"{CFG.DEPLOYED_ENV}/{CFG.PROJECT_NAME}"))
