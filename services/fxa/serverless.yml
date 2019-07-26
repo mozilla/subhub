@@ -25,8 +25,10 @@ provider:
   tracing: true
   snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
   environment:
-    STAGE: ${self:provider.stage}
+    DEPLOYED_BY: ${env:DEPLOYED_BY}
     DEPLOYED_ENV: ${env:DEPLOYED_ENV}
+    DEPLOYED_WHEN: ${env:DEPLOYED_WHEN}
+    STAGE: ${self:provider.stage}
     PROJECT_NAME: ${env:PROJECT_NAME}
     BRANCH: ${env:BRANCH}
     REVISION: ${env:REVISION}
@@ -38,8 +40,6 @@ provider:
     NEW_RELIC_SERVERLESS_MODE_ENABLED: ${env:NEW_RELIC_SERVERLESS_MODE_ENABLED}
     NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: ${env:NEW_RELIC_DISTRIBUTED_TRACING_ENABLED}
     PROFILING_ENABLED: ${env:PROFILING_ENABLED}
-    DEPLOYED_BY: ${env:DEPLOYED_BY}
-    DEPLOYED_WHEN: ${env:DEPLOYED_WHEN}
     USER_TABLE:
       Ref: 'Users'
     EVENT_TABLE:
@@ -49,8 +49,10 @@ provider:
     project-name: subhub
     project-desc: payment subscription REST api for customers
     project-email: subhub@mozilla.com
-    deploy-env: ${env:DEPLOYED_ENV}
-    deploy-method: serverless
+    deployed-by: ${env:DEPLOYED_BY}
+    deployed-env: ${env:DEPLOYED_ENV}
+    deployed-when: ${env:DEPLOYED_WHEN}
+    deployed-method: serverless
     sources: https://github.com/mozilla/subhub
     urls: prod.fxa.mozilla-subhub.app/v1
     keywords: subhub:subscriptions:flask:serverless:swagger
@@ -147,6 +149,11 @@ custom:
         Action: execute-api:Invoke
         Resource:
           - execute-api:/*/*/version
+      - Effect: Allow
+        Principal: "*"
+        Action: execute-api:Invoke
+        Resource:
+          - execute-api:/*/*/deployed
       - Effect: Allow
         Principal: "*"
         Action: execute-api:Invoke

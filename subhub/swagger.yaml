@@ -63,6 +63,20 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Version'
+  /deployed:
+    get:
+      operationId: subhub.sub.deployed.get_deployed
+      tags:
+        - Deployed
+      summary: SubHub deployed
+      description: Show Subhub deployed env vars
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Deployed'
   /support/{uid}/subscriptions:
     get:
       operationId: subhub.sub.payments.support_status
@@ -396,6 +410,18 @@ definitions:
       code:
         type: number
         example: 200
+  Deployed:
+    type: object
+    properties:
+      DEPLOYED_BY:
+        type: string
+        example: sidler@76
+      DEPLOYED_ENV:
+        type: string
+        example: dev
+      DEPLOYED_WHEN:
+        type: string
+        example: 2019-07-26T21:21:16.180200
   Plans:
     type: array
     items:

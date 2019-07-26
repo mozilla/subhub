@@ -19,6 +19,7 @@ import platform
 
 from datetime import datetime
 from decouple import UndefinedValueError, AutoConfig, config
+from functools import lru_cache
 from subprocess import Popen, CalledProcessError, PIPE
 
 from logging import getLogger
@@ -432,6 +433,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
 
     @property
+    @lru_cache()
     def DEPLOYED_WHEN(self):
         """
         DEPLOYED_WHEN
