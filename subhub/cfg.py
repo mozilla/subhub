@@ -121,7 +121,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             "stage": "INFO",
             "qa": "INFO",
             "dev": "DEBUG",
-        }.get(self.DEPLOY_ENV, "NOTSET")
+        }.get(self.DEPLOYED_ENV, "NOTSET")
         return self("LOG_LEVEL", default_level)
 
     @property
@@ -145,7 +145,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             return self("BRANCH")
 
     @property
-    def DEPLOY_ENV(self):
+    def DEPLOYED_ENV(self):
         """
         deployment environment
         """
@@ -353,7 +353,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         boolean property to determine if we should swagger or not
         """
-        return self.DEPLOY_ENV in ("stage", "qa", "dev")
+        return self.DEPLOYED_ENV in ("stage", "qa", "dev")
 
     @property
     def NEW_RELIC_ACCOUNT_ID(self):

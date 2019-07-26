@@ -52,7 +52,7 @@ SVCS = [
 
 def envs(sep=' ', **kwargs):
     envs = dict(
-        DEPLOY_ENV=CFG.DEPLOY_ENV,
+        DEPLOYED_ENV=CFG.DEPLOYED_ENV,
         PROJECT_NAME=CFG.PROJECT_NAME,
         BRANCH=CFG.BRANCH,
         REVISION=CFG.REVISION,
@@ -563,7 +563,7 @@ def task_package():
                 'test',
             ],
             'actions': [
-                f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.DEPLOY_ENV} -v',
+                f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.DEPLOYED_ENV} -v',
             ],
         }
 
@@ -573,7 +573,7 @@ def task_deploy():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        curl = f'curl --silent https://{CFG.DEPLOY_ENV}.{svc}.mozilla-subhub.app/v1/version'
+        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
         describe = 'git describe --abbrev=7'
         yield {
             'name': svc,
@@ -585,7 +585,7 @@ def task_deploy():
                 'test',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOY_ENV} --aws-s3-accelerate -v',
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
                 f'echo "{curl}"',
                 f'{curl}',
                 f'echo "{describe}"',

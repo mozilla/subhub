@@ -45,7 +45,7 @@ This is the support api key.  Defaults to `fake_support_api_key`
 ## Other Important CFG Properties
 These values are calculated and not to be set by a user.  They are mentioned here for clarity.
 
-### DEPLOY_ENV
+### DEPLOYED_ENV
 The deployment environment is determined by the branch name:
 - master: `prod`
 - stage/*: `stage`
