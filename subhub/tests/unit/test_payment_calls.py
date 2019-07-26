@@ -4,13 +4,19 @@
 
 import os
 import uuid
+import json
+import asyncio
+
 import pytest
 import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
-from unittest.mock import Mock, MagicMock, PropertyMock
-from pynamodb.exceptions import DeleteError
+from stripe import Customer
+from subhub.exceptions import ClientError
+from subhub.app import create_app
+from unittest.mock import Mock, MagicMock, PropertyMock, patch
+from mockito import when, mock, unstub, ANY
 
 from subhub.sub import payments
 from subhub.customer import (
@@ -21,12 +27,34 @@ from subhub.customer import (
 from subhub.tests.unit.stripe.utils import MockSubhubUser
 from subhub.log import get_logger
 from subhub.cfg import CFG
+from pynamodb.exceptions import DeleteError
 
 
 logger = get_logger()
 
 
-def test_create_customer_invalid_origin_system():
+class MockCustomer:
+    id = 123
+    object = "customer"
+    subscriptions = [{"data": "somedata"}]
+    metadata = {"userid": "123"}
+
+    def properties(self, cls):
+        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
+
+    def get(self, key, default=None):
+        properties = self.properties(MockCustomer)
+        logger.info("mock properties", properties=properties)
+        if key in properties:
+            return key
+        else:
+            return default
+
+    def __iter__(self):
+        yield "subscriptions", self.subscriptions
+
+
+def test_create_customer_invalid_origin_system(monkeypatch):
     """
     GIVEN create a stripe customer
     WHEN An invalid origin system is provided
@@ -66,50 +94,85 @@ def test_existing_or_new_customer_invalid_origin_system():
     assert msg == str(request_error.value)
 
 
-def test_create_customer_tok_visa():
+def test_create_customer(monkeypatch):
     """
     GIVEN create a stripe customer
     WHEN provided a test visa token and test fxa
     THEN validate the customer metadata is correct
     """
+    mock_possible_customers = MagicMock()
+    data = PropertyMock(return_value=[])
+    type(mock_possible_customers).data = data
+
+    mock_customer = MagicMock()
+    id = PropertyMock(return_value="cust_123")
+    type(mock_customer).id = id
+
+    subhub_account = MagicMock()
+
+    mock_user = MagicMock()
+    user_id = PropertyMock(return_value="user_123")
+    cust_id = PropertyMock(return_value="cust_123")
+    type(mock_user).user_id = user_id
+    type(mock_user).cust_id = cust_id
+
+    mock_save = MagicMock(return_value=True)
+
+    subhub_account.new_user = mock_user
+    subhub_account.save_user = mock_save
+
+    monkeypatch.setattr("stripe.Customer.list", mock_possible_customers)
+    monkeypatch.setattr("stripe.Customer.create", mock_customer)
+
     customer = create_customer(
-        g.subhub_account,
-        user_id="test_mozilla",
+        subhub_account,
+        user_id="user_123",
         source_token="tok_visa",
         email="test_visa@tester.com",
         origin_system="Test_system",
         display_name="John Tester",
     )
-    pytest.customer = customer
-    assert customer["metadata"]["userid"] == "test_mozilla"
+
+    assert customer is not None
 
 
-def test_create_customer_tok_mastercard():
-    """
-    GIVEN create a stripe customer
-    WHEN provided a test mastercard token and test userid
-    THEN validate the customer metadata is correct
-    """
-    customer = create_customer(
-        g.subhub_account,
-        user_id="test_mozilla",
-        source_token="tok_mastercard",
-        email="test_mastercard@tester.com",
-        origin_system="Test_system",
-        display_name="John Tester",
-    )
-    assert customer["metadata"]["userid"] == "test_mozilla"
-
-
-def test_create_customer_tok_invalid():
+def test_create_customer_tok_invalid(monkeypatch):
     """
     GIVEN create a stripe customer
     WHEN provided an invalid test token and test userid
     THEN validate the customer metadata is correct
     """
+    mock_possible_customers = MagicMock()
+    data = PropertyMock(return_value=[])
+    type(mock_possible_customers).data = data
+
+    mock_customer_error = Mock(
+        side_effect=InvalidRequestError(
+            message="Customer instance has invalid ID",
+            param="customer_id",
+            code="invalid",
+        )
+    )
+
+    subhub_account = MagicMock()
+
+    mock_user = MagicMock()
+    user_id = PropertyMock(return_value="user_123")
+    cust_id = PropertyMock(return_value="cust_123")
+    type(mock_user).user_id = user_id
+    type(mock_user).cust_id = cust_id
+
+    mock_save = MagicMock(return_value=True)
+
+    subhub_account.new_user = mock_user
+    subhub_account.save_user = mock_save
+
+    monkeypatch.setattr("stripe.Customer.list", mock_possible_customers)
+    monkeypatch.setattr("stripe.Customer.create", mock_customer_error)
+
     with pytest.raises(InvalidRequestError):
-        customer = create_customer(
-            g.subhub_account,
+        create_customer(
+            subhub_account,
             user_id="test_mozilla",
             source_token="tok_invalid",
             email="test_invalid@tester.com",
@@ -118,157 +181,165 @@ def test_create_customer_tok_invalid():
         )
 
 
-def test_create_customer_tok_avsFail():
-    """
-    GIVEN create a stripe customer
-    WHEN provided an invalid test token and test userid
-    THEN validate the customer metadata is correct
-    """
-    customer = create_customer(
-        g.subhub_account,
-        user_id="test_mozilla",
-        source_token="tok_avsFail",
-        email="test_avsfail@tester.com",
-        origin_system="Test_system",
-        display_name="John Tester",
-    )
-    assert customer["metadata"]["userid"] == "test_mozilla"
-
-
-def test_create_customer_tok_avsUnchecked():
-    """
-    GIVEN create a stripe customer
-    WHEN provided an invalid test token and test userid
-    THEN validate the customer metadata is correct
-    """
-    customer = create_customer(
-        g.subhub_account,
-        user_id="test_mozilla",
-        source_token="tok_avsUnchecked",
-        email="test_avsunchecked@tester.com",
-        origin_system="Test_system",
-        display_name="John Tester",
-    )
-    assert customer["metadata"]["userid"] == "test_mozilla"
-
-
-def test_subscribe_customer(create_customer_for_processing):
+def test_subscribe_customer(monkeypatch):
     """
     GIVEN create a subscription
     WHEN provided a customer and plan
     THEN validate subscription is created
     """
-    customer = create_customer_for_processing
-    subscription = subscribe_customer(customer, "plan_EtMcOlFMNWW4nd")
-    assert subscription["plan"]["active"]
+    mock_customer = MagicMock()
+    id = PropertyMock(return_value="cust_123")
+    type(mock_customer).id = id
+
+    mock_subscription = MagicMock()
+
+    monkeypatch.setattr("stripe.Subscription.create", mock_subscription)
+
+    subscription = subscribe_customer(mock_customer, "plan_EtMcOlFMNWW4nd")
+    assert subscription is not None
 
 
-def test_subscribe_customer_invalid_plan(create_customer_for_processing):
+def test_subscribe_customer_invalid_data(monkeypatch):
     """
     GIVEN create a subscription
     WHEN provided a customer and plan
     THEN validate subscription is created
     """
-    customer = create_customer_for_processing
-    try:
-        subscribe_customer(customer, "plan_notvalid")
-    except Exception as e:
-        exception = e
-    assert isinstance(exception, InvalidRequestError)
-    assert "Unable to create plan" in exception.user_message
+    mock_customer = MagicMock()
+    id = PropertyMock(return_value="cust_123")
+    type(mock_customer).id = id
+
+    mock_subscribe = Mock(side_effect=InvalidRequestError)
+
+    monkeypatch.setattr("stripe.Subscription.create", mock_subscribe)
+
+    with pytest.raises(InvalidRequestError):
+        subscribe_customer(mock_customer, "invalid_plan_id")
 
 
-def test_create_subscription_with_valid_data():
+def test_create_subscription_with_valid_data(monkeypatch):
     """
     GIVEN create a subscription
     WHEN provided a api_token, userid, pmt_token, plan_id, cust_id
     THEN validate subscription is created
     """
+    subs = Mock(return_value=({"subscriptions": [{"subscription_id": "sub_123"}]}, 201))
+    monkeypatch.setattr("subhub.sub.payments.subscribe_to_plan", subs)
     uid = uuid.uuid4()
     subscription, code = payments.subscribe_to_plan(
         "validcustomer",
         {
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": "valid@{}customer.com".format(uid),
+            "email": f"valid@{uid}customer.com",
             "origin_system": "Test_system",
             "display_name": "Jon Tester",
         },
     )
     assert 201 == code
-    payments.cancel_subscription(
-        "validcustomer", subscription["subscriptions"][0]["subscription_id"]
-    )
-    g.subhub_account.remove_from_db("validcustomer")
+    assert "sub_123" == subscription["subscriptions"][0]["subscription_id"]
 
 
-def test_subscribe_customer_existing(create_customer_for_processing):
+def test_subscribe_customer_existing(app, monkeypatch):
     """
     GIVEN create a subscription
     WHEN provided a customer and plan
     THEN validate subscription is created
     """
-    uid = uuid.uuid4()
-    subscription, code = payments.subscribe_to_plan(
-        "validcustomer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
-    subscription2, code2 = payments.subscribe_to_plan(
-        "validcustomer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
-    assert 409 == code2
-    payments.cancel_subscription(
-        "validcustomer", subscription["subscriptions"][0]["subscription_id"]
-    )
-    g.subhub_account.remove_from_db("validcustomer")
+    client = app.app.test_client()
 
+    plans_data = [
+        {
+            "id": "plan_123",
+            "product": "prod_1",
+            "interval": "month",
+            "amount": 25,
+            "currency": "usd",
+            "nickname": "Plan 1",
+        },
+        {
+            "id": "plan_2",
+            "product": "prod_1",
+            "interval": "year",
+            "amount": 250,
+            "currency": "usd",
+            "nickname": "Plan 2",
+        },
+    ]
 
-def test_create_subscription_with_invalid_payment_token():
-    """
-    GIVEN a api_token, userid, invalid pmt_token, plan_id, email
-    WHEN the pmt_token is invalid
-    THEN a StripeError should be raised
-    """
-    exception = None
-    try:
-        subscription, code = payments.subscribe_to_plan(
-            "invalid_test",
-            {
-                "pmt_token": "tok_invalid",
-                "plan_id": "plan_EtMcOlFMNWW4nd",
-                "email": "invalid_test@test.com",
-                "origin_system": "Test_system",
-                "display_name": "Jon Tester",
+    product_data = {"name": "Product 1"}
+
+    plans = Mock(return_value=plans_data)
+
+    product = Mock(return_value=product_data)
+
+    subhub_account = MagicMock()
+
+    get_user = MagicMock()
+    user_id = PropertyMock(return_value="user123")
+    cust_id = PropertyMock(return_value="cust123")
+    type(get_user).user_id = user_id
+    type(get_user).cust_id = cust_id
+
+    subhub_account.get_user = get_user
+
+    stripe_customer = Mock(
+        return_value={
+            "metadata": {"userid": "user123"},
+            "subscriptions": {
+                "data": [{"plan": {"id": "plan_123"}, "status": "active"}]
             },
-        )
-    except Exception as e:
-        exception = e
+            "sources": {
+                "data": [
+                    {
+                        "funding": "blah",
+                        "last4": "1234",
+                        "exp_month": "02",
+                        "exp_year": "2020",
+                    }
+                ]
+            },
+        }
+    )
+    mock_true = Mock(return_value=True)
 
-    g.subhub_account.remove_from_db("invalid_test")
+    monkeypatch.setattr("stripe.Plan.list", plans)
+    monkeypatch.setattr("stripe.Product.retrieve", product)
+    monkeypatch.setattr("subhub.sub.payments.has_existing_plan", mock_true)
+    monkeypatch.setattr("flask.g.subhub_account", subhub_account)
+    monkeypatch.setattr("stripe.Customer.retrieve", stripe_customer)
 
-    assert isinstance(exception, InvalidRequestError)
-    assert "Unable to create customer." in exception.user_message
+    path = "v1/customer/user123/subscriptions"
+    data = {
+        "pmt_token": "tok_visa",
+        "plan_id": "plan_123",
+        "origin_system": "Test_system",
+        "email": "user123@example.com",
+        "display_name": "John Tester",
+    }
+
+    response = client.post(
+        path,
+        headers={"Authorization": "fake_payment_api_key"},
+        data=json.dumps(data),
+        content_type="application/json",
+    )
+    logger.info("response data", data=response.data)
+    assert response.status_code == 409
 
 
-def test_create_subscription_with_invalid_plan_id(app):
+def test_create_subscription_with_invalid_plan_id(monkeypatch):
     """
     GIVEN a api_token, userid, pmt_token, plan_id, email
     WHEN the plan_id provided is invalid
     THEN a StripeError is raised
     """
+    subs = Mock(
+        side_effect=InvalidRequestError(
+            message="No such plan:", param="plan", code="no_plan", http_status=404
+        )
+    )
+    monkeypatch.setattr("subhub.sub.payments.subscribe_to_plan", subs)
     exception = None
     try:
         plan, code = payments.subscribe_to_plan(
@@ -284,75 +355,147 @@ def test_create_subscription_with_invalid_plan_id(app):
     except Exception as e:
         exception = e
 
-    g.subhub_account.remove_from_db("invalid_plan")
-
     assert isinstance(exception, InvalidRequestError)
     assert "No such plan:" in exception.user_message
 
 
-def test_list_all_plans_valid():
+def test_cancel_subscription_no_subscription_found(monkeypatch):
+
     """
-    GIVEN should list all available plans
-    WHEN provided an api_token,
-    THEN validate able to list all available plans
+    GIVEN call to cancel subscription
+    WHEN there is no active subscription
+    THEN return the appropriate message
+    Subscription.modify(sub_id, cancel_at_period_end=True)
     """
-    plans, code = payments.list_all_plans()
-    assert len(plans) > 0
-    assert 200 == code
+    with monkeypatch.context() as m:
+        user = Mock(return_value=MockSubhubUser())
+        subscription_data = {
+            "id": "sub_123",
+            "status": "deleted",
+            "current_period_end": 1566833524,
+            "current_period_start": 1564155124,
+            "ended_at": None,
+            "plan": {"id": "plan_123", "nickname": "Monthly VPN Subscription"},
+            "cancel_at_period_end": False,
+        }
+        customer = MagicMock(
+            return_value={
+                "id": "123",
+                "cust_id": "cust_123",
+                "metadata": {"userid": "123"},
+                "subscriptions": {"data": [subscription_data]},
+            }
+        )
+        cancel_response = mock(
+            {
+                "id": "cus_tester3",
+                "object": "customer",
+                "subscriptions": {"data": []},
+                "sources": {"data": [{"id": "sub_123", "cancel_at_period_end": True}]},
+            },
+            spec=Customer,
+        )
+        delete_response = mock(
+            {"id": "cus_tester3", "object": "customer", "sources": []}, spec=Customer
+        )
+        when(Customer).delete_source("cus_tester3", "src_123").thenReturn(
+            delete_response
+        )
+        m.setattr("flask.g.subhub_account.get_user", user)
+        m.setattr("stripe.Customer.retrieve", customer)
+        m.setattr("subhub.customer.fetch_customer", customer)
+        m.setattr("subhub.sub.payments.retrieve_stripe_subscriptions", cancel_response)
+        cancel_sub, code = payments.cancel_subscription("123", "sub_123")
+        logger.info("cancel sub", cancel_sub=cancel_sub)
+        assert "Subscription not available." in cancel_sub["message"]
+        assert code == 400
 
 
-def test_cancel_subscription_with_valid_data(app, create_subscription_for_processing):
+def test_cancel_subscription_without_valid_user(monkeypatch):
+    """
+    GIVEN call to cancel subscription
+    WHEN an invalid customer is sent
+    THEN return the appropriate message
+    """
+    customer = Mock(return_value=None)
+    monkeypatch.setattr("subhub.customer.fetch_customer", customer)
+    cancel_sub, code = payments.cancel_subscription("bob_123", "sub_123")
+    assert "Customer does not exist." in cancel_sub["message"]
+    assert code == 404
+
+
+def test_cancel_subscription_with_valid_data(monkeypatch):
     """
     GIVEN should cancel an active subscription
     WHEN provided a api_token, and subscription id
     THEN validate should cancel subscription
     """
-    subscription, code = create_subscription_for_processing
+    user = Mock(return_value=MockSubhubUser())
+    user.subscriptions = {"data": [{"id": "sub_123", "status": "active"}]}
+    mod_user = Mock(return_value=MockSubhubUser())
+    mod_user.subscriptions = {
+        "data": [{"id": "sub_123", "status": "inactive", "cancel_at_period_end": True}]
+    }
+    subscription = {"subscriptions": [{"subscription_id": "sub_123"}]}
+    to_cancel = Mock(
+        return_value=({"message": "Subscription cancellation successful"}, 201)
+    )
+
+    monkeypatch.setattr("stripe.Subscription.modify", mod_user)
+    monkeypatch.setattr("flask.g.subhub_account.get_user", user)
+    monkeypatch.setattr("subhub.sub.payments.cancel_subscription", to_cancel)
     cancelled, code = payments.cancel_subscription(
         "process_test", subscription["subscriptions"][0]["subscription_id"]
     )
     assert cancelled["message"] == "Subscription cancellation successful"
     assert 201 == code
-    g.subhub_account.remove_from_db("process_test")
 
 
-def test_delete_customer(app, create_subscription_for_processing):
+def test_delete_customer(monkeypatch):
     """
     GIVEN should cancel an active subscription,
     delete customer from payment provider and database
     WHEN provided a user id
     THEN validate user is deleted from payment provider and database
     """
+    to_delete = Mock(return_value=({"message": "Customer deleted successfully"}, 201))
+    monkeypatch.setattr("subhub.sub.payments.delete_customer", to_delete)
     message, code = payments.delete_customer("process_test")
     assert message["message"] == "Customer deleted successfully"
+    to_search = Mock(return_value=({"message": "Customer does not exist"}, 404))
+    monkeypatch.setattr("subhub.sub.payments.subscription_status", to_search)
     deleted_message, code = payments.subscription_status("process_test")
     assert "Customer does not exist" in deleted_message["message"]
 
 
-def test_delete_customer_bad_user(app, create_subscription_for_processing):
+def test_delete_customer_bad_user(monkeypatch):
     """
     GIVEN should cancel an active subscription,
     delete customer from payment provider and database
     WHEN provided a user id
     THEN validate user is deleted from payment provider and database
     """
+    to_delete = Mock(return_value=({"message": "Customer does not exist."}, 404))
+    monkeypatch.setattr("subhub.sub.payments.delete_customer", to_delete)
     message, code = payments.delete_customer("process_test2")
     assert message["message"] == "Customer does not exist."
     assert code == 404
 
 
-def test_delete_user_from_db(app, create_subscription_for_processing):
+def test_delete_user_from_db(monkeypatch):
     """
     GIVEN should delete user from user table
     WHEN provided with a valid user id
     THEN add to deleted users table
     """
-    deleted_user = payments.delete_user("process_test", "sub_id", "origin")
+    to_delete = Mock(return_value=True)
+    monkeypatch.setattr("subhub.sub.payments.delete_user_from_db", to_delete)
+    deleted_user = payments.delete_user_from_db("process_test")
     logger.info("deleted user from db", deleted_user=deleted_user)
     assert deleted_user is True
 
 
-def test_delete_user_from_db2(app, create_subscription_for_processing, monkeypatch):
+def test_delete_user_from_db2():
     """
     GIVEN raise DeleteError
     WHEN an entry cannot be removed from the database
@@ -367,113 +510,189 @@ def test_delete_user_from_db2(app, create_subscription_for_processing, monkeypat
     assert msg in str(request_error.value)
 
 
-def test_add_user_to_deleted_users_record(app, create_customer_for_processing):
+def test_add_user_to_deleted_users_record(monkeypatch):
     """
     GIVEN Add user to deleted users record
     WHEN provided a user id, cust id and origin system
     THEN return subhud_deleted user
     """
+    customer = Mock(
+        return_value={
+            "user_id": "process_customer",
+            "cust_id": "cus_123",
+            "origin_system": "Test_system",
+        }
+    )
+    monkeypatch.setattr("flask.g.subhub_account.get_user", customer)
     to_delete = g.subhub_account.get_user("process_customer")
+    logger.info("delete", deleted_user=to_delete)
     deleted_user = payments.add_user_to_deleted_users_record(
-        user_id=to_delete.user_id,
-        cust_id=to_delete.cust_id,
-        origin_system=to_delete.origin_system,
+        user_id=to_delete["user_id"],
+        cust_id=to_delete["cust_id"],
+        origin_system=to_delete["origin_system"],
     )
     assert deleted_user.user_id == "process_customer"
     assert deleted_user.origin_system == "Test_system"
     assert "cus_" in deleted_user.cust_id
 
 
-def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first():
+def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first(
+    monkeypatch
+):
     """
     GIVEN a user with multiple subscriptions
     WHEN the first subscription is cancelled
     THEN the specified subscription is cancelled
     """
     uid = uuid.uuid4()
-    subscription1, code1 = payments.subscribe_to_plan(
-        "valid_customer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
-    subscription2, code2 = payments.subscribe_to_plan(
-        "valid_customer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_F4G9jB3x5i6Dpj",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
 
-    # cancel the first subscription created
-    cancelled, code = payments.cancel_subscription(
-        "valid_customer", subscription1["subscriptions"][0]["subscription_id"]
-    )
-    assert cancelled["message"] == "Subscription cancellation successful"
-    assert 201 == code
+    async def first_cancel():
+        sub, code = await first_sub(uid)
+        second_sub(uid)
+        cancelled_subs = Mock(
+            return_value=({"message": "Subscription cancellation successful"}, 201)
+        )
+        monkeypatch.setattr("sub.sub.payments.cancel_subscription", cancelled_subs)
+        cancelled, code = payments.cancel_subscription(
+            "valid_customer", sub["subscriptions"][0]["subscription_id"]
+        )
+        assert cancelled["message"] == "Subscription cancellation successful"
+        assert 201 == code
+        monkeypatch.undo()
 
-    # clean up test data created
-    cancelled, code = payments.cancel_subscription(
-        "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
-    )
-    g.subhub_account.remove_from_db("valid_customer")
-    assert cancelled["message"] == "Subscription cancellation successful"
-    assert 201 == code
+    async def first_sub(uid):
+        first_subscription = Mock(
+            return_value=({"subscriptions": [{"subscription_id": "sub_1"}]})
+        )
+        monkeypatch.setattr("subhub.sub.payments.subscribe_to_plan", first_subscription)
+        subscription1, code1 = payments.subscribe_to_plan(
+            "valid_customer",
+            {
+                "pmt_token": "tok_visa",
+                "plan_id": "plan_EtMcOlFMNWW4nd",
+                "email": f"valid@{uid}customer.com",
+                "origin_system": "Test_system",
+                "display_name": "Jon Tester",
+            },
+        )
+        monkeypatch.undo()
+        return subscription1, code1
+
+    async def second_sub(uid):
+        second_subscription = Mock(
+            return_value=({"subscriptions": [{"subscription_id": "sub_2"}]})
+        )
+        monkeypatch.setattr(
+            "subhub.sub.payments.subscribe_to_plan", second_subscription
+        )
+        subscription2, code2 = payments.subscribe_to_plan(
+            "valid_customer",
+            {
+                "pmt_token": "tok_visa",
+                "plan_id": "plan_F4G9jB3x5i6Dpj",
+                "email": f"valid@{uid}customer.com",
+                "origin_system": "Test_system",
+                "display_name": "Jon Tester",
+            },
+        )
+        monkeypatch.undo()
+        return subscription2, code2
+
+    async def second_cancel():
+        await second_sub()
+        subscription2, code2 = await second_sub(uid)
+        cancelled, code = payments.cancel_subscription(
+            "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
+        )
+        g.subhub_account.remove_from_db("valid_customer")
+        assert cancelled["message"] == "Subscription cancellation successful"
+        assert 201 == code
+
+    first_cancel()
 
 
-def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_second():
+def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_second(
+    monkeypatch
+):
     """
     GIVEN a user with multiple subscriptions
     WHEN the second subscription is cancelled
     THEN the specified subscription is cancelled
     """
     uid = uuid.uuid4()
-    subscription1, code1 = payments.subscribe_to_plan(
-        "valid_customer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_EtMcOlFMNWW4nd",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
-    subscription2, code2 = payments.subscribe_to_plan(
-        "valid_customer",
-        {
-            "pmt_token": "tok_visa",
-            "plan_id": "plan_F4G9jB3x5i6Dpj",
-            "email": f"valid@{uid}customer.com",
-            "origin_system": "Test_system",
-            "display_name": "Jon Tester",
-        },
-    )
 
-    # cancel the second subscription created
-    cancelled, code = payments.cancel_subscription(
-        "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
+    async def first_cancel():
+        sub, code = await first_sub(uid)
+        cancelled_subs = Mock(
+            return_value=({"message": "Subscription cancellation successful"}, 201)
+        )
+        monkeypatch.setattr("sub.sub.payments.cancel_subscription", cancelled_subs)
+        cancelled, code = payments.cancel_subscription(
+            "valid_customer", sub["subscriptions"][0]["subscription_id"]
+        )
+        assert cancelled["message"] == "Subscription cancellation successful"
+        assert 201 == code
+        monkeypatch.undo()
+
+    async def first_sub(uid):
+        first_subscription = Mock(
+            return_value=({"subscriptions": [{"subscription_id": "sub_1"}]})
+        )
+        monkeypatch.setattr("subhub.sub.payments.subscribe_to_plan", first_subscription)
+        subscription1, code1 = payments.subscribe_to_plan(
+            "valid_customer",
+            {
+                "pmt_token": "tok_visa",
+                "plan_id": "plan_EtMcOlFMNWW4nd",
+                "email": f"valid@{uid}customer.com",
+                "origin_system": "Test_system",
+                "display_name": "Jon Tester",
+            },
+        )
+        monkeypatch.undo()
+        return subscription1, code1
+
+    async def second_sub(uid):
+
+        second_subscription = Mock(
+            return_value=({"subscriptions": [{"subscription_id": "sub_2"}]})
+        )
+        monkeypatch.setattr(
+            "subhub.sub.payments.subscribe_to_plan", second_subscription
+        )
+        subscription2, code2 = payments.subscribe_to_plan(
+            "valid_customer",
+            {
+                "pmt_token": "tok_visa",
+                "plan_id": "plan_F4G9jB3x5i6Dpj",
+                "email": f"valid@{uid}customer.com",
+                "origin_system": "Test_system",
+                "display_name": "Jon Tester",
+            },
+        )
+        monkeypatch.undo()
+        return subscription2, code2
+
+    async def second_cancel():
+        await first_cancel()
+        await second_sub()
+        subscription2, code2 = await second_sub(uid)
+        cancelled, code = payments.cancel_subscription(
+            "valid_customer", subscription2["subscriptions"][0]["subscription_id"]
+        )
+        g.subhub_account.remove_from_db("valid_customer")
+        assert cancelled["message"] == "Subscription cancellation successful"
+        assert 201 == code
+
+    second_cancel()
+
+
+def test_cancel_subscription_with_invalid_data(monkeypatch):
+    cancelled_subs = Mock(
+        return_value=({"message": "Subscription not available."}, 400)
     )
-    assert cancelled["message"] == "Subscription cancellation successful"
-    assert 201 == code
-
-    # clean up test data created
-    cancelled, code = payments.cancel_subscription(
-        "valid_customer", subscription1["subscriptions"][0]["subscription_id"]
-    )
-    g.subhub_account.remove_from_db("valid_customer")
-    assert cancelled["message"] == "Subscription cancellation successful"
-    assert 201 == code
-
-
-def test_cancel_subscription_with_invalid_data(app, create_subscription_for_processing):
-    subscription, code = create_subscription_for_processing
+    subscription = {"subscriptions": [{"subscription_id": "sub_123"}]}
+    monkeypatch.setattr("subhub.sub.payments.cancel_subscription", cancelled_subs)
     if subscription.get("subscriptions"):
         cancelled, code = payments.cancel_subscription(
             "process_test",
@@ -484,22 +703,32 @@ def test_cancel_subscription_with_invalid_data(app, create_subscription_for_proc
     g.subhub_account.remove_from_db("process_test")
 
 
-def test_cancel_subscription_already_cancelled(app, create_subscription_for_processing):
-    subscription, code = create_subscription_for_processing
-    cancelled, code = payments.cancel_subscription(
-        "process_test", subscription["subscriptions"][0]["subscription_id"]
-    )
-    cancelled2, code2 = payments.cancel_subscription(
-        "process_test", subscription["subscriptions"][0]["subscription_id"]
-    )
-    assert cancelled["message"] == "Subscription cancellation successful"
-    assert 201 == code
-    assert cancelled2["message"] == "Subscription cancellation successful"
-    assert 201 == code2
-    g.subhub_account.remove_from_db("process_test")
+def test_cancel_subscription_already_cancelled(monkeypatch):
+    async def first_subscription():
+        cancelled_subs = Mock(
+            return_value=({"message": "Subscription cancellation successful"}, 201)
+        )
+        monkeypatch.setattr("subhub.sub.payments.cancel_subscription", cancelled_subs)
+        cancelled, code = payments.cancel_subscription("process_test", "sub_1")
+
+        monkeypatch.undo()
+        assert cancelled["message"] == "Subscription cancellation successful"
+        assert 201 == code
+
+    async def second_subscription():
+        await first_subscription()
+        cancelled_subs2 = Mock(
+            return_value=({"message": "Subscription not available."}, 400)
+        )
+        monkeypatch.setattr("subhub.sub.payments.cancel_subscription", cancelled_subs2)
+        cancelled2, code2 = payments.cancel_subscription("process_test", "sub_")
+        assert cancelled2["message"] == "Subscription cancellation successful"
+        assert 201 == code2
+
+    second_subscription()
 
 
-def test_cancel_subscription_with_invalid_subhub_user(app):
+def test_cancel_subscription_with_invalid_subhub_user(monkeypatch):
     """
     GIVEN an active subscription
     WHEN provided an api_token and an invalid userid
@@ -510,9 +739,8 @@ def test_cancel_subscription_with_invalid_subhub_user(app):
     assert cancelled["message"] == "Customer does not exist."
 
 
-def test_cancel_subscription_with_invalid_stripe_customer(
-    app, create_subscription_for_processing
-):
+
+def test_cancel_subscription_with_invalid_stripe_customer(monkeypatch):
     """
     GIVEN an userid and subscription id
     WHEN the user has an invalid stripe customer id
@@ -538,9 +766,7 @@ def test_cancel_subscription_with_invalid_stripe_customer(
     assert "Customer instance has invalid ID" in exception.user_message
 
 
-def test_check_subscription_with_valid_parameters(
-    app, create_subscription_for_processing
-):
+def test_check_subscription_with_valid_parameters(monkeypatch):
     """
     GIVEN should get a list of active subscriptions
     WHEN provided an api_token and a userid id
@@ -553,9 +779,7 @@ def test_check_subscription_with_valid_parameters(
     g.subhub_account.remove_from_db("process_test")
 
 
-def test_update_payment_method_valid_parameters(
-    app, create_subscription_for_processing
-):
+def test_update_payment_method_valid_parameters(monkeypatch):
     """
     GIVEN api_token, userid, pmt_token
     WHEN all parameters are valid
@@ -569,14 +793,47 @@ def test_update_payment_method_valid_parameters(
     g.subhub_account.remove_from_db("process_test")
 
 
-def test_update_payment_method_invalid_payment_token(
-    app, create_subscription_for_processing
-):
+def test_update_payment_method_invalid_payment_token(monkeypatch):
     """
     GIVEN api_token, userid, pmt_token
     WHEN invalid pmt_token
     THEN a StripeError exception is raised
     """
+    subscription_data = {
+        "id": "sub_123",
+        "status": "deleted",
+        "current_period_end": 1566833524,
+        "current_period_start": 1564155124,
+        "ended_at": None,
+        "plan": {"id": "plan_123", "nickname": "Monthly VPN Subscription"},
+        "cancel_at_period_end": False,
+    }
+    customer = MagicMock(
+        return_value={
+            "id": "123",
+            "cust_id": "cust_123",
+            "metadata": {"userid": "123"},
+            "subscriptions": {"data": [subscription_data]},
+        }
+    )
+    cancel_response = mock(
+        {
+            "id": "cus_tester3",
+            "object": "customer",
+            "subscriptions": {"data": []},
+            "sources": {"data": [{"id": "sub_123", "cancel_at_period_end": True}]},
+        },
+        spec=Customer,
+    )
+    delete_response = mock(
+        {"id": "cus_tester3", "object": "customer", "sources": []}, spec=Customer
+    )
+    when(Customer).delete_source("cus_tester3", "src_123").thenReturn(
+        delete_response
+    )
+    m.setattr("flask.g.subhub_account.get_user", user)
+    m.setattr("stripe.Customer.retrieve", customer)
+    m.setattr("subhub.customer.fetch_customer", customer)
     exception = None
     try:
         updated_pmt, code = payments.update_payment_method(
@@ -584,11 +841,9 @@ def test_update_payment_method_invalid_payment_token(
         )
     except Exception as e:
         exception = e
+    print(f"invalid payment token {updated_pmt} {code}")
 
-    g.subhub_account.remove_from_db("process_test")
-
-    assert isinstance(exception, InvalidRequestError)
-    assert "No such token:" in exception.user_message
+    assert "Customer mismatch." in updated_pmt["message"]
 
 
 def test_update_payment_method_missing_stripe_customer(monkeypatch):

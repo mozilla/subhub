@@ -101,6 +101,7 @@ def _get_all_plans():
 
 
 def retrieve_stripe_subscriptions(customer: Customer) -> list:
+    logger.info("customer", customer=customer)
     try:
         customer_subscriptions_data = customer.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
@@ -129,7 +130,9 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
         ]:
             Subscription.modify(sub_id, cancel_at_period_end=True)
             updated_customer = fetch_customer(g.subhub_account, uid)
+            logger.info("updated customer", updated_customer=updated_customer)
             subs = retrieve_stripe_subscriptions(updated_customer)
+            logger.info("subs", subs=subs, type=type(subs))
             for sub in subs:
                 if sub["cancel_at_period_end"] and sub["id"] == sub_id:
                     return {"message": "Subscription cancellation successful"}, 201

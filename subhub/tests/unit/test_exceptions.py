@@ -6,7 +6,7 @@ from subhub.exceptions import SubHubError, IntermittentError, ClientError, Serve
 from subhub.exceptions import SecretStringMissingError
 
 
-def test_SubHubError():
+def test_subhub_error():
     message = "message"
     status_code = 513
     payload = dict(some="payload")
@@ -17,7 +17,7 @@ def test_SubHubError():
     )
 
 
-def test_IntermittentError():
+def test_intermittent_error():
     message = "message"
     ex1 = IntermittentError(message)
     assert ex1.args[0] == message
@@ -34,7 +34,7 @@ def test_IntermittentError():
     assert ex2.to_dict() == dict(message=message, some="payload")
 
 
-def test_ClientError():
+def test_client_error():
     message = "message"
     ex1 = ClientError(message)
     assert ex1.args[0] == message
@@ -51,7 +51,7 @@ def test_ClientError():
     assert ex2.to_dict() == dict(message=message, some="payload")
 
 
-def test_ServerError():
+def test_server_error():
     message = "message"
     ex1 = ServerError(message)
     assert ex1.args[0] == message
