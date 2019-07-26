@@ -624,6 +624,18 @@ def task_pip3list():
         ],
     }
 
+def task_curl():
+    '''
+    curl again remote deployment url: /version, /deployed
+    '''
+    for route in ('deployed', 'version'):
+        yield {
+            'name': route,
+            'actions': [
+                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-subhub.app/v1/{route}',
+            ],
+        }
+
 def task_rmrf():
     '''
     delete cached files: pycache, pytest, node, venv, doitdb
