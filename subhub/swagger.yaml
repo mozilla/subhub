@@ -404,12 +404,15 @@ definitions:
   Version:
     type: object
     properties:
-      message:
+      BRANCH:
         type: string
-        example: v0.0.2-109-gadd6c97
-      code:
-        type: number
-        example: 200
+        example: master
+      VERSION:
+        type: string
+        example: v0.0.3-11-gaf8af91
+      REVISION:
+        type: string
+        example: af8af912255d204bcd178fe47e9a1af3215e09d4
   Deployed:
     type: object
     properties:

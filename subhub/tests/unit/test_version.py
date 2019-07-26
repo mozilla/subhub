@@ -13,4 +13,5 @@ def test_get_version():
     """
     test get_version
     """
-    assert get_version() == ({"message": CFG.VERSION}, 200)
+    version = dict(BRANCH=CFG.BRANCH, VERSION=CFG.VERSION, REVISION=CFG.REVISION)
+    assert get_version() == (version, 200)
