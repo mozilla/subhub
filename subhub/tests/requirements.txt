@@ -11,3 +11,4 @@ locustio==0.11.0
 purl==1.5
 behave==1.2.6
 jsoncompare==0.1.2
+pyparsing==2.4.0
