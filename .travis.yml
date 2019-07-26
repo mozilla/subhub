@@ -36,3 +36,4 @@ script:
   EOF
 - doit test
 - doit graph
+- doit draw
