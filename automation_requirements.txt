@@ -7,4 +7,5 @@ tox==3.13.2
 black==19.3b0
 ruamel.yaml==0.15.97
 locustio==0.11.0
+doit-graph==0.1.1
 pyparsing==2.4.0
