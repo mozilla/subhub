@@ -5,6 +5,10 @@ import sys
 
 import awsgi
 import newrelic.agent
+
+from aws_xray_sdk.core import xray_recorder
+from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
+
 newrelic.agent.initialize()
 
 # First some funky path manipulation so that we can work properly in
@@ -17,9 +21,12 @@ from subhub.log import get_logger
 
 logger = get_logger()
 
+xray_recorder.configure(service="subhub")
+
 # Create app at module scope to cache it for repeat requests
 try:
     app = create_app()
+    XRayMiddleware(app.app, xray_recorder)
 except Exception:  # pylint: disable=broad-except
     logger.exception("Exception occurred while loading app")
     # TODO: Add Sentry exception catch here
