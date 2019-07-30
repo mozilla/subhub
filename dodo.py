@@ -108,6 +108,7 @@ def pyfiles(path, exclude=None):
     pyfiles = set(Path(path).rglob('*.py')) - set(Path(exclude).rglob('*.py') if exclude else [])
     return [pyfile.as_posix() for pyfile in pyfiles]
 
+# TODO: This needs to check for the existence of the dependency prior to execution or update project requirements.
 def task_count():
     '''
     use the cloc utility to count lines of code
@@ -678,6 +679,14 @@ def task_tidy():
             'rm -rf ' + ' '.join(TIDY_FILES),
             'find . | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf',
         ],
+    }
+
+def task_draw():
+    """generate image from a dot file"""
+    return {
+        'file_dep': ['tasks.dot'],
+        'targets': ['tasks.png'],
+        'actions': ['dot -Tpng %(dependencies)s -o %(targets)s'],
     }
 
 if __name__ == '__main__':

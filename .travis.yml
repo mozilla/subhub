@@ -19,6 +19,7 @@ before_install:
 - pip install -r automation_requirements.txt
 - npm install -g dynalite
 - npm install -g kinesalite
+- sudo apt-get install -y graphviz graphviz-dev
 script:
 - mkdir -p ~/.aws/
 - |
