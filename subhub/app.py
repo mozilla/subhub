@@ -11,8 +11,6 @@ import sys
 import connexion
 import stripe
 import stripe.error
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
@@ -139,9 +137,6 @@ def create_app(config=None):
 
 if __name__ == "__main__":
     app = create_app()
-    if CFG.AWS_EXECUTION_ENV:
-        xray_recorder.configure(service="subhub")
-        XRayMiddleware(app.app, xray_recorder)
     app.debug = True
     app.use_reloader = True
     app.run(host="0.0.0.0", port=CFG.LOCAL_FLASK_PORT)
