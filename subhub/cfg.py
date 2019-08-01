@@ -406,6 +406,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return ast.literal_eval(self("PROFILING_ENABLED", "False"))
 
     @property
+    def STRIPE_API_MOCK(self):
+        """
+        STRIPE_MOCK
+        """
+        return self("STRIPE_API_MOCK", None)
+
+    @property
     def DEPLOY_DOMAIN(self):
         """
         DEPLOY_DOMAIN

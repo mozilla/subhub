@@ -1,0 +1,52 @@
+version: "3.7"
+
+services:
+  subhub:
+    container_name: subhub
+    build:
+      context: .
+      args:
+        AWS_ACCESS_KEY_ID: "AKIAIOSFODNN7EXAMPLE"
+        AWS_SECRET_ACCESS_KEY: "wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY"
+        STRIPE_API_KEY: "sk_test_123"
+        # NOTE: This enables debug logging of the Stripe API when running in docker-compose.
+        STRIPE_LOG: "debug"
+        STRIPE_API_MOCK: "https://172.22.0.4:12112"
+        LOCAL_FLASK_PORT: 5000
+    ports:
+      - "5000:5000"
+    networks:
+      frontend:
+        ipv4_address: 172.22.0.5
+    links:
+      - dynamodb
+      - stripe
+    depends_on:
+      - stripe
+  dynamodb:
+    container_name: dynamodb
+    image: dwmkerr/dynamodb
+    command: "-sharedDb"
+    hostname: dynamo
+    restart: always
+    environment:
+      - reschedule=on-node-failure
+    networks:
+      frontend:
+        ipv4_address: 172.22.0.6
+  stripe:
+    container_name: stripe
+    build:
+      # NOTE: There are interesting rules around docker builds from git repos: https://docs.docker.com/engine/reference/commandline/build/#git-repositories
+      context: https://github.com/stripe/stripe-mock.git#pull/174/head
+    ports:
+      - "12111:12111"
+      - "12112:12112"
+    networks:
+      frontend:
+        ipv4_address: 172.22.0.4
+networks:
+  frontend:
+    ipam:
+      config:
+        - subnet: 172.22.0.0/16

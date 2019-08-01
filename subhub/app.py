@@ -24,6 +24,14 @@ from subhub.log import get_logger
 
 logger = get_logger()
 
+if CFG.STRIPE_API_MOCK:
+    stripe.proxy = CFG.STRIPE_API_MOCK
+    # NOTE: The below 2 lines are discussion points for our application's configuration in general.
+    stripe.max_network_retries = 1
+    stripe.enable_telemetry = False
+else:
+    stripe.proxy = "https://api.stripe.com"
+
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):
     logger.error("intermittent stripe error", error=e)
@@ -56,10 +64,11 @@ def server_stripe_card_error(e):
 
 def create_app(config=None):
     logger.info("creating flask app", config=config)
-    region = "localhost"
-    host = f"http://localhost:{CFG.DYNALITE_PORT}"
-    stripe.api_key = CFG.STRIPE_API_KEY
-    if CFG.AWS_EXECUTION_ENV:
+    if not CFG.AWS_EXECUTION_ENV:
+        region = "localhost"
+        host = f"http://dynamodb:{CFG.DYNALITE_PORT}"
+        stripe.api_key = CFG.STRIPE_API_KEY
+    else:
         region = "us-west-2"
         host = None
     options = dict(swagger_ui=CFG.SWAGGER_UI)
@@ -137,6 +146,4 @@ def create_app(config=None):
 
 if __name__ == "__main__":
     app = create_app()
-    app.debug = True
-    app.use_reloader = True
     app.run(host="0.0.0.0", port=CFG.LOCAL_FLASK_PORT)
