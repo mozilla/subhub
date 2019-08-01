@@ -395,6 +395,9 @@ def task_dynalite():
             pid = call(f'lsof -i:{CFG.DYNALITE_PORT} -t')[1].strip()
         except CalledProcessError:
             return None
+        finally:
+            mutex.release()
+        mutex.acquire()
         try:
             args = call(f'ps -p {pid} -o args=')[1].strip()
         except CalledProcessError:
