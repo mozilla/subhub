@@ -27,6 +27,6 @@ script:
   - doit graph
   - doit draw
   - doit test
-  - if [ $TRAVIS_BRANCH == 'true' ];
+  - if [ $TRAVIS_BRANCH == 'master' ];
     then doit deploy;
     fi
