@@ -60,8 +60,8 @@ provider:
         - 'dynamodb:DescribeTable'
         - 'dynamodb:CreateTable'
       Resource:
-        - { 'Fn::GetAtt': ['Users', 'Arn'] }
-        - { 'Fn::GetAtt': ['Events', 'Arn'] }
+        - 'Fn::ImportValue': ${self:custom.stage}-Users
+        - 'Fn::ImportValue': ${self:custom.stage}-Events
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
@@ -90,7 +90,7 @@ provider:
       Action:
         - sns:Publish
       Resource:
-        - 'Fn::Join': [':', ['arn:aws:sns', Ref: AWS::Region, Ref: AWS::AccountId, '${self:provider.stage}-fxa-event-data']]
+        - 'Fn::ImportValue': ${self:custom.stage}-SubHubSNS
   resourcePolicy: ${self:custom.resourcePolicies.${self:custom.access.${self:provider.stage}}}
 
 package:
@@ -102,7 +102,6 @@ package:
 
 custom:
   prefix: ${self:provider.stage}-${self:service.name}
-#  subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
     dockerizePip: 'non-linux'
     fileName: subhub/requirements.txt
@@ -172,57 +171,3 @@ functions:
     handler: handler.handle
     events:
       - schedule: rate(6 hours)
-
-resources:
-  Resources:
-    SubHubSNS:
-      Type: AWS::SNS::Topic
-      Properties:
-        DisplayName: FxA ${self:provider.stage} Event Data
-        TopicName: ${self:provider.stage}-fxa-event-data
-    SubHubTopicPolicy:
-      Type: AWS::SNS::TopicPolicy
-      Properties:
-        PolicyDocument:
-          Id: AWSAccountTopicAccess
-          Version: '2008-10-17'
-          Statement:
-            - Sid: FxAStageAccess
-              Effect: Allow
-              Principal:
-                AWS: arn:aws:iam::${self:provider.snsaccount}:root
-              Action:
-                - SNS:Subscribe
-                - SNS:Receive
-                - SNS:GetTopicAttributes
-              Resource: arn:aws:sns:us-west-2:903937621340:${self:provider.stage}-fxa-event-data
-        Topics:
-          - Ref: SubHubSNS
-    Users:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: user_id
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: user_id
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
-    Events:
-      Type: 'AWS::DynamoDB::Table'
-      Properties:
-        AttributeDefinitions:
-          -
-            AttributeName: event_id
-            AttributeType: S
-        KeySchema:
-          -
-            AttributeName: event_id
-            KeyType: HASH
-        BillingMode: PAY_PER_REQUEST
-        PointInTimeRecoverySpecification:
-          PointInTimeRecoveryEnabled: true
