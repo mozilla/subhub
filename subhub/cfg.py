@@ -447,6 +447,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         return self("DEPLOYED_WHEN", datetime.utcnow().isoformat())
 
+    @property
+    def STRIPE_API_BASE(self):
+        """
+        STRIPE_API_BASE
+        """
+        return self("STRIPE_API_BASE", None)
+
     def __getattr__(self, attr):
         """
         getattr
