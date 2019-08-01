@@ -521,6 +521,29 @@ def task_perf_remote():
     }
 
 
+def task_behave():
+    '''
+    run behave tests
+    '''
+    ID='fake-id'
+    KEY='fake-key'
+    PP='.'
+    FLASK_PORT=5000
+    cmd = f'env {envs(LOCAL_FLASK_PORT=FLASK_PORT, AWS_ACCESS_KEY_ID=ID, AWS_SECRET_ACCESS_KEY=KEY, PYTHONPATH=PP)} {PYTHON3} subhub/app.py'
+    return {
+        'task_dep':[
+            'check',
+            'stripe',
+            'dynalite:start'
+        ],
+        'actions':[
+            LongRunning(f'nohup {cmd} > /dev/null &'),
+            f'pip3 install -r subhub/tests/requirements.txt',
+            f'behave subhub/tests/bdd/version.feature'
+        ]
+    }
+
+
 def task_test():
     '''
     run tox in tests/

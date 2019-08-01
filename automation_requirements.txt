@@ -6,6 +6,7 @@ flake8==3.7.8
 tox==3.13.2
 black==19.3b0
 ruamel.yaml==0.15.97
+behave==1.2.6
 locustio==0.11.0
 doit-graph==0.1.1
 pyparsing==2.4.0
