@@ -22,9 +22,6 @@ before_install:
   - sudo rm -f /etc/boto.cfg
   - npm install -g dynalite@2.3.2
   - npm install -g kinesalite@2.0.3
-  - |
-    echo "starting stripe-mock"
-    stripe-mock -http-port 80 -https-port 443 &
   - sudo apt-get install -y graphviz graphviz-dev awscli
   - "./scripts/aws_credentials.sh"
 
@@ -46,6 +43,9 @@ jobs:
         - doit test
     - stage: Behave Tests
       script:
+        - |
+          echo "starting stripe-mock"
+          stripe-mock -http-port 80 -https-port 443 &
         - doit behave
     - stage: Deploy to development
       script:
