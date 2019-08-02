@@ -21,8 +21,9 @@ provider:
   logRetentionInDays: 90
   logs:
     restApi: true
-  memorySize: 256
-  timeout: 10
+  memorySize: 512
+  reservedConcurrency: 5
+  timeout: 5
   tracing: true
   snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
   environment:
