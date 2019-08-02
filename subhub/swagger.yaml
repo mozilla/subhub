@@ -101,6 +101,10 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
@@ -127,6 +131,10 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -156,6 +164,10 @@ paths:
           description: Already subscribed.
           schema:
             $ref: '#/definitions/Errormessage'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -205,6 +217,14 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Plans'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
   /customer/{uid}/subscriptions/{sub_id}:
     post:
       operationId: subhub.sub.payments.reactivate_subscription
@@ -228,6 +248,14 @@ paths:
           description: Subscription or User could not be found
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
@@ -257,6 +285,14 @@ paths:
           description: Customer does not exist or Subscription not valid.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
@@ -304,6 +340,14 @@ paths:
           description:  Customer does not exist.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -332,6 +376,14 @@ paths:
           description: Customer does not exist.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -372,6 +424,14 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
   /hub:
@@ -518,3 +578,21 @@ definitions:
       code:
         type: number
         example: 404
+  IntermittentError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Connection cannot be completed.
+  ServerError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Server not available
+      param:
+        type: string
+        example: Customer not found
+      code:
+        type: string
+        example: Invalid Account

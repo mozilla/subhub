@@ -6,7 +6,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from flask import jsonify
-from stripe.error import StripeError, CardError
+from stripe.error import AuthenticationError, CardError, StripeError
 
 from subhub.app import create_app
 from subhub.app import server_stripe_error
@@ -29,8 +29,8 @@ def test_intermittent_stripe_error():
 
 
 def test_server_stripe_error():
-    expected = jsonify({"message": "something", "code": "500"}), 500
-    error = StripeError("something", code="500")
+    expected = jsonify({"message": "something", "code": "500", "params": None}), 500
+    error = AuthenticationError("something", code="500")
     actual = server_stripe_error(error)
     assert actual[0].json == expected[0].json
     assert actual[1] == expected[1]
