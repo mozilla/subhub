@@ -7,6 +7,7 @@
 
 from datetime import datetime
 
+import cachetools
 from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
 from flask import g
 
@@ -78,6 +79,11 @@ def list_all_plans() -> FlaskListResponse:
     List all available plans for a user to purchase.
     :return:
     """
+    return _get_all_plans(), 200
+
+
+@cachetools.cached(cachetools.TTLCache(10, 600))
+def _get_all_plans():
     plans = Plan.list(limit=100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
@@ -94,7 +100,7 @@ def list_all_plans() -> FlaskListResponse:
                 "product_name": product["name"],
             }
         )
-    return stripe_plans, 200
+    return stripe_plans
 
 
 def check_stripe_subscriptions(customer: Customer) -> list:
