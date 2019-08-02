@@ -78,6 +78,7 @@ def app():
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
         g.hub_table = app.app.hub_table
+        g.subhub_deleted_users = app.app.subhub_deleted
         yield app
 
 
