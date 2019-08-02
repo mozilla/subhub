@@ -12,6 +12,7 @@ import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
+from subhub.exceptions import ClientError
 from unittest.mock import Mock, MagicMock, PropertyMock
 
 from subhub.sub import payments
@@ -325,11 +326,63 @@ def test_delete_customer(app, create_subscription_for_processing):
     WHEN provided a user id
     THEN validate user is deleted from payment provider and database
     """
-    # (subscription, code) = create_subscription_for_processing
     message, code = payments.delete_customer("process_test")
     assert message["message"] == "Customer deleted successfully"
     deleted_message, code = payments.subscription_status("process_test")
-    assert "canceled" in deleted_message["subscriptions"][0]["status"]
+    assert "Customer does not exist" in deleted_message["message"]
+
+
+def test_delete_customer_bad_user(app, create_subscription_for_processing):
+    """
+    GIVEN should cancel an active subscription,
+    delete customer from payment provider and database
+    WHEN provided a user id
+    THEN validate user is deleted from payment provider and database
+    """
+    message, code = payments.delete_customer("process_test2")
+    assert message["message"] == "Customer does not exist."
+    assert code == 404
+
+
+def test_delete_user_from_db(app, create_subscription_for_processing):
+    """
+    GIVEN should delete user from user table
+    WHEN provided with a valid user id
+    THEN add to deleted users table
+    """
+    deleted_user = payments.delete_user_from_db("process_test")
+    logger.info("deleted user from db", deleted_user=deleted_user)
+    assert deleted_user is True
+
+
+def test_delete_user_from_db2(app, create_subscription_for_processing):
+    """
+    GIVEN raise ClientError
+    WHEN provided with an invalid user id
+    THEN validate error message
+    """
+    uid = "process_test2"
+    with pytest.raises(ClientError) as request_error:
+        payments.delete_user_from_db("process_test2")
+    msg = f"userid is None for customer {uid}"
+    assert msg in str(request_error.value)
+
+
+def test_add_user_to_deleted_users_record(app, create_customer_for_processing):
+    """
+    GIVEN Add user to deleted users record
+    WHEN provided a user id, cust id and origin system
+    THEN return subhud_deleted user
+    """
+    to_delete = g.subhub_account.get_user("process_customer")
+    deleted_user = payments.add_user_to_deleted_users_record(
+        user_id=to_delete.user_id,
+        cust_id=to_delete.cust_id,
+        origin_system=to_delete.origin_system,
+    )
+    assert deleted_user.user_id == "process_customer"
+    assert deleted_user.origin_system == "Test_system"
+    assert "cus_" in deleted_user.cust_id
 
 
 def test_cancel_subscription_with_valid_data_multiple_subscriptions_remove_first():

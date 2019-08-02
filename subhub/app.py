@@ -18,7 +18,7 @@ from flask import request
 from subhub import secrets
 from subhub.cfg import CFG
 from subhub.exceptions import SubHubError
-from subhub.db import SubHubAccount, HubEvent
+from subhub.db import SubHubAccount, HubEvent, SubHubDeletedAccount
 
 from subhub.log import get_logger
 
@@ -74,12 +74,19 @@ def create_app(config=None):
         table_name=CFG.USER_TABLE, region=region, host=host
     )
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
+    app.app.subhub_deleted = SubHubDeletedAccount(
+        table_name=CFG.DELETED_USER_TABLE, region=region, host=host
+    )
     if not app.app.subhub_account.model.exists():
         app.app.subhub_account.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
     if not app.app.hub_table.model.exists():
         app.app.hub_table.model.create_table(
+            read_capacity_units=1, write_capacity_units=1, wait=True
+        )
+    if not app.app.subhub_deleted.model.exists():
+        app.app.subhub_deleted.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
 
@@ -116,6 +123,7 @@ def create_app(config=None):
     def before_request():
         g.subhub_account = current_app.subhub_account
         g.hub_table = current_app.hub_table
+        g.subhub_deleted_users = current_app.subhub_deleted
         g.app_system_id = None
         if CFG.PROFILING_ENABLED:
             if "profile" in request.args and not hasattr(sys, "_called_from_test"):

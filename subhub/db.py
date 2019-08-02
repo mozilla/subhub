@@ -177,3 +177,103 @@ class HubEvent:
         except DoesNotExist:
             logger.error("remove from db", event_id=event_id)
             return False
+
+
+def _create_deleted_account_model(table_name_, region_, host_):
+    class SubHubDeletedAccountModel(Model):
+        class Meta:
+            table_name = table_name_
+            region = region_
+            if host_:
+                host = host_
+
+        user_id = UnicodeAttribute(hash_key=True)
+        cust_id = UnicodeAttribute(null=True)
+        origin_system = UnicodeAttribute()
+
+    return SubHubDeletedAccountModel
+
+
+# This exists purely for type-checking, the actual model is dynamically
+# created in DbAccount
+class SubHubDeletedAccountModel(Model):
+    user_id = UnicodeAttribute(hash_key=True)
+    cust_id = UnicodeAttribute(null=True)
+    origin_system = UnicodeAttribute()
+    customer_status = UnicodeAttribute()
+
+
+class SubHubDeletedAccount:
+    def __init__(self, table_name: str, region: str, host: Optional[str] = None):
+        _table = table_name
+        _region = region
+        _host = host
+
+        class SubHubDeletedAccountModel(Model):
+            class Meta:
+                table_name = _table
+                region = _region
+                if _host:
+                    host = _host
+
+            user_id = UnicodeAttribute(hash_key=True)
+            cust_id = UnicodeAttribute(null=True)
+            origin_system = UnicodeAttribute()
+            customer_status = UnicodeAttribute()
+
+        self.model = SubHubDeletedAccountModel
+
+    def new_user(
+        self, uid: str, origin_system: str, cust_id: Optional[str] = None
+    ) -> SubHubDeletedAccountModel:
+        return self.model(
+            user_id=uid,
+            cust_id=cust_id,
+            origin_system=origin_system,
+            customer_status="deleted",
+        )
+
+    def get_user(self, uid: str) -> Optional[SubHubDeletedAccountModel]:
+        try:
+            subscription_user = self.model.get(uid, consistent_read=True)
+            return subscription_user
+        except DoesNotExist:
+            logger.error("get user", uid=uid)
+            return None
+
+    @staticmethod
+    def save_user(user: SubHubDeletedAccountModel) -> bool:
+        try:
+            user.save()
+            return True
+        except PutError:
+            logger.error("save user", user=user)
+            return False
+
+    def append_custid(self, uid: str, cust_id: str) -> bool:
+        try:
+            update_user = self.model.get(uid, consistent_read=True)
+            update_user.cust_id = cust_id
+            update_user.save()
+            return True
+        except DoesNotExist:
+            logger.error("append custid", uid=uid, cust_id=cust_id)
+            return False
+
+    def remove_from_db(self, uid: str) -> bool:
+        try:
+            self.model.get(uid, consistent_read=True).delete()
+            return True
+        except DoesNotExist:
+            logger.error("remove from db", uid=uid)
+            return False
+
+    def mark_deleted(self, uid: str) -> bool:
+        try:
+            delete_user = self.model.get(uid, consistent_read=True)
+            delete_user.customer_status = "deleted"
+            delete_user.save()
+            return True
+        except DoesNotExist:
+            logger.error("mark deleted", uid=uid)
+            return False

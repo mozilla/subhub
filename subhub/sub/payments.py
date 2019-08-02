@@ -151,12 +151,32 @@ def delete_customer(uid) -> FlaskResponse:
         return dict(message="Customer does not exist."), 404
     deleted_payment_customer = Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
-        deleted_customer = g.subhub_account.mark_deleted(uid)
+        deleted_customer = delete_user_from_db(uid)
         user = g.subhub_account.get_user(uid)
-        logger.info("deleted customer", customer=user.customer_status)
-        if deleted_customer:
+        if deleted_customer and user is None:
             return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
+
+
+def delete_user_from_db(uid: str) -> bool:
+    to_delete = g.subhub_account.get_user(uid)
+    if not to_delete:
+        raise ClientError(f"userid is None for customer {uid}")
+
+    deleted_user = add_user_to_deleted_users_record(
+        user_id=to_delete.user_id,
+        cust_id=to_delete.cust_id,
+        origin_system=to_delete.origin_system,
+    )
+    if not deleted_user:
+        return False
+    return g.subhub_account.remove_from_db(uid)
+
+
+def add_user_to_deleted_users_record(user_id, cust_id, origin_system):
+    return g.subhub_deleted_users.new_user(
+        uid=user_id, cust_id=cust_id, origin_system=origin_system
+    )
 
 
 def reactivate_subscription(uid, sub_id):

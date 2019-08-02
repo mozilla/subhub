@@ -241,6 +241,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("USER_TABLE", "users-testing")
 
     @property
+    def DELETED_USER_TABLE(self):
+        """
+        DELETED_USER_TABLE
+        """
+        return self("DELETED_USER_TABLE", "deleted-users-testing")
+
+    @property
     def EVENT_TABLE(self):
         """
         default value for EVENT_TABLE
