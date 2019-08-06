@@ -407,7 +407,6 @@ def task_dynalite():
         if cmd in args:
             return pid
         return None
-    pid = running()
     yield {
         'name': 'stop',
         'task_dep': [
@@ -415,10 +414,10 @@ def task_dynalite():
             'yarn',
         ],
         'actions': [
-            f'kill {pid}',
+            f'kill {running()}',
         ],
         'uptodate': [
-            lambda: pid is None
+            lambda: running() is None
         ],
     }
     yield {
@@ -433,7 +432,7 @@ def task_dynalite():
             f'echo "{msg}"',
         ],
         'uptodate': [
-            lambda: pid,
+            lambda: running(),
         ],
     }
 
@@ -451,8 +450,7 @@ def task_local():
             'check',
             'stripe',
             'venv',
-            'test',
-            'dynalite:start',
+            'dynalite:start', #FIXME: test removed as a dep due to concurrency bug
         ],
         'actions': [
             f'{PYTHON3} -m setup develop',
