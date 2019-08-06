@@ -28,8 +28,6 @@ before_install:
 stages:
   - name: Graph
   - name: Unit Test
-  - name: Deploy to development
-    if: branch = master
 
 jobs:
   include:
@@ -40,6 +38,3 @@ jobs:
     - stage: Unit Test
       script:
         - doit test
-    - stage: Deploy to development
-      script:
-        - doit deploy
