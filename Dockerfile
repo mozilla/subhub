@@ -25,6 +25,7 @@ RUN apk add build-base==0.5-r1
 RUN apk add gcc==8.3.0-r0
 RUN apk add linux-headers==4.19.36-r0
 RUN apk add git==2.22.0-r0
+RUN apk add graphviz-dev==2.40.1-r1
 
 RUN mkdir -p /subhub
 COPY . /subhub
@@ -33,5 +34,10 @@ WORKDIR /subhub
 
 EXPOSE $LOCAL_FLASK_PORT
 
-RUN python -m setup develop
-ENTRYPOINT scripts/entrypoint.sh
+RUN pip install --upgrade pip
+RUN pip install awscli
+RUN pip install -r automation_requirements.txt
+RUN ls -ltra 
+# RUN python dodo.py
+
+# ENTRYPOINT scripts/entrypoint.sh
