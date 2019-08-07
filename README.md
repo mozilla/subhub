@@ -159,7 +159,6 @@ doit test
 ```
 Note: The `test` task is a dependency of `package`, `local` and `deploy` tasks, however you can skip them by setting `SKIP_TESTS=<something>`.
 
-
 ## run package
 This runs the `serverless package` command to zip up the `subhub` code and its dependencies.
 ```

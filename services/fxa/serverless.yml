@@ -8,6 +8,7 @@ plugins:
   - serverless-plugin-tracing
   - serverless-dynamodb-local
   - serverless-offline
+
 provider:
   name: aws
   runtime: python3.7
@@ -20,8 +21,9 @@ provider:
   logRetentionInDays: 90
   logs:
     restApi: true
-  memorySize: 256
-  timeout: 10
+  memorySize: 512
+  reservedConcurrency: 5
+  timeout: 5
   tracing: true
   snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
   environment:
@@ -114,6 +116,7 @@ package:
     - 'subhub/**'
 
 custom:
+  stage: ${opt:stage, self:provider.stage}
   prefix: ${self:provider.stage}-${self:service.name}
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
@@ -260,3 +263,18 @@ resources:
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+  Outputs:
+    SubHubSNS:
+      Value:
+        Ref: SubHubSNS
+      Export:
+        Name: ${self:custom.stage}-SubHubSNS
+    SubHubTopicPolicy:
+      Value:
+        Ref: SubHubTopicPolicy
+    Users:
+      Value:
+        Ref: Users
+    Events:
+      Value:
+        Ref: Events

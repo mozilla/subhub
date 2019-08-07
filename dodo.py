@@ -10,6 +10,7 @@ import json
 import difflib
 import itertools
 import contextlib
+import threading
 
 from ruamel import yaml
 from functools import lru_cache
@@ -49,6 +50,8 @@ SVCS = [
     svc for svc in os.listdir('services')
     if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')
 ]
+
+mutex = threading.Lock()
 
 def envs(sep=' ', **kwargs):
     envs = dict(
@@ -386,19 +389,24 @@ def task_dynalite():
     cmd = f'{DYNALITE} --port {CFG.DYNALITE_PORT}'
     msg = f'dynalite server started on {CFG.DYNALITE_PORT} logging to {CFG.DYNALITE_FILE}'
     def running():
+        mutex.acquire()
         pid = None
         try:
             pid = call(f'lsof -i:{CFG.DYNALITE_PORT} -t')[1].strip()
         except CalledProcessError:
             return None
+        finally:
+            mutex.release()
+        mutex.acquire()
         try:
             args = call(f'ps -p {pid} -o args=')[1].strip()
         except CalledProcessError:
             return None
+        finally:
+            mutex.release()
         if cmd in args:
             return pid
         return None
-    pid = running()
     yield {
         'name': 'stop',
         'task_dep': [
@@ -406,10 +414,10 @@ def task_dynalite():
             'yarn',
         ],
         'actions': [
-            f'kill {pid}',
+            f'kill {running()}',
         ],
         'uptodate': [
-            lambda: pid is None
+            lambda: running() is None
         ],
     }
     yield {
@@ -424,7 +432,7 @@ def task_dynalite():
             f'echo "{msg}"',
         ],
         'uptodate': [
-            lambda: pid,
+            lambda: running(),
         ],
     }
 
@@ -442,8 +450,7 @@ def task_local():
             'check',
             'stripe',
             'venv',
-            'test',
-            'dynalite:start',
+            'dynalite:start', #FIXME: test removed as a dep due to concurrency bug
         ],
         'actions': [
             f'{PYTHON3} -m setup develop',

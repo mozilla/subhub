@@ -101,6 +101,14 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
@@ -127,6 +135,14 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -156,6 +172,14 @@ paths:
           description: Already subscribed.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -205,6 +229,14 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Plans'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
   /customer/{uid}/subscriptions/{sub_id}:
     post:
       operationId: subhub.sub.payments.reactivate_subscription
@@ -228,6 +260,14 @@ paths:
           description: Subscription or User could not be found
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
@@ -257,6 +297,14 @@ paths:
           description: Customer does not exist or Subscription not valid.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
@@ -277,6 +325,8 @@ paths:
           schema:
             type: object
             properties:
+              cancel_at_period_end:
+                type: boolean
               payment_type:
                 type: string
                 enum:
@@ -291,11 +341,58 @@ paths:
                 type: integer
                 example: 2020
               subscriptions:
-                description: |
-                  Optionally included subscriptions.
                 type: array
+                required: [
+                  "subscription_id",
+                  "status",
+                  "plan_name",
+                  "plan_id",
+                  "ended_at",
+                  "current_period_start",
+                  "current_period_end",
+                  "cancel_at_period_end"
+                ]
                 items:
-                  $ref: '#/definitions/Subscriptions'
+                  type: object
+                  properties:
+                    subscription_id:
+                      type: string
+                      example: sub_abc123
+                    plan_id:
+                      type: string
+                      example: pro_basic_823
+                    plan_name:
+                      type: string
+                      example: "pro_basic"
+                    current_period_end:
+                      type: number
+                      description: Seconds since UNIX epoch.
+                      example: 1557361022
+                    current_period_start:
+                      type: number
+                      description: Seconds since UNIX epoch.
+                      example: 1557361022
+                    end_at:
+                      type: number
+                      description: Non-null if the subscription is ending at a period in time.
+                      example: 1557361022
+                    status:
+                      type: string
+                      description: Subscription status.
+                      example: active
+                    cancel_at_period_end:
+                      type: boolean
+                      description: Shows if subscription will be cancelled at the end of the period.
+                      example: true
+                    failure_code:
+                      type: string
+                      description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+                      example: Card declined
+                    failure_message:
+                      type: string
+                      description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+                      example: Your card was declined.
+
         400:
           description: Customer user ID does not match.
           schema:
@@ -304,6 +401,14 @@ paths:
           description:  Customer does not exist.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
@@ -332,6 +437,14 @@ paths:
           description: Customer does not exist.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
         - in: body
@@ -372,6 +485,14 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
   /hub:
@@ -458,57 +579,60 @@ definitions:
           type: string
           example: Monthly Rocket Launches
   Subscriptions:
-    type: array
-    required: [
-      "subscription_id",
-      "status",
-      "plan_name",
-      "plan_id",
-      "ended_at",
-      "current_period_start",
-      "current_period_end",
-      "cancel_at_period_end"
-    ]
-    items:
-      type: object
-      properties:
-        subscription_id:
-          type: string
-          example: sub_abc123
-        plan_id:
-          type: string
-          example: pro_basic_823
-        plan_name:
-          type: string
-          example: "pro_basic"
-        current_period_end:
-          type: number
-          description: Seconds since UNIX epoch.
-          example: 1557361022
-        current_period_start:
-          type: number
-          description: Seconds since UNIX epoch.
-          example: 1557361022
-        end_at:
-          type: number
-          description: Non-null if the subscription is ending at a period in time.
-          example: 1557361022
-        status:
-          type: string
-          description: Subscription status.
-          example: active
-        cancel_at_period_end:
-          type: boolean
-          description: Shows if subscription will be cancelled at the end of the period.
-          example: true
-        failure_code:
-          type: string
-          description: Shows the failure code for subscription that is incomplete.  This is an optional field.
-          example: Card declined
-        failure_message:
-          type: string
-          description: Shows the failure message for subscription that is incomplete.  This is an optional field.
-          example: Your card was declined.
+    type: object
+    properties:
+      subscriptions:
+        type: array
+        required: [
+          "subscription_id",
+          "status",
+          "plan_name",
+          "plan_id",
+          "ended_at",
+          "current_period_start",
+          "current_period_end",
+          "cancel_at_period_end"
+        ]
+        items:
+          type: object
+          properties:
+            subscription_id:
+              type: string
+              example: sub_abc123
+            plan_id:
+              type: string
+              example: pro_basic_823
+            plan_name:
+              type: string
+              example: "pro_basic"
+            current_period_end:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            current_period_start:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            end_at:
+              type: number
+              description: Non-null if the subscription is ending at a period in time.
+              example: 1557361022
+            status:
+              type: string
+              description: Subscription status.
+              example: active
+            cancel_at_period_end:
+              type: boolean
+              description: Shows if subscription will be cancelled at the end of the period.
+              example: true
+            failure_code:
+              type: string
+              description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+              example: Card declined
+            failure_message:
+              type: string
+              description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+              example: Your card was declined.
   Errormessage:
     type: object
     properties:
@@ -518,3 +642,21 @@ definitions:
       code:
         type: number
         example: 404
+  IntermittentError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Connection cannot be completed.
+  ServerError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Server not available
+      param:
+        type: string
+        example: Customer not found
+      code:
+        type: string
+        example: Invalid Account
