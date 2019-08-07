@@ -103,15 +103,14 @@ def _get_all_plans():
     return stripe_plans
 
 
-def check_stripe_subscriptions(customer: Customer) -> list:
+def retrieve_stripe_subscriptions(customer: Customer) -> list:
     try:
-        logger.debug("check stripe subscriptions", subscriptions=customer.subscriptions)
         customer_subscriptions_data = customer.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
         return customer_subscriptions
-    except NameError as ne:
-        logger.error("error getting subscriptions", customer=customer, error=ne)
-        return []
+    except AttributeError as e:
+        logger.error("error getting subscriptions", customer=customer, error=e)
+        raise e
 
 
 def cancel_subscription(uid, sub_id) -> FlaskResponse:
@@ -121,7 +120,6 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     :param sub_id:
     :return: Success or failure message for the cancellation.
     """
-
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
         return {"message": "Customer does not exist."}, 404
@@ -134,8 +132,10 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
         ]:
             Subscription.modify(sub_id, cancel_at_period_end=True)
             updated_customer = fetch_customer(g.subhub_account, uid)
-            check_stripe_subscriptions(updated_customer)
-            return {"message": "Subscription cancellation successful"}, 201
+            subs = retrieve_stripe_subscriptions(updated_customer)
+            for sub in subs:
+                if sub["cancel_at_period_end"] and sub["id"] == sub_id:
+                    return {"message": "Subscription cancellation successful"}, 201
     return {"message": "Subscription not available."}, 400
 
 

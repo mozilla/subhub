@@ -74,7 +74,7 @@ def create_app(config=None):
         table_name=CFG.USER_TABLE, region=region, host=host
     )
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
-    app.app.subhub_deleted = SubHubDeletedAccount(
+    app.app.subhub_deleted_users = SubHubDeletedAccount(
         table_name=CFG.DELETED_USER_TABLE, region=region, host=host
     )
     if not app.app.subhub_account.model.exists():
@@ -85,8 +85,8 @@ def create_app(config=None):
         app.app.hub_table.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
-    if not app.app.subhub_deleted.model.exists():
-        app.app.subhub_deleted.model.create_table(
+    if not app.app.subhub_deleted_users.model.exists():
+        app.app.subhub_deleted_users.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
 
@@ -123,7 +123,7 @@ def create_app(config=None):
     def before_request():
         g.subhub_account = current_app.subhub_account
         g.hub_table = current_app.hub_table
-        g.subhub_deleted_users = current_app.subhub_deleted
+        g.subhub_deleted_users = current_app.subhub_deleted_users
         g.app_system_id = None
         if CFG.PROFILING_ENABLED:
             if "profile" in request.args and not hasattr(sys, "_called_from_test"):

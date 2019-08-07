@@ -96,9 +96,6 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
     db_account = subhub_account.get_user(user_id)
     if db_account:
         customer = Customer.retrieve(db_account.cust_id)
-        if "deleted" in customer and customer["deleted"]:
-            subhub_account.remove_from_db(user_id)
-            customer = None
     return customer
 
 
