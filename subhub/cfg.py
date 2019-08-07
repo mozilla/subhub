@@ -147,6 +147,9 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         deployment environment
         """
+        deployed_env = self("DEPLOYED_ENV", None)
+        if deployed_env:
+            return deployed_env
         branch = self.BRANCH
         if branch == "master":
             return "prod"
