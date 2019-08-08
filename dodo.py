@@ -708,11 +708,3 @@ def task_draw():
         'targets': ['tasks.png'],
         'actions': ['dot -Tpng %(dependencies)s -o %(targets)s'],
     }
-
-if __name__ == '__main__':
-    cmd = 'sudo python3 -m pip install -r automation_requirements.txt'
-    answer = input(cmd + '[Y/n] ')
-    if answer in ('', 'Y', 'y', 'Yes', 'YES', 'yes'):
-        os.system(cmd)
-    else:
-        print('automation_requirements.txt NOT installed!')
