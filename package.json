@@ -6,12 +6,12 @@
   },
   "license": "MPL-2.0",
   "devDependencies": {
-    "dynalite": "^2.2.0",
-    "serverless": "^1.27.3",
+    "dynalite": "2.3.2",
+    "serverless": "1.49.0",
     "serverless-dynamodb-local": "0.2.38",
-    "serverless-domain-manager": "^3.2.1",
-    "serverless-offline": "5.0.1",
-    "serverless-plugin-tracing": "^2.0.0",
-    "serverless-python-requirements": "4.3.0"
+    "serverless-domain-manager": "3.2.7",
+    "serverless-offline": "5.10.1",
+    "serverless-plugin-tracing": "2.0.0",
+    "serverless-python-requirements": "5.0.0"
   }
 }
