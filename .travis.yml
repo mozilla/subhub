@@ -2,6 +2,8 @@ language: python
 dist: xenial
 python:
   - "3.7"
+services:
+  - docker
 env:
   global:
     - AWS_DEFAULT_REGION: us-west-2
@@ -13,6 +15,7 @@ env:
     - secure: eIOTi2ri6Y07/lqulILb6wQDC3SiZkiEPALG22icnOMQJJc7iSQCatyxZAze4M1aZRoQ3RgvKcftLFFB55JtXKwAoeQMU2eLSls31weKU4WgBqDwItJaKbbeDM/tBUYKel1rocx1rjxAGB/l4/YavlLwVyVOuA3MZ/bRbBEyBWsTJsdSpSUmEjXmWEcrk4ielMxZYBjbvSpa++FDDQvxSPzt5xeu66fa885i1u95MSNuaCJa3zkcueopEu1k/PA/IpqBr4Ga5llKer3epnByyy35JOnfBC4GC/Pu4B/520NaAj1YFP2Fuz9ZifSm9+E3iwHV1Ui87Xft8c3Qu0nIev9n9s3VUIq40Q5nWTmL9lolULdnQdWW5spHyKZGZKO4lX66KNe7Pj/B+58FUNYTzNkxhM1K1361QDrF9isgNgE/yCIcM4jeDHuZcnw0yjJe5b5Rv/RMIaEL/tz7DUSFKIWxbS6ESBVSyBoyxcph9b0mWH1LIKTWtFbFMS35Fxt962ozPmK/Wq+SXOfdPk7Um4Jz3o3/T12hFfcaqwXkeMtqRioq+m67+tYdWRUcflVyrXP4c3z5obLlo3t3bWRKSrr3ca5j60yxt+wbD+jt53A4hR9jrlRXsiMlm4T0GOE10loF2rYIzrnL+2yOD8cpaKG0StqLh4IUYeJk4X7WtlY=
     - secure: SGLE6u5bXFchF9jCtiiuYkp3Eyz7ghwyS7TvHcfv6SBsA1QGXPyVUsU9QcoLB3srajwvponYOLAyynD+tG9AdqgvmueRpUh+h3qckU1NPfDUEefkJ9zdYcT+n7TCGBYePRuYUbLMtRvX8NDUb9LTD3U+u80L53UjFfTrRQH8csE4tfOiqpPrzbKAMBnrl7fyBWHCwjkICoce01wEEp2+T4b6Sq/qWUkKrPn6KBnHO3Ev+WtEPGcF9pMrhdwkV8vsA8C9KYffDbT7s3dAlZIhEtIhD1komqMYdfTuokVyRlrWqcG4g++7/ZPGYCtFTpPx8o3qQfoLhgKMe7oOs+WivqmFtsOV6JywDDR4brBQI3lUtRK2yIrBhdhC/BAogol8g1A5asPL2uGPJtrc4O4E1x5mGgDJLtpefM3zWOqdXiL6YGz0MYZA3hgZxLj2uVHj97pzxPZbZgyrwO6LtH0hbwTxF1L9/Ha42jPEtnjmu6fvygSaQXtjot6saCSIMZBGwYWmk5ckcZ3zgI+G9R9G0eIRwap/mKElmgQX46BqsC/npQWHTQNcv5UmMtFAFRdT76gnWS9NanvOZO3mxreo9q+cyt7yz7TS2bZpNesU1GqLF6mmyWjvJP4FsEB1JhzW+yfAK8+1xnIcRxw8n/XA6x5ZAiJLD5+2M4ukucwj8aM=
 
+
 before_install:
   - python -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL);
     fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
@@ -23,11 +26,12 @@ before_install:
   - npm install -g dynalite
   - npm install -g kinesalite
   - sudo apt-get install -y graphviz graphviz-dev awscli
-  - "./scripts/aws_credentials.sh"
+  - "./bin/aws-credentials.sh"
 
 stages:
   - name: Graph
   - name: Unit Test
+  - name: Docker Build
 
 jobs:
   include:
@@ -38,3 +42,6 @@ jobs:
     - stage: Unit Test
       script:
         - doit test
+    - stage: Docker Build
+      script:
+        - docker-compose build

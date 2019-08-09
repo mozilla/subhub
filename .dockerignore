@@ -1,0 +1,29 @@
+# Dynalite
+*.out
+
+# OSX
+.DS_Store
+
+# doit
+.doit.db
+
+# Virtual Environment
+venv
+
+# Eggs
+.eggs
+subhub.egg-info
+
+# Node
+node_modules
+
+# Visual Studio Code
+.vscode
+
+# PyCharm
+.idea
+
+.vscode/
+.tox
+venv
+.doit.db
