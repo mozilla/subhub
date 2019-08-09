@@ -2,22 +2,23 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import stripe
+
 from flask import request, Response
 
-import stripe
-from subhub.cfg import CFG
-from subhub.hub.stripe.customer import StripeCustomerCreated
-from subhub.hub.stripe.customer import StripeCustomerDeleted
-from subhub.hub.stripe.customer import StripeCustomerSubscriptionCreated
-from subhub.hub.stripe.customer import StripeCustomerUpdated
-from subhub.hub.stripe.subscription import StripeSubscriptionCreated
-from subhub.hub.stripe.customer import StripeCustomerSubscriptionUpdated
-from subhub.hub.stripe.customer import StripeCustomerSubscriptionDeleted
-from subhub.hub.stripe.customer import StripeCustomerSourceExpiring
-from subhub.hub.stripe.invoices import StripeInvoiceFinalized
-from subhub.hub.stripe.invoices import StripeInvoicePaymentFailed
-from subhub.hub.stripe.intents import StripePaymentIntentSucceeded
-from subhub.log import get_logger
+from hub.stripe.customer import StripeCustomerCreated
+from hub.stripe.customer import StripeCustomerDeleted
+from hub.stripe.customer import StripeCustomerSubscriptionCreated
+from hub.stripe.customer import StripeCustomerUpdated
+from hub.stripe.subscription import StripeSubscriptionCreated
+from hub.stripe.customer import StripeCustomerSubscriptionUpdated
+from hub.stripe.customer import StripeCustomerSubscriptionDeleted
+from hub.stripe.customer import StripeCustomerSourceExpiring
+from hub.stripe.invoices import StripeInvoiceFinalized
+from hub.stripe.invoices import StripeInvoicePaymentFailed
+from hub.stripe.intents import StripePaymentIntentSucceeded
+from shared.cfg import CFG
+from shared.log import get_logger
 
 logger = get_logger()
 

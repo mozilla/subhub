@@ -116,7 +116,7 @@ package:
     - '**/*'
   include:
     - 'handler.py'
-    - 'subhub/**'
+    - 'src/**'
 
 custom:
   stage: ${opt:stage, self:provider.stage}
@@ -124,7 +124,7 @@ custom:
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
     dockerizePip: 'non-linux'
-    fileName: subhub/requirements.txt
+    fileName: src/requirements.txt
   git-repo: https://github.com/mozilla/subhub
   dynamodb:
     start:
@@ -197,11 +197,41 @@ custom:
             aws:SourceIp: ${file(./whitelist.yml):hub}
 
 functions:
-  subhub:
-    name: ${self:custom.prefix}-function
+  sub:
+    name: ${self:custom.prefix}-sub
     description: >
       subhub service for handling subscription services interactions
-    handler: handler.handle
+    handler: handler.handle_sub
+    timeout: 30
+    events:
+      - http:
+          method: ANY
+          path: /
+          cors: true
+      - http:
+          method: ANY
+          path: '{proxy+}'
+          cors: true
+  hub:
+    name: ${self:custom.prefix}-hub
+    description: >
+      subhub service for handling hub webhook interactions
+    handler: handler.handle_hub
+    timeout: 30
+    events:
+      - http:
+          method: ANY
+          path: /
+          cors: true
+      - http:
+          method: ANY
+          path: '{proxy+}'
+          cors: true
+  mia:
+    name: ${self:custom.prefix}-mia
+    description: >
+      subhub service for handling missing hub webhook events
+    handler: handler.handle_mia
     timeout: 30
     events:
       - http:
