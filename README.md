@@ -189,6 +189,14 @@ This command will generate a PNG of the dependency graph.
 doit draw
 ```
 
+### Docker
+* build: `docker build -t mozilla/subhub .`
+* run: `docker run -it mozilla/subhub`
+
+### Docker Compose
+* build and run: `docker-compose up --build`
+* run: `docker-compose up`
+
 ## Postman
 
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning,
