@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -78,6 +75,7 @@ def app():
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
         g.hub_table = app.app.hub_table
+        g.subhub_deleted_users = app.app.subhub_deleted_users
         yield app
 
 

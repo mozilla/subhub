@@ -21,8 +21,9 @@ provider:
   logRetentionInDays: 90
   logs:
     restApi: true
-  memorySize: 256
-  timeout: 10
+  memorySize: 512
+  reservedConcurrency: 5
+  timeout: 5
   tracing: true
   snsaccount: ${file(./accounts.yml):fxa.${self:provider.stage}}
   environment:
@@ -45,6 +46,8 @@ provider:
       Ref: 'Users'
     EVENT_TABLE:
       Ref: 'Events'
+    DELETED_USER_TABLE:
+      Ref: 'DeletedUsers'
   tags:
     cost-center: 1440
     project-name: subhub
@@ -76,6 +79,7 @@ provider:
       Resource:
         - { 'Fn::GetAtt': ['Users', 'Arn'] }
         - { 'Fn::GetAtt': ['Events', 'Arn'] }
+        - { 'Fn::GetAtt': ['DeletedUsers', 'Arn']}
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
@@ -248,6 +252,18 @@ resources:
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
+    DeletedUsers:
+      Type: 'AWS::DynamoDB::Table'
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: user_id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: user_id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        PointInTimeRecoverySpecification:
+          PointInTimeRecoveryEnabled: true
     Events:
       Type: 'AWS::DynamoDB::Table'
       Properties:
@@ -277,3 +293,6 @@ resources:
     Events:
       Value:
         Ref: Events
+    DeletedUsers:
+      Value:
+        Ref: DeletedUsers

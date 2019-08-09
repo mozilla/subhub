@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -96,9 +93,6 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
     db_account = subhub_account.get_user(user_id)
     if db_account:
         customer = Customer.retrieve(db_account.cust_id)
-        if "deleted" in customer and customer["deleted"]:
-            subhub_account.remove_from_db(user_id)
-            customer = None
     return customer
 
 

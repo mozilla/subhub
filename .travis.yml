@@ -28,10 +28,8 @@ before_install:
 
 stages:
   - name: Graph
-  - name: Unit Tests
+  - name: Unit Test
   - name: Behave Tests
-  - name: Deploy to development
-    if: branch = master
 
 jobs:
   include:
@@ -44,13 +42,4 @@ jobs:
         - doit test
     - stage: Behave Tests
       script:
-        - |
-          echo "starting stripe-mock"
-          stripe-mock -http-port 80 -https-port 443 &
         - doit behave
-    - stage: Deploy to development
-      script:
-        - doit deploy
-addons:
-  hosts:
-    - stripe.com

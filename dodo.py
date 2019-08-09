@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import os
 import re
 import pwd
@@ -30,9 +27,6 @@ DOIT_CONFIG = {
 }
 
 HEADER = '''
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -407,7 +401,6 @@ def task_dynalite():
         if cmd in args:
             return pid
         return None
-    pid = running()
     yield {
         'name': 'stop',
         'task_dep': [
@@ -415,10 +408,10 @@ def task_dynalite():
             'yarn',
         ],
         'actions': [
-            f'kill {pid}',
+            f'kill {running()}',
         ],
         'uptodate': [
-            lambda: pid is None
+            lambda: running() is None
         ],
     }
     yield {
@@ -433,7 +426,7 @@ def task_dynalite():
             f'echo "{msg}"',
         ],
         'uptodate': [
-            lambda: pid,
+            lambda: running(),
         ],
     }
 
@@ -451,8 +444,7 @@ def task_local():
             'check',
             'stripe',
             'venv',
-            'test',
-            'dynalite:start',
+            'dynalite:start', #FIXME: test removed as a dep due to concurrency bug
         ],
         'actions': [
             f'{PYTHON3} -m setup develop',

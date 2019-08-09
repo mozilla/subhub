@@ -101,6 +101,10 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
         503:
           description: Intermittent Error
           schema:
@@ -131,6 +135,10 @@ paths:
           description: Customer not found.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
         503:
           description: Intermittent Error
           schema:
@@ -164,6 +172,10 @@ paths:
           description: Already subscribed.
           schema:
             $ref: '#/definitions/Errormessage'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
         503:
           description: Intermittent Error
           schema:
@@ -313,6 +325,8 @@ paths:
           schema:
             type: object
             properties:
+              cancel_at_period_end:
+                type: boolean
               payment_type:
                 type: string
                 enum:
@@ -327,11 +341,58 @@ paths:
                 type: integer
                 example: 2020
               subscriptions:
-                description: |
-                  Optionally included subscriptions.
                 type: array
+                required: [
+                  "subscription_id",
+                  "status",
+                  "plan_name",
+                  "plan_id",
+                  "ended_at",
+                  "current_period_start",
+                  "current_period_end",
+                  "cancel_at_period_end"
+                ]
                 items:
-                  $ref: '#/definitions/Subscriptions'
+                  type: object
+                  properties:
+                    subscription_id:
+                      type: string
+                      example: sub_abc123
+                    plan_id:
+                      type: string
+                      example: pro_basic_823
+                    plan_name:
+                      type: string
+                      example: "pro_basic"
+                    current_period_end:
+                      type: number
+                      description: Seconds since UNIX epoch.
+                      example: 1557361022
+                    current_period_start:
+                      type: number
+                      description: Seconds since UNIX epoch.
+                      example: 1557361022
+                    end_at:
+                      type: number
+                      description: Non-null if the subscription is ending at a period in time.
+                      example: 1557361022
+                    status:
+                      type: string
+                      description: Subscription status.
+                      example: active
+                    cancel_at_period_end:
+                      type: boolean
+                      description: Shows if subscription will be cancelled at the end of the period.
+                      example: true
+                    failure_code:
+                      type: string
+                      description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+                      example: Card declined
+                    failure_message:
+                      type: string
+                      description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+                      example: Your card was declined.
+
         400:
           description: Customer user ID does not match.
           schema:
@@ -518,57 +579,60 @@ definitions:
           type: string
           example: Monthly Rocket Launches
   Subscriptions:
-    type: array
-    required: [
-      "subscription_id",
-      "status",
-      "plan_name",
-      "plan_id",
-      "ended_at",
-      "current_period_start",
-      "current_period_end",
-      "cancel_at_period_end"
-    ]
-    items:
-      type: object
-      properties:
-        subscription_id:
-          type: string
-          example: sub_abc123
-        plan_id:
-          type: string
-          example: pro_basic_823
-        plan_name:
-          type: string
-          example: "pro_basic"
-        current_period_end:
-          type: number
-          description: Seconds since UNIX epoch.
-          example: 1557361022
-        current_period_start:
-          type: number
-          description: Seconds since UNIX epoch.
-          example: 1557361022
-        end_at:
-          type: number
-          description: Non-null if the subscription is ending at a period in time.
-          example: 1557361022
-        status:
-          type: string
-          description: Subscription status.
-          example: active
-        cancel_at_period_end:
-          type: boolean
-          description: Shows if subscription will be cancelled at the end of the period.
-          example: true
-        failure_code:
-          type: string
-          description: Shows the failure code for subscription that is incomplete.  This is an optional field.
-          example: Card declined
-        failure_message:
-          type: string
-          description: Shows the failure message for subscription that is incomplete.  This is an optional field.
-          example: Your card was declined.
+    type: object
+    properties:
+      subscriptions:
+        type: array
+        required: [
+          "subscription_id",
+          "status",
+          "plan_name",
+          "plan_id",
+          "ended_at",
+          "current_period_start",
+          "current_period_end",
+          "cancel_at_period_end"
+        ]
+        items:
+          type: object
+          properties:
+            subscription_id:
+              type: string
+              example: sub_abc123
+            plan_id:
+              type: string
+              example: pro_basic_823
+            plan_name:
+              type: string
+              example: "pro_basic"
+            current_period_end:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            current_period_start:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            end_at:
+              type: number
+              description: Non-null if the subscription is ending at a period in time.
+              example: 1557361022
+            status:
+              type: string
+              description: Subscription status.
+              example: active
+            cancel_at_period_end:
+              type: boolean
+              description: Shows if subscription will be cancelled at the end of the period.
+              example: true
+            failure_code:
+              type: string
+              description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+              example: Card declined
+            failure_message:
+              type: string
+              description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+              example: Your card was declined.
   Errormessage:
     type: object
     properties:

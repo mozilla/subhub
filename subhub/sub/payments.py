@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import datetime
 
+import cachetools
 from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
 from flask import g
 
@@ -78,6 +76,11 @@ def list_all_plans() -> FlaskListResponse:
     List all available plans for a user to purchase.
     :return:
     """
+    return _get_all_plans(), 200
+
+
+@cachetools.cached(cachetools.TTLCache(10, 600))
+def _get_all_plans():
     plans = Plan.list(limit=100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
@@ -94,18 +97,17 @@ def list_all_plans() -> FlaskListResponse:
                 "product_name": product["name"],
             }
         )
-    return stripe_plans, 200
+    return stripe_plans
 
 
-def check_stripe_subscriptions(customer: Customer) -> list:
+def retrieve_stripe_subscriptions(customer: Customer) -> list:
     try:
-        logger.debug("check stripe subscriptions", subscriptions=customer.subscriptions)
         customer_subscriptions_data = customer.subscriptions
         customer_subscriptions = customer_subscriptions_data.get("data")
         return customer_subscriptions
-    except NameError as ne:
-        logger.error("error getting subscriptions", customer=customer, error=ne)
-        return []
+    except AttributeError as e:
+        logger.error("error getting subscriptions", customer=customer, error=e)
+        raise e
 
 
 def cancel_subscription(uid, sub_id) -> FlaskResponse:
@@ -115,7 +117,6 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     :param sub_id:
     :return: Success or failure message for the cancellation.
     """
-
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
         return {"message": "Customer does not exist."}, 404
@@ -128,8 +129,10 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
         ]:
             Subscription.modify(sub_id, cancel_at_period_end=True)
             updated_customer = fetch_customer(g.subhub_account, uid)
-            check_stripe_subscriptions(updated_customer)
-            return {"message": "Subscription cancellation successful"}, 201
+            subs = retrieve_stripe_subscriptions(updated_customer)
+            for sub in subs:
+                if sub["cancel_at_period_end"] and sub["id"] == sub_id:
+                    return {"message": "Subscription cancellation successful"}, 201
     return {"message": "Subscription not available."}, 400
 
 
@@ -145,12 +148,32 @@ def delete_customer(uid) -> FlaskResponse:
         return dict(message="Customer does not exist."), 404
     deleted_payment_customer = Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
-        deleted_customer = g.subhub_account.mark_deleted(uid)
+        deleted_customer = delete_user_from_db(uid)
         user = g.subhub_account.get_user(uid)
-        logger.info("deleted customer", customer=user.customer_status)
-        if deleted_customer:
+        if deleted_customer and user is None:
             return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
+
+
+def delete_user_from_db(uid: str) -> bool:
+    to_delete = g.subhub_account.get_user(uid)
+    if not to_delete:
+        raise ClientError(f"userid is None for customer {uid}")
+
+    deleted_user = add_user_to_deleted_users_record(
+        user_id=to_delete.user_id,
+        cust_id=to_delete.cust_id,
+        origin_system=to_delete.origin_system,
+    )
+    if not deleted_user:
+        return False
+    return g.subhub_account.remove_from_db(uid)
+
+
+def add_user_to_deleted_users_record(user_id, cust_id, origin_system):
+    return g.subhub_deleted_users.new_user(
+        uid=user_id, cust_id=cust_id, origin_system=origin_system
+    )
 
 
 def reactivate_subscription(uid, sub_id):

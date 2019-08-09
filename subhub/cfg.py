@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -239,6 +236,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         default value for USER_TABLE
         """
         return self("USER_TABLE", "users-testing")
+
+    @property
+    def DELETED_USER_TABLE(self):
+        """
+        DELETED_USER_TABLE
+        """
+        return self("DELETED_USER_TABLE", "deleted-users-testing")
 
     @property
     def EVENT_TABLE(self):
