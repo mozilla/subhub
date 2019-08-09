@@ -6,13 +6,13 @@ Payment subscription REST api for customers:
 - FxA (Firefox Accounts)
 
 ## Required Software
-- python3.7: requires python3.7 interpreter for creating virtual envionments for testing and running subhub
+- python3.7: requires python3.7 interpreter for creating virtual environments for testing and running subhub
 - yarn (https://yarnpkg.com): package manager for node modules for setting up serverless for running and deploying subhub
 - cloc
 - [GraphViz](https://graphviz.org/)
 
 ## Important Environment Variables
-The CFG object is for accessing values either from the `subhub/.env` file and|or superceeded by env vars.
+The CFG object is for accessing values either from the `subhub/.env` file and|or superseded by env vars.
 A value that is known to be set or have a default can be accessed:
 ```
 CFG.SOME_VALUE
@@ -24,7 +24,7 @@ CFG("OTHER_VALUE", "SOME_DEFAULT")
 These values can be enabled as an env var or listed in a `.env` in the subhub/ directory.
 
 ### STRIPE_API_KEY
-This value is used for producion deployments as well as testing (testing key).
+This value is used for production deployments as well as testing (testing key).
 
 ### USER_TABLE
 This is the name of the table to be created in `dynamodb`.  Defaults to `testing` if not specified.
@@ -73,7 +73,7 @@ This is the 40 digit sha1 commit hash for the code.  This is available in the gi
 This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the git repo as well as when deployed to AWS Lambda.
 
 ### PROFILING_ENABLED
-This is the Boolean flag to indicate if profiling is enabled in the application.
+This is a Boolean flag to indicate if profiling is enabled in the application.
 
 ## doit
 http://pydoit.org/
@@ -103,7 +103,7 @@ doit black
 ```
 
 ## install npm packages
-The npm task installs packages defined in the `package.json` file.  These are for use with `serverless` and `dyanlite`.
+The npm task installs packages defined in the `package.json` file.  These are for use with `serverless` and `dynalite`.
 ```
 doit npm
 ```
@@ -201,5 +201,5 @@ etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).
 The `behave` tests for this project are located in the `subhub/tests/bdd` directory.  The
 steps that are available presently are available in the `steps`subdirectory.  You can run this in a
 few ways:
-  * Jetbrain's PyCharm: A runtime configuration is loaded in that allows for debugging and running of the feature files.
+  * Jetbrains PyCharm: A runtime configuration is loaded in that allows for debugging and running of the feature files.
   * Command line: `cd subhub/tests/bdd && behave` after satisfying the `requirements.txt` in that directory.
