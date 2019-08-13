@@ -115,7 +115,7 @@ package:
   exclude:
     - '**/*'
   include:
-    - 'handler.py'
+    - 'fxa.py'
     - 'subhub/**'
 
 custom:
@@ -201,7 +201,7 @@ functions:
     name: ${self:custom.prefix}-function
     description: >
       subhub service for handling subscription services interactions
-    handler: handler.handle
+    handler: fxa.handle
     timeout: 30
     events:
       - http:
@@ -212,6 +212,13 @@ functions:
           method: ANY
           path: '{proxy+}'
           cors: true
+  missing-fxa-events:
+    name: ${self:custom.prefix}-mia-function
+    description: >
+      subhub service proccessing missed events
+    handler: mia.handle
+    events:
+      - schedule: rate(6 hours)
 
 resources:
   Resources:
