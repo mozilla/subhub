@@ -508,7 +508,7 @@ def task_perf_remote():
         ],
         'actions':[
             f'{PYTHON3} -m setup develop',
-            f'cd subhub/tests/performance && locust -f locustfile.py --host=http://{CFG.DEPLOY_DOMAIN}'
+            f'cd subhub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
         ]
     }
 
