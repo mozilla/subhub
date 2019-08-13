@@ -577,44 +577,25 @@ def task_deploy():
     '''
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        if svc != "missing-events":
-            curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
-            describe = 'git describe --abbrev=7'
-            yield {
-                'name': svc,
-                'task_dep': [
-                    'check',
-                    'creds',
-                    'stripe',
-                    'yarn',
-                    'test',
-                ],
-                'actions': [
-                    f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
-                    f'echo "{curl}"',
-                    f'{curl}',
-                    f'echo "{describe}"',
-                    f'{describe}',
-                ],
-            }
-        else:
-            describe = 'git describe --abbrev=7'
-            yield {
-                'name': svc,
-                'task_dep': [
-                    'check',
-                    'creds',
-                    'stripe',
-                    'yarn',
-                    'test',
-                ],
-                'actions': [
-                    f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
-                    f'echo "{describe}"',
-                    f'{describe}',
-                ],
-            }
-
+        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
+        describe = 'git describe --abbrev=7'
+        yield {
+            'name': svc,
+            'task_dep': [
+                'check',
+                'creds',
+                'stripe',
+                'yarn',
+                'test',
+            ],
+            'actions': [
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
+                f'echo "{curl}"',
+                f'{curl}',
+                f'echo "{describe}"',
+                f'{describe}',
+            ],
+        }
 
 def task_remove():
     '''
