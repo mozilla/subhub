@@ -15,5 +15,7 @@ services:
         STRIPE_API_KEY: "sk_test_123"
         SUPPORT_API_KEY: "support_test"
         LOCAL_FLASK_PORT: 5000
+        DEPLOY_ENV: dev
+        DEPLOY_DOMAIN: dev.fxa.mozilla-subhub.app
     ports:
       - "5000:5000"
