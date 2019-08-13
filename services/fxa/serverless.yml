@@ -42,12 +42,9 @@ provider:
     NEW_RELIC_SERVERLESS_MODE_ENABLED: ${env:NEW_RELIC_SERVERLESS_MODE_ENABLED}
     NEW_RELIC_DISTRIBUTED_TRACING_ENABLED: ${env:NEW_RELIC_DISTRIBUTED_TRACING_ENABLED}
     PROFILING_ENABLED: ${env:PROFILING_ENABLED}
-    USER_TABLE:
-      Ref: 'Users'
-    EVENT_TABLE:
-      Ref: 'Events'
-    DELETED_USER_TABLE:
-      Ref: 'DeletedUsers'
+    USER_TABLE: 'Users'
+    EVENT_TABLE: 'Events'
+    DELETED_USER_TABLE: 'DeletedUsers'
   tags:
     cost-center: 1440
     project-name: subhub
@@ -77,9 +74,9 @@ provider:
         - 'dynamodb:DescribeTable'
         - 'dynamodb:CreateTable'
       Resource:
-        - { 'Fn::GetAtt': ['Users', 'Arn'] }
-        - { 'Fn::GetAtt': ['Events', 'Arn'] }
-        - { 'Fn::GetAtt': ['DeletedUsers', 'Arn']}
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.USER_TABLE}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.EVENT_TABLE}"
+        - "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DELETED_USER_TABLE}"
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
@@ -240,6 +237,7 @@ resources:
           - Ref: SubHubSNS
     Users:
       Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
           -
@@ -254,6 +252,7 @@ resources:
           PointInTimeRecoveryEnabled: true
     DeletedUsers:
       Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
           - AttributeName: user_id
@@ -266,6 +265,7 @@ resources:
           PointInTimeRecoveryEnabled: true
     Events:
       Type: 'AWS::DynamoDB::Table'
+      DeletionPolicy: Retain
       Properties:
         AttributeDefinitions:
           -
