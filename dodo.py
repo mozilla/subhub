@@ -573,46 +573,36 @@ def task_deploy():
     '''
     run serverless deploy -v for every service
     '''
+    def deploy_to_prod():
+        if CFG.DEPLOYED_ENV == 'prod':
+            if CFG('DEPLOY_TO', None) == 'prod':
+                return True
+            return False
+        return True
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        if svc != "missing-events":
-            curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
-            describe = 'git describe --abbrev=7'
-            yield {
-                'name': svc,
-                'task_dep': [
-                    'check',
-                    'creds',
-                    'stripe',
-                    'yarn',
-                    'test',
-                ],
-                'actions': [
-                    f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
-                    f'echo "{curl}"',
-                    f'{curl}',
-                    f'echo "{describe}"',
-                    f'{describe}',
-                ],
-            }
-        else:
-            describe = 'git describe --abbrev=7'
-            yield {
-                'name': svc,
-                'task_dep': [
-                    'check',
-                    'creds',
-                    'stripe',
-                    'yarn',
-                    'test',
-                ],
-                'actions': [
-                    f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
-                    f'echo "{describe}"',
-                    f'{describe}',
-                ],
-            }
-
+        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
+        describe = 'git describe --abbrev=7'
+        yield {
+            'name': svc,
+            'task_dep': [
+                'check',
+                'creds',
+                'stripe',
+                'yarn',
+                'test',
+            ],
+            'actions': [
+                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
+                f'echo "{curl}"',
+                f'{curl}',
+                f'echo "{describe}"',
+                f'{describe}',
+            ] if deploy_to_prod() else [
+                f'attempting to deploy to prod without env var DEPLOY_TO=prod set',
+                'false',
+            ],
+        }
 
 def task_remove():
     '''
