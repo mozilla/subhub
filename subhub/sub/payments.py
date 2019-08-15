@@ -216,7 +216,7 @@ def subscription_status(uid) -> FlaskResponse:
     if not subscriptions:
         return {"message": "No subscriptions for this customer."}, 403
     return_data = create_return_data(subscriptions)
-    return return_data, 201
+    return return_data, 200
 
 
 def create_return_data(subscriptions) -> JsonDict:
