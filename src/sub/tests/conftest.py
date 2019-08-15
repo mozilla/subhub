@@ -14,10 +14,10 @@ import pytest
 import stripe
 from flask import g
 
-from subhub.sub import payments
-from subhub.app import create_app
-from subhub.cfg import CFG
-from subhub.customer import create_customer
+from src.sub import payments
+from src.sub.app import create_app
+from src.shared.cfg import CFG
+from src.sub.customer import create_customer
 
 from subhub.log import get_logger
 
@@ -38,7 +38,7 @@ def pytest_configure():
     os.environ["AWS_ACCESS_KEY_ID"] = "fake"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
     os.environ["USER_TABLE"] = "users-testing"
-    os.environ["EVENT_TABLE"] = "events-testing"
+    os.environ["DELETED_USER_TABLE"] = "deleted-users-testing"
     os.environ["ALLOWED_ORIGIN_SYSTEMS"] = "Test_system,Test_System,Test_System1"
     sys._called_from_test = True
 
@@ -74,7 +74,6 @@ def app():
     app = create_app()
     with app.app.app_context():
         g.subhub_account = app.app.subhub_account
-        g.hub_table = app.app.hub_table
         g.subhub_deleted_users = app.app.subhub_deleted_users
         yield app
 

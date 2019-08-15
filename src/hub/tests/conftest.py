@@ -35,7 +35,6 @@ def pytest_configure():
     # Latest boto3 now wants fake credentials around, so here we are.
     os.environ["AWS_ACCESS_KEY_ID"] = "fake"
     os.environ["AWS_SECRET_ACCESS_KEY"] = "fake"
-    os.environ["USER_TABLE"] = "users-testing"
     os.environ["EVENT_TABLE"] = "events-testing"
     os.environ["ALLOWED_ORIGIN_SYSTEMS"] = "Test_system,Test_System,Test_System1"
     sys._called_from_test = True
