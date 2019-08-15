@@ -32,7 +32,7 @@ import threading
 import collections
 import structlog
 
-from subhub.cfg import CFG
+from src.shared.cfg import CFG
 
 IS_CONFIGURED = False
 EVENT_UUID = str(uuid.uuid4())

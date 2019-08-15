@@ -4,9 +4,9 @@
 
 import json
 
-from hub.stripe.abstract import AbstractStripeHubEvent
-from hub.routes.static import StaticRoutes
-from shared.log import get_logger
+from src.hub.stripe.abstract import AbstractStripeHubEvent
+from src.hub.routes.static import StaticRoutes
+from src.shared.log import get_logger
 
 logger = get_logger()
 
