@@ -66,7 +66,6 @@ def create_app(config=None):
     app = connexion.FlaskApp(__name__, specification_dir=".", options=options)
     app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
-
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
 
     if not app.app.hub_table.model.exists():

@@ -72,7 +72,7 @@ paths:
             $ref: '#/definitions/Deployed'
   /support/{uid}/subscriptions:
     get:
-      operationId: sub.sub.payments.support_status
+      operationId: sub.payments.support_status
       tags:
         - Support
       summary: Support view of user Subscriptions
@@ -106,7 +106,7 @@ paths:
         - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
     get:
-      operationId: sub.sub.payments.subscription_status
+      operationId: sub.payments.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
@@ -139,7 +139,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: sub.sub.payments.subscribe_to_plan
+      operationId: sub.payments.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
