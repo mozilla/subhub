@@ -12,12 +12,12 @@ from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
 
-from subhub import secrets
-from subhub.cfg import CFG
-from subhub.exceptions import SubHubError
-from subhub.db import SubHubAccount, HubEvent, SubHubDeletedAccount
+from .shared import secrets
+from .shared.cfg import CFG
+from .shared.exceptions import SubHubError
+from .shared.db import HubEvent
 
-from subhub.log import get_logger
+from .shared.log import get_logger
 
 logger = get_logger()
 
@@ -64,26 +64,14 @@ def create_app(config=None):
         host = None
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
-    app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
+    app = connexion.FlaskApp(__name__, specification_dir=".", options=options)
     app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
-    app.app.subhub_account = SubHubAccount(
-        table_name=CFG.USER_TABLE, region=region, host=host
-    )
+
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
-    app.app.subhub_deleted_users = SubHubDeletedAccount(
-        table_name=CFG.DELETED_USER_TABLE, region=region, host=host
-    )
-    if not app.app.subhub_account.model.exists():
-        app.app.subhub_account.model.create_table(
-            read_capacity_units=1, write_capacity_units=1, wait=True
-        )
+
     if not app.app.hub_table.model.exists():
         app.app.hub_table.model.create_table(
-            read_capacity_units=1, write_capacity_units=1, wait=True
-        )
-    if not app.app.subhub_deleted_users.model.exists():
-        app.app.subhub_deleted_users.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
 
@@ -118,9 +106,7 @@ def create_app(config=None):
 
     @app.app.before_request
     def before_request():
-        g.subhub_account = current_app.subhub_account
         g.hub_table = current_app.hub_table
-        g.subhub_deleted_users = current_app.subhub_deleted_users
         g.app_system_id = None
         if CFG.PROFILING_ENABLED:
             if "profile" in request.args and not hasattr(sys, "_called_from_test"):
