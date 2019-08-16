@@ -607,6 +607,52 @@ def task_deploy():
             ],
         }
 
+def task_deploy_svc():
+    '''
+    run serverless deploy -v on a provided <svc>
+    '''
+    def deploy_to_prod():
+        if CFG.DEPLOYED_ENV == 'prod':
+            if CFG('DEPLOY_TO', None) == 'prod':
+                return True
+            return False
+        return True
+    servicepath = f'services/%(svc)s'
+    curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.%(svc)s.mozilla-subhub.app/v1/version'
+    describe = 'git describe --abbrev=7'
+    return {
+        'basename': 'deploy-svc',
+        'params': [
+            {
+                'name': 'svc',
+                'long': 'svc',
+                'short': 's',
+                'choices': [
+                    (svc, '') for svc in SVCS
+                ],
+                'default': 'fxa',
+                'help': 'choose svc',
+            }
+        ],
+        'task_dep': [
+            'check',
+            'creds',
+            'stripe',
+            'yarn',
+            'test',
+        ],
+        'actions': [
+            f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
+            f'echo "{curl}"',
+            f'{curl}',
+            f'echo "{describe}"',
+            f'{describe}',
+        ] if deploy_to_prod() else [
+            f'attempting to deploy to prod without env var DEPLOY_TO=prod set',
+            'false',
+        ],
+    }
+
 def task_remove():
     '''
     run serverless remove -v for every service
