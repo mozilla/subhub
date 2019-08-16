@@ -5,10 +5,10 @@
 import json
 import requests
 
-from subhub.hub.routes.abstract import AbstractRoute
-from subhub.cfg import CFG
+from hub.routes.abstract import AbstractRoute
+from shared.cfg import CFG
 
-from subhub.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

@@ -4,7 +4,7 @@
 
 """
 Usage example:
-    from subhub.log import get_logger
+    from shared.log import get_logger
     log = get_logger()
     log.info('my_event', my_key1='val 1', my_key2=5, my_key3=[1, 2, 3], my_key4={'a': 1, 'b': 2})
 List of metadata keys in each log message:
@@ -32,7 +32,7 @@ import threading
 import collections
 import structlog
 
-from subhub.cfg import CFG
+from shared.cfg import CFG
 
 IS_CONFIGURED = False
 EVENT_UUID = str(uuid.uuid4())

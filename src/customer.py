@@ -7,10 +7,10 @@ from stripe import Customer, Subscription
 import stripe
 from stripe.error import InvalidRequestError
 
-from subhub.cfg import CFG
-from subhub.exceptions import IntermittentError, ServerError
-from subhub.db import SubHubAccount
-from subhub.log import get_logger
+from shared.cfg import CFG
+from shared.exceptions import IntermittentError, ServerError
+from shared.db import SubHubAccount
+from shared.log import get_logger
 
 logger = get_logger()
 

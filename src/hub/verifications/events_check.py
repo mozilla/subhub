@@ -9,13 +9,13 @@ from datetime import datetime, timedelta
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
-from subhub.app import create_app, g
-from subhub.hub.stripe.controller import event_process
+from hub.app import create_app, g
+from hub.stripe.controller import event_process
 from flask import current_app
 import stripe
 
-from subhub.cfg import CFG
-from subhub.log import get_logger
+from shared.cfg import CFG
+from shared.log import get_logger
 
 logger = get_logger()
 

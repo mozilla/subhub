@@ -452,7 +452,7 @@ def task_local():
         'actions': [
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {ENVS} {PYTHON3} subhub/app.py',
+            f'env {ENVS} {PYTHON3} hub.app.py',
         ],
     }
 
@@ -481,7 +481,7 @@ def task_perf_local():
         AWS_SECRET_ACCESS_KEY='fake-key',
         PYTHONPATH='.'
     )
-    cmd = f'env {ENVS} {PYTHON3} subhub/app.py'
+    cmd = f'env {ENVS} {PYTHON3} hub.app.py'
     return {
         'basename': 'perf-local',
         'task_dep':[
@@ -493,8 +493,8 @@ def task_perf_local():
         'actions':[
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            LongRunning(f'nohup env {envs} {PYTHON3} subhub/app.py > /dev/null &'),
-            f'cd subhub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
+            LongRunning(f'nohup env {envs} {PYTHON3} hub.app.py > /dev/null &'),
+            f'cd sub.tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
         ]
     }
 
@@ -511,7 +511,7 @@ def task_perf_remote():
         ],
         'actions':[
             f'{PYTHON3} -m setup develop',
-            f'cd subhub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
+            f'cd sub.tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
         ]
     }
 
@@ -540,7 +540,7 @@ def task_pytest():
     '''
     run pytest per test file
     '''
-    for filename in Path('subhub/tests').glob('**/*.py'):
+    for filename in Path('sub.tests').glob('**/*.py'):
         yield {
             'name': filename,
             'task_dep': [
@@ -584,7 +584,7 @@ def task_deploy():
         return True
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
+        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-hub.app/v1/version'
         describe = 'git describe --abbrev=7'
         yield {
             'name': svc,
@@ -646,7 +646,7 @@ def task_curl():
         yield {
             'name': route,
             'actions': [
-                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-subhub.app/v1/{route}',
+                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-hub.app/v1/{route}',
             ],
         }
 

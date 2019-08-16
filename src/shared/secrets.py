@@ -7,8 +7,8 @@ import boto3
 import base64
 import json
 
-from subhub.cfg import CFG
-from subhub.exceptions import SecretStringMissingError
+from shared.cfg import CFG
+from shared.exceptions import SecretStringMissingError
 
 
 def get_secret(secret_id):

@@ -5,7 +5,7 @@
 import functools
 import time
 import cProfile
-from subhub.cfg import CFG
+from shared.cfg import CFG
 
 from functools import wraps
 

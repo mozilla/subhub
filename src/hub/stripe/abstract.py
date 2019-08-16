@@ -5,10 +5,10 @@
 from abc import ABC, abstractmethod
 import requests
 from attrdict import AttrDict
-from subhub.hub.routes.pipeline import RoutesPipeline
-from subhub.cfg import CFG
+from hub.routes.pipeline import RoutesPipeline
+from shared.cfg import CFG
 
-from subhub.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
