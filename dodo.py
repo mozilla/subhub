@@ -452,7 +452,7 @@ def task_local():
         'actions': [
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {ENVS} {PYTHON3} hub.app.py',
+            f'env {ENVS} {PYTHON3} src/sub/app.py',
         ],
     }
 
@@ -494,7 +494,7 @@ def task_perf_local():
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
             LongRunning(f'nohup env {envs} {PYTHON3} hub.app.py > /dev/null &'),
-            f'cd sub.tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
         ]
     }
 
@@ -511,7 +511,7 @@ def task_perf_remote():
         ],
         'actions':[
             f'{PYTHON3} -m setup develop',
-            f'cd sub.tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
         ]
     }
 
@@ -540,7 +540,7 @@ def task_pytest():
     '''
     run pytest per test file
     '''
-    for filename in Path('sub.tests').glob('**/*.py'):
+    for filename in Path('src/sub/tests').glob('**/*.py'):
         yield {
             'name': filename,
             'task_dep': [

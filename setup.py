@@ -7,10 +7,10 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open('subhub/requirements.txt') as f:
+with open('src/requirements.txt') as f:
     app_requirements = f.read().splitlines()
 
-with open('sub.tests/requirements.txt') as f:
+with open('src/test_requirements.txt') as f:
     test_requirements = f.read().splitlines()
 
 setup_requirements = [
