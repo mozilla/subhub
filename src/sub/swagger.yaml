@@ -20,14 +20,14 @@ securityDefinitions:
       Ops issued token.
       An example of the Authorization header would be:
       ```Authorization: Bearer 00secret00```
-    x-apikeyInfoFunc: src.shared.authentication.payment_auth
+    x-apikeyInfoFunc: sub.shared.authentication.payment_auth
   SupportApiKey:
     type: apiKey
     in: header
     name: Authorization
     description: |
       Sending application identifier
-    x-apikeyInfoFunc: src.shared.authentication.support_auth
+    x-apikeyInfoFunc: sub.shared.authentication.support_auth
 parameters:
   uidParam:
     in: path
@@ -44,7 +44,7 @@ parameters:
 paths:
   /version:
     get:
-      operationId: src.shared.version.get_version
+      operationId: sub.shared.version.get_version
       tags:
         - Version
       summary: SubHub version
@@ -58,7 +58,7 @@ paths:
             $ref: '#/definitions/Version'
   /deployed:
     get:
-      operationId: src.shared.deployed.get_deployed
+      operationId: sub.shared.deployed.get_deployed
       tags:
         - Deployed
       summary: SubHub deployed
@@ -72,7 +72,7 @@ paths:
             $ref: '#/definitions/Deployed'
   /support/{uid}/subscriptions:
     get:
-      operationId: src.sub.payments.support_status
+      operationId: sub.sub.payments.support_status
       tags:
         - Support
       summary: Support view of user Subscriptions
@@ -106,7 +106,7 @@ paths:
         - $ref: '#/parameters/uidParam'
   /customer/{uid}/subscriptions:
     get:
-      operationId: src.sub.payments.subscription_status
+      operationId: sub.sub.payments.subscription_status
       tags:
         - Subscriptions
       summary: List of Subscriptions
@@ -139,7 +139,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: src.sub.payments.subscribe_to_plan
+      operationId: sub.sub.payments.subscribe_to_plan
       tags:
         - Subscriptions
       summary: Subscribe to Plan
@@ -208,7 +208,7 @@ paths:
                 example: Joe User
   /plans:
     get:
-      operationId: src.sub.payments.list_all_plans
+      operationId: sub.payments.list_all_plans
       tags:
         - Subscriptions
       summary: List all Stripe Plans
@@ -232,7 +232,7 @@ paths:
             $ref: '#/definitions/IntermittentError'
   /customer/{uid}/subscriptions/{sub_id}:
     post:
-      operationId: src.sub.payments.reactivate_subscription
+      operationId: sub.payments.reactivate_subscription
       tags:
         - Subscriptions
       summary: Reactivate a Subscription
@@ -265,7 +265,7 @@ paths:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
     delete:
-      operationId: src.sub.payments.cancel_subscription
+      operationId: sub.payments.cancel_subscription
       tags:
         - Subscriptions
       summary: Cancel a Subscription
@@ -303,7 +303,7 @@ paths:
         - $ref: '#/parameters/subIdParam'
   /customer/{uid}:
     get:
-      operationId: src.sub.payments.customer_update
+      operationId: sub.payments.customer_update
       tags:
         - Subscriptions
       summary: Customer Update
@@ -405,7 +405,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
     post:
-      operationId: src.sub.payments.update_payment_method
+      operationId: sub.payments.update_payment_method
       tags:
         - Subscriptions
       summary: Update Payment Method
@@ -452,7 +452,7 @@ paths:
                 description: Pay Token.
                 example: tok_KPte7942xySKBKyrBu11yEpf
     delete:
-      operationId: src.sub.payments.delete_customer
+      operationId: sub.payments.delete_customer
       tags:
         - Subscriptions
       summary: Delete a customer

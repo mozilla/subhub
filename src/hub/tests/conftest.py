@@ -14,10 +14,9 @@ import pytest
 import stripe
 from flask import g
 
-from src.hub.app import create_app
-from src.shared.cfg import CFG
-
-from src.shared.log import get_logger
+from hub.app import create_app
+from hub.shared.cfg import CFG
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

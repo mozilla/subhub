@@ -10,10 +10,10 @@ import flask
 import stripe.error
 from mockito import when, mock, unstub
 
-from src.shared.cfg import CFG
-from src.shared import secrets
+from hub.shared.cfg import CFG
+from hub.shared import secrets
 
-from src.hub.tests.unit.stripe.utils import run_test, MockSqsClient
+from hub.tests.unit.stripe.utils import run_test, MockSqsClient
 
 
 def run_customer(mocker, data, filename):

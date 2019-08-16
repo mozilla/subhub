@@ -6,9 +6,9 @@ import mockito
 import requests
 import boto3
 import flask
-from src.shared.cfg import CFG
+from hub.shared.cfg import CFG
 
-from src.hub.tests.unit.stripe.utils import run_test, MockSqsClient
+from hub.tests.unit.stripe.utils import run_test, MockSqsClient
 
 
 def test_stripe_hub_succeeded(mocker):

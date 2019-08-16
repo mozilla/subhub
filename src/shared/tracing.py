@@ -2,24 +2,25 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import functools
-import time
-import cProfile
-from shared.cfg import CFG
-
-from functools import wraps
-
 """
 Memory Profile a function
-Requires the environment variable, PYTHONTRACEMALLOC to be set prior 
+Requires the environment variable, PYTHONTRACEMALLOC to be set prior
 or you will get the following run-tine exception:
     `the tracemalloc module must be tracing memory allocations to take a snapshot`
-    
+
 Calling syntax:
     @mprofiled
     def some_function():
         pass
 """
+
+import functools
+import time
+import cProfile
+
+from functools import wraps
+
+from shared.cfg import CFG
 
 
 def mprofiled(func):

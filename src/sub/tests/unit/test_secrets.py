@@ -7,9 +7,9 @@ import boto3
 
 from mockito import when, mock, unstub
 
-from src.shared import secrets
-from src.shared.cfg import CFG
-from src.shared.exceptions import SecretStringMissingError
+from sub.shared.exceptions import SecretStringMissingError
+from sub.shared import secrets
+from sub.shared.cfg import CFG
 
 
 EXPECTED = {

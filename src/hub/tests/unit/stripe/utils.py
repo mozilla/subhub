@@ -5,9 +5,9 @@
 import os
 import json
 
-from src.shared.cfg import CFG
-from src.shared import secrets
-from src.hub.stripe.controller import StripeHubEventPipeline, event_process, view
+from hub.shared.cfg import CFG
+from hub.shared import secrets
+from hub.stripe.controller import StripeHubEventPipeline, event_process, view
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 
