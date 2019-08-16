@@ -584,7 +584,7 @@ def task_deploy():
         return True
     for svc in SVCS:
         servicepath = f'services/{svc}'
-        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-hub.app/v1/version'
+        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
         describe = 'git describe --abbrev=7'
         yield {
             'name': svc,
@@ -646,7 +646,7 @@ def task_curl():
         yield {
             'name': route,
             'actions': [
-                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-hub.app/v1/{route}',
+                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-subhub.app/v1/{route}',
             ],
         }
 
