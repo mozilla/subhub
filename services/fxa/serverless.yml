@@ -58,7 +58,7 @@ provider:
     deployed-when: ${env:DEPLOYED_WHEN}
     deployed-method: serverless
     sources: https://github.com/mozilla/subhub
-    urls: prod.fxa.mozilla-hub.app/v1
+    urls: prod.fxa.mozilla-subhub.app/v1
     keywords: subscriptions:flask:serverless:swagger
     branch: ${env:BRANCH}
     revision: ${env:REVISION}
@@ -130,8 +130,8 @@ custom:
     start:
       migrate: true
   customDomain:
-    domainName: ${self:custom.subdomain}.mozilla-hub.app
-    certificateName: ${self:custom.subdomain}.mozilla-hub.app
+    domainName: ${self:custom.subdomain}.mozilla-subhub.app
+    certificateName: ${self:custom.subdomain}.mozilla-subhub.app
     basePath: 'v1'
     stage: ${self:provider.stage}
     createRoute53Record: true
