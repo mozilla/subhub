@@ -10,7 +10,7 @@ with open("README.md", "r") as fh:
 with open('subhub/requirements.txt') as f:
     app_requirements = f.read().splitlines()
 
-with open('subhub/tests/requirements.txt') as f:
+with open('sub.tests/requirements.txt') as f:
     test_requirements = f.read().splitlines()
 
 setup_requirements = [

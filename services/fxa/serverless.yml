@@ -58,8 +58,8 @@ provider:
     deployed-when: ${env:DEPLOYED_WHEN}
     deployed-method: serverless
     sources: https://github.com/mozilla/subhub
-    urls: prod.fxa.mozilla-subhub.app/v1
-    keywords: subhub:subscriptions:flask:serverless:swagger
+    urls: prod.fxa.mozilla-hub.app/v1
+    keywords: subscriptions:flask:serverless:swagger
     branch: ${env:BRANCH}
     revision: ${env:REVISION}
     version: ${env:VERSION}
@@ -116,7 +116,7 @@ package:
     - '**/*'
   include:
     - 'handler.py'
-    - 'subhub/**'
+    - 'src/**'
 
 custom:
   stage: ${opt:stage, self:provider.stage}
@@ -124,14 +124,14 @@ custom:
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
     dockerizePip: 'non-linux'
-    fileName: subhub/requirements.txt
+    fileName: src/requirements.txt
   git-repo: https://github.com/mozilla/subhub
   dynamodb:
     start:
       migrate: true
   customDomain:
-    domainName: ${self:custom.subdomain}.mozilla-subhub.app
-    certificateName: ${self:custom.subdomain}.mozilla-subhub.app
+    domainName: ${self:custom.subdomain}.mozilla-hub.app
+    certificateName: ${self:custom.subdomain}.mozilla-hub.app
     basePath: 'v1'
     stage: ${self:provider.stage}
     createRoute53Record: true
@@ -197,11 +197,41 @@ custom:
             aws:SourceIp: ${file(./whitelist.yml):hub}
 
 functions:
-  subhub:
-    name: ${self:custom.prefix}-function
+  sub:
+    name: ${self:custom.prefix}-sub
     description: >
-      subhub service for handling subscription services interactions
-    handler: handler.handle
+      Function for handling subscription services interactions
+    handler: handler.handle_sub
+    timeout: 30
+    events:
+      - http:
+          method: ANY
+          path: /sub
+          cors: true
+      - http:
+          method: ANY
+          path: '{proxy+}'
+          cors: true
+  hub:
+    name: ${self:custom.prefix}-hub
+    description: >
+      Function for handling hub hub interactions
+    handler: handler.handle_hub
+    timeout: 30
+    events:
+      - http:
+          method: ANY
+          path: /hub
+          cors: true
+      - http:
+          method: ANY
+          path: '{proxy+}'
+          cors: true
+  mia:
+    name: ${self:custom.prefix}-mia
+    description: >
+      Function for reconcilation of missing hub events
+    handler: handler.handle_mia
     timeout: 30
     events:
       - http:
@@ -278,21 +308,3 @@ resources:
         BillingMode: PAY_PER_REQUEST
         PointInTimeRecoverySpecification:
           PointInTimeRecoveryEnabled: true
-  Outputs:
-    SubHubSNS:
-      Value:
-        Ref: SubHubSNS
-      Export:
-        Name: ${self:custom.stage}-SubHubSNS
-    SubHubTopicPolicy:
-      Value:
-        Ref: SubHubTopicPolicy
-    Users:
-      Value:
-        Ref: Users
-    Events:
-      Value:
-        Ref: Events
-    DeletedUsers:
-      Value:
-        Ref: DeletedUsers

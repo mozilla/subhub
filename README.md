@@ -202,12 +202,12 @@ doit draw
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning,
 etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).
 
-## [Performance Tests](./subhub/tests/performance/README.md)
+## [Performance Tests](./sub.tests/performance/README.md)
 
 ## Behave Tests
 
-The `behave` tests for this project are located in the `subhub/tests/bdd` directory.  The
+The `behave` tests for this project are located in the `sub.tests/bdd` directory.  The
 steps that are available presently are available in the `steps`subdirectory.  You can run this in a
 few ways:
   * Jetbrains PyCharm: A runtime configuration is loaded in that allows for debugging and running of the feature files.
-  * Command line: `cd subhub/tests/bdd && behave` after satisfying the `requirements.txt` in that directory.
+  * Command line: `cd sub.tests/bdd && behave` after satisfying the `requirements.txt` in that directory.

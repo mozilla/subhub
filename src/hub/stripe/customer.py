@@ -9,11 +9,11 @@ from datetime import datetime
 import stripe
 from stripe.error import InvalidRequestError
 
-from subhub.hub.stripe.abstract import AbstractStripeHubEvent
-from subhub.hub.routes.static import StaticRoutes
-from subhub.exceptions import ClientError
+from hub.stripe.abstract import AbstractStripeHubEvent
+from hub.routes.static import StaticRoutes
+from shared.exceptions import ClientError
 
-from subhub.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
