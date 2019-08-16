@@ -2,13 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import uuid
 import json
-from sub.payments import subscribe_to_plan, customer_update, create_update_data
-from sub.tests.unit.stripe.utils import MockSubhubAccount
-from unittest.mock import Mock, MagicMock, PropertyMock
-import os
 
+from sub.payments import subscribe_to_plan, customer_update, create_update_data
+from sub.tests.unit.utils import MockSubhubAccount
+from unittest.mock import Mock, MagicMock, PropertyMock
 from sub.shared.log import get_logger
 
 logger = get_logger()
