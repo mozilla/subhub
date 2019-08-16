@@ -4,15 +4,14 @@
 
 import json
 import time
-from datetime import datetime
-
 import stripe
+
+from datetime import datetime
 from stripe.error import InvalidRequestError
 
 from hub.stripe.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
-
 from hub.shared.log import get_logger
 
 logger = get_logger()

@@ -8,8 +8,8 @@ from unittest.mock import Mock, patch
 import connexion
 import stripe.error
 
-from src.sub.app import create_app
-from src.sub.tests.unit.utils import MockSubhubUser
+from sub.app import create_app
+from sub.tests.unit.utils import MockSubhubUser
 
 
 class MockCustomer:

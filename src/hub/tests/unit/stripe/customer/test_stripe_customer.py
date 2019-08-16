@@ -11,9 +11,9 @@ import requests
 
 from mockito import when, mock, unstub
 
-from src.hub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
-from src.shared.cfg import CFG
-from src.shared.log import get_logger
+from hub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
+from hub.shared.cfg import CFG
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

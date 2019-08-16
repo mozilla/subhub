@@ -3,12 +3,12 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import flask
-from flask import Response
 
+from flask import Response
 from mockito import when, mock, unstub
 
-from src.shared.log import get_logger
-from src.hub.tests.unit.stripe.utils import run_event_process
+from hub.tests.unit.stripe.utils import run_event_process
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

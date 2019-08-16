@@ -5,8 +5,8 @@
 import os
 import json
 
-from src.shared.cfg import CFG
-from src.shared import secrets
+from sub.shared.cfg import CFG
+from sub.shared import secrets
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 

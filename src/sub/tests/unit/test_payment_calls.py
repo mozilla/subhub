@@ -9,18 +9,18 @@ import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
-from sub.shared.exceptions import ClientError
 from unittest.mock import Mock, MagicMock, PropertyMock
 
-from src.sub import payments
-from src.sub.customer import (
+from sub.shared.exceptions import ClientError
+from sub import payments
+from sub.customer import (
     create_customer,
     subscribe_customer,
     existing_or_new_customer,
 )
-from src.sub.tests.unit.utils import MockSubhubUser
-from src.shared.log import get_logger
-from src.shared.cfg import CFG
+from sub.tests.unit.utils import MockSubhubUser
+from sub.shared.log import get_logger
+from sub.shared.cfg import CFG
 
 
 logger = get_logger()

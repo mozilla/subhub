@@ -4,8 +4,9 @@
 
 import functools
 
-from src.shared.tracing import timed, mprofiled
 from random import randint, randrange
+
+from sub.shared.tracing import timed, mprofiled
 
 
 @timed

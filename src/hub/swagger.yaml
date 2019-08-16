@@ -18,7 +18,7 @@ securityDefinitions:
     name: Authorization
     description: |
       Hub validation
-    x-apikeyInfoFunc: src.shared.authentication.hub_auth
+    x-apikeyInfoFunc: hub.shared.authentication.hub_auth
 parameters:
   uidParam:
     in: path
@@ -35,7 +35,7 @@ parameters:
 paths:
   /version:
     get:
-      operationId: src.shared.version.get_version
+      operationId: hub.shared.version.get_version
       tags:
         - Version
       summary: SubHub version
@@ -49,7 +49,7 @@ paths:
             $ref: '#/definitions/Version'
   /deployed:
     get:
-      operationId: src.shared.deployed.get_deployed
+      operationId: hub.shared.deployed.get_deployed
       tags:
         - Deployed
       summary: SubHub deployed
@@ -63,7 +63,7 @@ paths:
             $ref: '#/definitions/Deployed'
   /hub:
     post:
-      operationId: src.hub.stripe.controller.view
+      operationId: hub.stripe.controller.view
       tags:
         - Hub
       summary: Receives hub calls

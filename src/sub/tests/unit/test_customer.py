@@ -4,7 +4,7 @@
 
 from unittest.mock import MagicMock, PropertyMock
 
-from src.sub.customer import fetch_customer
+from sub.customer import fetch_customer
 
 
 def test_fetch_customer_no_account(monkeypatch):

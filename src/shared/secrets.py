@@ -7,8 +7,8 @@ import boto3
 import base64
 import json
 
-from shared.cfg import CFG
 from shared.exceptions import SecretStringMissingError
+from shared.cfg import CFG
 
 
 def get_secret(secret_id):

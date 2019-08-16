@@ -15,10 +15,10 @@ newrelic.agent.initialize()
 # the AWS environment
 sys.path.append(f"{os.path.dirname(os.path.realpath(__file__))}/src")
 
-from src.sub.app import create_app as create_sub_app
-from src.hub.app import create_app as create_hub_app
-from src.shared.log import get_logger
-from src.hub.verifications import events_check
+from sub.app import create_app as create_sub_app
+from hub.app import create_app as create_hub_app
+from shared.log import get_logger
+from hub.verifications import events_check
 
 logger = get_logger()
 

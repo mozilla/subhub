@@ -3,22 +3,21 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import time
-from datetime import datetime, timedelta
 import os
 import json
-
 import boto3
 import flask
-from flask import Response
 import stripe
 import requests
 
+from flask import Response
 from mockito import when, mock, unstub
+from datetime import datetime, timedelta
 
-from src.hub.tests.unit.stripe.utils import run_view, run_event_process
-from src.shared.cfg import CFG
-from src.hub.verifications.events_check import EventCheck, process_events
-from src.shared.log import get_logger
+from hub.tests.unit.stripe.utils import run_view, run_event_process
+from hub.verifications.events_check import EventCheck, process_events
+from hub.shared.cfg import CFG
+from hub.shared.log import get_logger
 
 logger = get_logger()
 
