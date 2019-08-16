@@ -14,8 +14,11 @@ from functools import lru_cache
 from doit.tools import LongRunning
 from pathlib import Path
 from pkg_resources import parse_version
+from os.path import join, dirname, realpath
 
-from subhub.cfg import CFG, call, CalledProcessError
+sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
+
+from shared.cfg import CFG, call, CalledProcessError
 
 DOIT_CONFIG = {
     'default_tasks': [
