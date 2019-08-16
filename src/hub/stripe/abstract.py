@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 import requests
 from attrdict import AttrDict
 from hub.routes.pipeline import RoutesPipeline
-from shared.cfg import CFG
+from hub.shared.cfg import CFG
 
-from shared.log import get_logger
+from hub.shared.log import get_logger
 
 logger = get_logger()
 
