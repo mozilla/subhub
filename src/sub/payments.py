@@ -10,8 +10,8 @@ from flask import g
 
 from sub.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
-from shared.exceptions import ClientError
-from shared.log import get_logger
+from sub.shared.exceptions import ClientError
+from sub.shared.log import get_logger
 
 logger = get_logger()
 

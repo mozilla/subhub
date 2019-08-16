@@ -7,7 +7,7 @@ import json
 from hub.stripe.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 
-from shared.log import get_logger
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

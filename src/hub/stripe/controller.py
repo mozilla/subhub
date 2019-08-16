@@ -5,7 +5,7 @@
 from flask import request, Response
 
 import stripe
-from shared.cfg import CFG
+from hub.shared.cfg import CFG
 from hub.stripe.customer import StripeCustomerCreated
 from hub.stripe.customer import StripeCustomerDeleted
 from hub.stripe.customer import StripeCustomerSubscriptionCreated
@@ -17,7 +17,7 @@ from hub.stripe.customer import StripeCustomerSourceExpiring
 from hub.stripe.invoices import StripeInvoiceFinalized
 from hub.stripe.invoices import StripeInvoicePaymentFailed
 from hub.stripe.intents import StripePaymentIntentSucceeded
-from shared.log import get_logger
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

@@ -9,7 +9,7 @@ import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
-from shared.exceptions import ClientError
+from sub.shared.exceptions import ClientError
 from unittest.mock import Mock, MagicMock, PropertyMock
 
 from src.sub import payments

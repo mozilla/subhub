@@ -14,8 +14,8 @@ from hub.stripe.controller import event_process
 from flask import current_app
 import stripe
 
-from shared.cfg import CFG
-from shared.log import get_logger
+from hub.shared.cfg import CFG
+from hub.shared.log import get_logger
 
 logger = get_logger()
 

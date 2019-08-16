@@ -9,7 +9,7 @@ from sub.tests.unit.stripe.utils import MockSubhubAccount
 from unittest.mock import Mock, MagicMock, PropertyMock
 import os
 
-from shared.log import get_logger
+from sub.shared.log import get_logger
 
 logger = get_logger()
 
