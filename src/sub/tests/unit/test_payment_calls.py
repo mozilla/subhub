@@ -13,11 +13,7 @@ from unittest.mock import Mock, MagicMock, PropertyMock
 
 from sub.shared.exceptions import ClientError
 from sub import payments
-from sub.customer import (
-    create_customer,
-    subscribe_customer,
-    existing_or_new_customer,
-)
+from sub.customer import create_customer, subscribe_customer, existing_or_new_customer
 from sub.tests.unit.utils import MockSubhubUser
 from sub.shared.log import get_logger
 from sub.shared.cfg import CFG

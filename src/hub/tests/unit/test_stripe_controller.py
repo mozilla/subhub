@@ -12,6 +12,7 @@ from hub.shared.log import get_logger
 
 logger = get_logger()
 
+
 def run_webhook(mocker, data):
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""

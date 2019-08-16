@@ -2,8 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from sub.shared.exceptions import SubHubError, IntermittentError, ClientError, ServerError
-from sub.shared.exceptions import SecretStringMissingError
+from sub.shared.exceptions import (
+    SubHubError,
+    IntermittentError,
+    ClientError,
+    ServerError,
+    SecretStringMissingError,
+)
 
 
 def test_SubHubError():

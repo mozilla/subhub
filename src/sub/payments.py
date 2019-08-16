@@ -8,8 +8,8 @@ import cachetools
 from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
 from flask import g
 
-from sub.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
+from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.shared.exceptions import ClientError
 from sub.shared.log import get_logger
 
