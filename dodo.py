@@ -205,9 +205,9 @@ def gen_file_check(name, func, *patterns, message=None):
 
 def check_black():
     '''
-    run black --check in subhub directory
+    run black --check in src/ directory
     '''
-    black_check = f'black --check {CFG.PROJECT_PATH}'
+    black_check = f'black --check src/'
     return {
         'name': 'black',
         'task_dep': [
@@ -275,7 +275,7 @@ def task_check():
     yield gen_file_check('json', json.load, 'services/**/*.json')
     yield gen_file_check('yaml', yaml.safe_load, 'services/**/*.yaml', 'services/**/*.yml')
     header_message = "consider running 'doit header:<filename>'"
-    yield gen_file_check('header', check_header, 'subhub/**/*.py', message=header_message)
+    yield gen_file_check('header', check_header, 'src/**/*.py', message=header_message)
     yield check_black()
     yield check_reqs()
 
@@ -329,20 +329,20 @@ def task_stripe():
 
 def task_black():
     '''
-    run black on subhub/
+    run black on src/
     '''
     return {
         'actions': [
-            f'black {CFG.PROJECT_PATH}',
+            f'black src/'
         ],
     }
 
 def task_header():
     '''
-    apply the HEADER to all the py files under subhub/
+    apply the HEADER to all the py files under src/
     '''
     def ensure_headers():
-        for pyfile in pyfiles('subhub/'):
+        for pyfile in pyfiles('src/'):
             with open(pyfile, 'r') as old:
                 content = old.read()
                 if has_header(content):
@@ -452,7 +452,7 @@ def task_local():
         'actions': [
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            f'env {ENVS} {PYTHON3} src/sub/app.py',
+            f'env {ENVS} {PYTHON3} src/sub/app.py', #FIXME: should work on hub too...
         ],
     }
 
@@ -481,7 +481,7 @@ def task_perf_local():
         AWS_SECRET_ACCESS_KEY='fake-key',
         PYTHONPATH='.'
     )
-    cmd = f'env {ENVS} {PYTHON3} hub.app.py'
+    cmd = f'env {ENVS} {PYTHON3} src/sub/app.py' #FIXME: should work on hub too...
     return {
         'basename': 'perf-local',
         'task_dep':[
@@ -493,8 +493,8 @@ def task_perf_local():
         'actions':[
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            LongRunning(f'nohup env {envs} {PYTHON3} hub.app.py > /dev/null &'),
-            f'cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
+            LongRunning(f'nohup env {envs} {PYTHON3} src/sub/app.py > /dev/null &'), #FIXME: same as above
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}' #FIXME: same
         ]
     }
 
@@ -511,7 +511,7 @@ def task_perf_remote():
         ],
         'actions':[
             f'{PYTHON3} -m setup develop',
-            f'cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}' #FIXME: same as above
         ]
     }
 
@@ -540,7 +540,7 @@ def task_pytest():
     '''
     run pytest per test file
     '''
-    for filename in Path('src/sub/tests').glob('**/*.py'):
+    for filename in Path('src/sub/tests').glob('**/*.py'): #FIXME: should work on hub too...
         yield {
             'name': filename,
             'task_dep': [
