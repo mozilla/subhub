@@ -37,7 +37,7 @@ setup(
     install_requires=app_requirements,
     license='Mozilla Public License 2.0',
     include_package_data=True,
-    packages=find_packages(include=['subhub']),
+    packages=find_packages(include=['src']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
