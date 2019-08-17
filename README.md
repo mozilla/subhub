@@ -123,7 +123,7 @@ The `check` task have several subtasks:
 - `doit check:json` This makes sure all of the json files in the git repo can be loaded.
 - `doit check:yaml` This makes sure all of the yaml files in the git repo can be loaded.
 - `doit check:black` This runs `black --check` to ensure formatting.
-- `doit check:reqs` This compares subhub/requirements.txt vs what is installed via pip freeze.
+- `doit check:reqs` This compares automation_requirements.txt vs what is installed via pip freeze.
 
 ## setup the virtualenv (venv)
 This task will create the virtual env and install all of the requirements for use in running code locally.
