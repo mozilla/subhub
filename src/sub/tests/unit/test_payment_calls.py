@@ -542,7 +542,7 @@ def test_check_subscription_with_valid_parameters(
     """
     subscription, code = create_subscription_for_processing
     sub_status, code = payments.subscription_status("process_test")
-    assert 201 == code
+    assert 200 == code
     assert len(sub_status) > 0
     g.subhub_account.remove_from_db("process_test")
 
