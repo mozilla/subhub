@@ -12,7 +12,7 @@ administered by the Mozilla IT SRE team. We are available on #it-sre on slack.
 ## Secrets
 Secrets in this project all reside in AWS Secrets Manager. There is one set of secrets for each
 environment: prod, stage, qa, dev.  These secrets are loaded as environment variables via the
-subhub/secrets.py file and then generally used via the env loading mechanism in suhub/cfg.py which
+src/shared/secrets.py file and then generally used via the env loading mechanism in src/shared/cfg.py which
 uses decouple to load them as fields.
 
 ## Source Repos
