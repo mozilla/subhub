@@ -362,8 +362,8 @@ def task_venv():
     '''
     setup virtual env
     '''
-    app_requirements = f'{CFG.PROJECT_PATH}/requirements.txt'
-    test_requirements = f'{CFG.PROJECT_PATH}/tests/requirements.txt'
+    app_requirements = f'src/app_requirements.txt'
+    test_requirements = f'src/test_requirements.txt'
     return {
         'task_dep': [
             'check',

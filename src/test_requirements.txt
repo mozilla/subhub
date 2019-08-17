@@ -1,5 +1,5 @@
 # requirements for subhub testing to run
-# do not add requirements for subhub, subhub/requirements.txt already handles that
+# do not add requirements for subhub, src/app_requirements.txt already handles that
 mockito==1.1.1
 pytest==5.0.1
 pytest-cov==2.7.1
