@@ -108,6 +108,41 @@ def pyfiles(path, exclude=None):
     pyfiles = set(Path(path).rglob('*.py')) - set(Path(exclude).rglob('*.py') if exclude else [])
     return [pyfile.as_posix() for pyfile in pyfiles]
 
+def parameterized(dec):
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+        return repl
+    layer.__name__ = dec.__name__
+    layer.__doc__ = dec.__doc__
+    return layer
+
+@parameterized
+def guard(func, env):
+    def wrapper(*args, **kwargs):
+        task_dict = func(*args, **kwargs)
+        if CFG.DEPLOYED_ENV == env and CFG('DEPLOY_TO', None) != env:
+            task_dict['actions'] = [
+                f'attempting to run {func.__name__} without env var DEPLOY_TO={env} set',
+                'false',
+            ]
+        return task_dict
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+@parameterized
+def skip(func, taskname):
+    def wrapper(*args, **kwargs):
+        task_dict = func(*args, **kwargs)
+        envvar = f'SKIP_{taskname.upper()}'
+        if CFG(envvar, None):
+            task_dict['uptodate'] = [True]
+        return task_dict
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
 # TODO: This needs to check for the existence of the dependency prior to execution or update project requirements.
 def task_count():
     '''
@@ -302,13 +337,12 @@ def task_creds():
         ],
     }
 
+@skip('test')
 def task_stripe():
     '''
     check to see if STRIPE_API_KEY is set
     '''
     def stripe_check():
-        if os.environ.get('SKIP_TESTS', None):
-            return True
         try:
             CFG.STRIPE_API_KEY
         except:
@@ -358,6 +392,7 @@ def task_header():
         ],
     }
 
+@skip('venv')
 def task_venv():
     '''
     setup virtual env
@@ -373,9 +408,6 @@ def task_venv():
             f'{PIP3} install --upgrade pip',
             f'[ -f "{app_requirements}" ] && {PIP3} install -r "{app_requirements}"',
             f'[ -f "{test_requirements}" ] && {PIP3} install -r "{test_requirements}"',
-        ],
-        'uptodate': [
-            lambda: os.environ.get('SKIP_VENV', None),
         ],
     }
 
@@ -515,7 +547,7 @@ def task_perf_remote():
         ]
     }
 
-
+@skip('test')
 def task_test():
     '''
     run tox in tests/
@@ -530,9 +562,6 @@ def task_test():
         ],
         'actions': [
             f'cd {CFG.REPO_ROOT} && tox',
-        ],
-        'uptodate': [
-            lambda: os.environ.get('SKIP_TESTS', None),
         ],
     }
 
@@ -572,16 +601,11 @@ def task_package():
             ],
         }
 
+@guard('prod')
 def task_deploy():
     '''
     run serverless deploy -v for every service
     '''
-    def deploy_to_prod():
-        if CFG.DEPLOYED_ENV == 'prod':
-            if CFG('DEPLOY_TO', None) == 'prod':
-                return True
-            return False
-        return True
     for svc in SVCS:
         servicepath = f'services/{svc}'
         curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
@@ -601,22 +625,14 @@ def task_deploy():
                 f'{curl}',
                 f'echo "{describe}"',
                 f'{describe}',
-            ] if deploy_to_prod() else [
-                f'attempting to deploy to prod without env var DEPLOY_TO=prod set',
-                'false',
             ],
         }
 
+@guard('prod')
 def task_deploy_svc():
     '''
     run serverless deploy -v on a provided <svc>
     '''
-    def deploy_to_prod():
-        if CFG.DEPLOYED_ENV == 'prod':
-            if CFG('DEPLOY_TO', None) == 'prod':
-                return True
-            return False
-        return True
     servicepath = f'services/%(svc)s'
     curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.%(svc)s.mozilla-subhub.app/v1/version'
     describe = 'git describe --abbrev=7'
@@ -647,9 +663,6 @@ def task_deploy_svc():
             f'{curl}',
             f'echo "{describe}"',
             f'{describe}',
-        ] if deploy_to_prod() else [
-            f'attempting to deploy to prod without env var DEPLOY_TO=prod set',
-            'false',
         ],
     }
 
