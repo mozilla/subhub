@@ -108,6 +108,12 @@ def pyfiles(path, exclude=None):
     pyfiles = set(Path(path).rglob('*.py')) - set(Path(exclude).rglob('*.py') if exclude else [])
     return [pyfile.as_posix() for pyfile in pyfiles]
 
+def load_serverless(svc):
+    return yaml.safe_load(open(f'services/{svc}/serverless.yml'))
+
+def get_svcs_to_funcs():
+    return {svc: list(load_serverless(svc)['functions'].keys()) for svc in SVCS}
+
 def parameterized(dec):
     def layer(*args, **kwargs):
         def repl(f):
@@ -665,6 +671,36 @@ def task_deploy_svc():
             f'{describe}',
         ],
     }
+
+def task_deploy_func():
+    '''
+    run serverless deploy funciton -v --function <func> in the given <svc>
+    '''
+    svc = '$(echo "%(svc_func)s" | cut -d- -f1)'
+    func = '$(echo "%(svc_func)s" | cut -d- -f2)'
+    servicepath = f'services/{svc}'
+    function = f'{CFG.DEPLOYED_ENV}-{svc}-{func}'
+    return {
+        'basename': 'deploy-func',
+        'params': [
+            {
+                'name': 'svc_func',
+                'long': 'svc-func',
+                'short': 'f',
+                'choices': [
+                    (f'{svc}-{func}', '')
+                    for svc, funcs in get_svcs_to_funcs().items()
+                    for func in funcs
+                ],
+                'default': 'fxa-sub',
+                'help': 'give <svc>-<func> to deploy a single aws function',
+            }
+        ],
+        'actions' :[
+            f'cd {servicepath} && env {envs()} {SLS} deploy function --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v --function {function}',
+        ],
+    }
+
 
 def task_remove():
     '''
