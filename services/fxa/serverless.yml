@@ -208,10 +208,6 @@ functions:
           method: ANY
           path: /sub
           cors: true
-      - http:
-          method: ANY
-          path: '{proxy+}'
-          cors: true
   hub:
     name: ${self:custom.prefix}-hub
     description: >
@@ -223,10 +219,6 @@ functions:
           method: ANY
           path: /hub
           cors: true
-      - http:
-          method: ANY
-          path: '{proxy+}'
-          cors: true
   mia:
     name: ${self:custom.prefix}-mia
     description: >
@@ -237,10 +229,6 @@ functions:
       - http:
           method: ANY
           path: /
-          cors: true
-      - http:
-          method: ANY
-          path: '{proxy+}'
           cors: true
 
 resources:

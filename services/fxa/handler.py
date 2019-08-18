@@ -11,7 +11,7 @@ from os.path import join, dirname, realpath
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
 
-newrelic.agent.initialize()
+# newrelic.agent.initialize()
 
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
@@ -24,7 +24,7 @@ from shared.log import get_logger
 logger = get_logger()
 
 
-@newrelic.agent.lambda_handler()
+# @newrelic.agent.lambda_handler()
 def handle_sub(event, context):
     try:
         xray_recorder.configure(service="fxa.sub")
@@ -37,7 +37,7 @@ def handle_sub(event, context):
         # TODO: Add Sentry exception catch here
         raise
 
-@newrelic.agent.lambda_handler()
+# @newrelic.agent.lambda_handler()
 def handle_hub(event, context):
     try:
         xray_recorder.configure(service="fxa.hub")
@@ -50,8 +50,7 @@ def handle_hub(event, context):
         # TODO: Add Sentry exception catch here
         raise
 
-# TODO: Discuss
-@newrelic.agent.lambda_handler()
+# @newrelic.agent.lambda_handler()
 def handle_mia(event, context):
     try:
         logger.info("handling mia event", subhub_event=event, context=context)
