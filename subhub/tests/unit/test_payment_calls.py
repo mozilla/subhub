@@ -9,8 +9,8 @@ import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
-from subhub.exceptions import ClientError
 from unittest.mock import Mock, MagicMock, PropertyMock
+from pynamodb.exceptions import DeleteError
 
 from subhub.sub import payments
 from subhub.customer import (
@@ -347,21 +347,23 @@ def test_delete_user_from_db(app, create_subscription_for_processing):
     WHEN provided with a valid user id
     THEN add to deleted users table
     """
-    deleted_user = payments.delete_user_from_db("process_test")
+    deleted_user = payments.delete_user("process_test", "sub_id", "origin")
     logger.info("deleted user from db", deleted_user=deleted_user)
     assert deleted_user is True
 
 
-def test_delete_user_from_db2(app, create_subscription_for_processing):
+def test_delete_user_from_db2(app, create_subscription_for_processing, monkeypatch):
     """
-    GIVEN raise ClientError
-    WHEN provided with an invalid user id
+    GIVEN raise DeleteError
+    WHEN an entry cannot be removed from the database
     THEN validate error message
     """
-    uid = "process_test2"
-    with pytest.raises(ClientError) as request_error:
-        payments.delete_user_from_db("process_test2")
-    msg = f"userid is None for customer {uid}"
+    delete_error = Mock(side_effect=DeleteError())
+    monkeypatch.setattr("subhub.db.SubHubAccount.remove_from_db", delete_error)
+
+    with pytest.raises(DeleteError) as request_error:
+        payments.delete_user("process_test_2", "sub_id", "origin")
+    msg = "Error deleting item"
     assert msg in str(request_error.value)
 
 

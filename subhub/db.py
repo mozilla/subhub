@@ -5,8 +5,9 @@
 from typing import Optional
 
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
+from pynamodb.connection import Connection
 from pynamodb.models import Model, DoesNotExist
-from pynamodb.exceptions import PutError
+from pynamodb.exceptions import PutError, DeleteError
 
 from subhub.log import get_logger
 
@@ -96,10 +97,13 @@ class SubHubAccount:
 
     def remove_from_db(self, uid: str) -> bool:
         try:
-            self.model.get(uid, consistent_read=True).delete()
+            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
+            conn.delete_item(
+                self.model.Meta.table_name, hash_key=uid, range_key=None
+            )  # Note that range key is optional
             return True
-        except DoesNotExist:
-            logger.error("remove from db", uid=uid)
+        except DeleteError:
+            logger.error("failed to remove user from db", uid=uid)
             return False
 
     def mark_deleted(self, uid: str) -> bool:
@@ -167,12 +171,15 @@ class HubEvent:
             logger.error("append event", event_id=event_id, sent_system=sent_system)
             return False
 
-    def remove_from_db(self, event_id: str) -> bool:
+    def remove_from_db(self, uid: str) -> bool:
         try:
-            self.model.get(event_id, consistent_read=True).delete()
+            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
+            conn.delete_item(
+                self.model.Meta.table_name, hash_key=uid, range_key=None
+            )  # Note that range key is optional
             return True
-        except DoesNotExist:
-            logger.error("remove from db", event_id=event_id)
+        except DeleteError:
+            logger.error("failed to remove event from db", uid=uid)
             return False
 
 
@@ -259,10 +266,13 @@ class SubHubDeletedAccount:
 
     def remove_from_db(self, uid: str) -> bool:
         try:
-            self.model.get(uid, consistent_read=True).delete()
+            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
+            conn.delete_item(
+                self.model.Meta.table_name, hash_key=uid, range_key=None
+            )  # Note that range key is optional
             return True
-        except DoesNotExist:
-            logger.error("remove from db", uid=uid)
+        except DeleteError:
+            logger.error("failed to remove deleted user from db", uid=uid)
             return False
 
     def mark_deleted(self, uid: str) -> bool:
