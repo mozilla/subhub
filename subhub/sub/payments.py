@@ -32,7 +32,8 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     )
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
-        return {"message": "User already subscribed."}, 409
+        return dict(message="User already subscribed."), 409
+
     if not customer.get("deleted"):
         Subscription.create(customer=customer.id, items=[{"plan": data["plan_id"]}])
         updated_customer = fetch_customer(g.subhub_account, user_id=uid)
@@ -40,8 +41,8 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
             updated_customer["subscriptions"]
         )
         return create_return_data(newest_subscription), 201
-    else:
-        return dict(message=None), 400
+
+    return dict(message=None), 400
 
 
 def find_newest_subscription(subscriptions):
@@ -118,7 +119,7 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     """
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
-        return {"message": "Customer does not exist."}, 404
+        return dict(message="Customer does not exist."), 404
 
     for item in customer["subscriptions"]["data"]:
         if item["id"] == sub_id and item["status"] in [
@@ -132,7 +133,8 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
             for sub in subs:
                 if sub["cancel_at_period_end"] and sub["id"] == sub_id:
                     return {"message": "Subscription cancellation successful"}, 201
-    return {"message": "Subscription not available."}, 400
+
+    return dict(message="Subscription not available."), 400
 
 
 def delete_customer(uid) -> FlaskResponse:
@@ -145,6 +147,7 @@ def delete_customer(uid) -> FlaskResponse:
     subscription_user = g.subhub_account.get_user(uid)
     if not subscription_user:
         return dict(message="Customer does not exist."), 404
+
     deleted_payment_customer = Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
         deleted_customer = delete_user(
@@ -155,6 +158,7 @@ def delete_customer(uid) -> FlaskResponse:
         user = g.subhub_account.get_user(uid)
         if deleted_customer and user is None:
             return dict(message="Customer deleted successfully"), 200
+
     return dict(message="Customer not available"), 400
 
 
@@ -193,16 +197,17 @@ def reactivate_subscription(uid, sub_id):
 
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
-        return {"message": "Customer does not exist."}, 404
-    active_subscriptions = customer["subscriptions"]["data"]
+        return dict(message="Customer does not exist."), 404
 
+    active_subscriptions = customer["subscriptions"]["data"]
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
                 Subscription.modify(sub_id, cancel_at_period_end=False)
-                return {"message": "Subscription reactivation was successful."}, 200
-            return {"message": "Subscription is already active."}, 200
-    return {"message": "Current subscription not found."}, 404
+                return dict(message="Subscription reactivation was successful."), 200
+            return dict(message="Subscription is already active."), 200
+
+    return dict(message="Current subscription not found."), 404
 
 
 def support_status(uid) -> FlaskResponse:
@@ -217,10 +222,12 @@ def subscription_status(uid) -> FlaskResponse:
     """
     items = g.subhub_account.get_user(uid)
     if not items or not items.cust_id:
-        return {"message": "Customer does not exist."}, 404
+        return dict(message="Customer does not exist."), 404
+
     subscriptions = Subscription.list(customer=items.cust_id, limit=100, status="all")
     if not subscriptions:
-        return {"message": "No subscriptions for this customer."}, 403
+        return dict(message="No subscriptions for this customer."), 403
+
     return_data = create_return_data(subscriptions)
     return return_data, 200
 
@@ -286,13 +293,13 @@ def update_payment_method(uid, data) -> FlaskResponse:
     """
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
-        return {"message": "Customer does not exist."}, 404
+        return dict(message="Customer does not exist."), 404
 
     if customer["metadata"]["userid"] == uid:
         customer.modify(customer.id, source=data["pmt_token"])
         return {"message": "Payment method updated successfully."}, 201
-    else:
-        return {"message": "Customer mismatch."}, 400
+
+    return dict(message="Customer mismatch."), 400
 
 
 def customer_update(uid) -> tuple:
@@ -304,16 +311,16 @@ def customer_update(uid) -> tuple:
     try:
         customer = fetch_customer(g.subhub_account, uid)
         if not customer:
-            return "Customer does not exist.", 404
+            return dict(message="Customer does not exist."), 404
 
         if customer["metadata"]["userid"] == uid:
             return_data = create_update_data(customer)
             return return_data, 200
-        else:
-            return "Customer mismatch.", 400
+
+        return dict(message="Customer mismatch."), 400
     except KeyError as e:
         logger.error("Customer does not exist", error=e)
-        return {"message": f"Customer does not exist: missing {e}"}, 404
+        return dict(message=f"Customer does not exist: missing {e}"), 404
 
 
 def create_update_data(customer) -> dict:

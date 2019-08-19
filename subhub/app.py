@@ -65,7 +65,12 @@ def create_app(config=None):
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
-    app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
+    app.add_api(
+        "swagger.yaml",
+        pass_context_arg_name="request",
+        strict_validation=True,
+        validate_responses=True,
+    )
 
     app.app.subhub_account = SubHubAccount(
         table_name=CFG.USER_TABLE, region=region, host=host
