@@ -142,6 +142,7 @@ custom:
     stage: restricted
     qa: restricted
     dev: unfettered
+    fab: unfettered
   resourcePolicies:
     unfettered:
       - Effect: Allow
