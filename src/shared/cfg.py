@@ -160,6 +160,21 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return "dev"
 
     @property
+    def DEPLOYED_BY(self):
+        """
+        DEPLOYED_BY
+        """
+        return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
+
+    @property
+    @lru_cache()
+    def DEPLOYED_WHEN(self):
+        """
+        DEPLOYED_WHEN
+        """
+        return self("DEPLOYED_WHEN", datetime.utcnow().isoformat())
+
+    @property
     def REVISION(self):
         """
         revision
@@ -420,6 +435,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("DEPLOY_DOMAIN", "localhost")
 
     @property
+    def SRCTAR(self):
+        """
+        SRCTAR
+        """
+        return self("SRCTAR", ".src.tar.gz")
+
+    @property
     def USER(self):
         """
         user
@@ -438,21 +460,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
             return platform.node()
         except:
             return "unknown"
-
-    @property
-    def DEPLOYED_BY(self):
-        """
-        DEPLOYED_BY
-        """
-        return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
-
-    @property
-    @lru_cache()
-    def DEPLOYED_WHEN(self):
-        """
-        DEPLOYED_WHEN
-        """
-        return self("DEPLOYED_WHEN", datetime.utcnow().isoformat())
 
     def __getattr__(self, attr):
         """
