@@ -47,6 +47,10 @@ SVCS = [
     svc for svc in os.listdir('services')
     if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')
 ]
+SRCS = [
+    src for src in os.listdir('src/')
+    if os.path.isdir(f'src/{src}') if src != 'shared'
+]
 
 mutex = threading.Lock()
 
@@ -604,6 +608,33 @@ def task_package():
             ],
             'actions': [
                 f'cd services/{svc} && env {envs()} {SLS} package --stage {CFG.DEPLOYED_ENV} -v',
+            ],
+        }
+
+def task_tar():
+    '''
+    tar up source files, dereferncing symlinks
+    '''
+    excludes = ' '.join([
+        f'--exclude={CFG.SRCTAR}',
+        '--exclude=__pycache__',
+        '--exclude=*.pyc',
+        '--exclude=.env',
+        '--exclude=.git',
+    ])
+    for src in SRCS:
+        ## it is important to note that this is required to keep the tarballs from
+        ## genereating different checksums and therefore different layers in docker
+        cmd = f'cd {CFG.REPO_ROOT}/src/{src} && echo "$(git status -s)" > {CFG.REVISION} && tar cvh {excludes} . | gzip -n > {CFG.SRCTAR} && rm {CFG.REVISION}'
+        yield {
+            'name': src,
+            'task_dep': [
+                'check:noroot',
+                'test',
+            ],
+            'actions': [
+                f'echo "{cmd}"',
+                f'{cmd}',
             ],
         }
 
