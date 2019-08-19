@@ -4,6 +4,7 @@
 
 import json
 from unittest.mock import Mock, patch
+import mock
 
 import connexion
 import stripe.error
@@ -182,3 +183,45 @@ def test_customer_unsubscribe_server_stripe_error_with_params(app, monkeypatch):
 
     assert response.status_code == 500
     assert "Customer instance has invalid ID" in data["message"]
+
+
+@mock.patch("subhub.sub.payments._get_all_plans")
+def test_plan_response_valid(mock_plans, app):
+    fh = open("tests/unit/fixtures/valid_plan_response.json")
+    valid_response = json.loads(fh.read())
+    fh.close()
+
+    mock_plans.return_value = valid_response
+
+    client = app.app.test_client()
+
+    path = "v1/plans"
+
+    response = client.get(
+        path,
+        headers={"Authorization": "fake_payment_api_key"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 200
+
+
+@mock.patch("subhub.sub.payments._get_all_plans")
+def test_plan_response_invalid(mock_plans, app):
+    fh = open("tests/unit/fixtures/invalid_plan_response.json")
+    invalid_response = json.loads(fh.read())
+    fh.close()
+
+    mock_plans.return_value = invalid_response
+
+    client = app.app.test_client()
+
+    path = "v1/plans"
+
+    response = client.get(
+        path,
+        headers={"Authorization": "fake_payment_api_key"},
+        content_type="application/json",
+    )
+
+    assert response.status_code == 500

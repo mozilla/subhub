@@ -329,10 +329,9 @@ paths:
                 type: boolean
               payment_type:
                 type: string
-                enum:
-                  - card
+                example: card
               last4:
-                type: integer
+                type: string
                 example: 4242
               exp_month:
                 type: integer
@@ -640,7 +639,7 @@ definitions:
         type: string
         example: The resource is not available.
       code:
-        type: number
+        type: string
         example: 404
   IntermittentError:
     type: object
