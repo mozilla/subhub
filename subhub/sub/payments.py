@@ -10,7 +10,6 @@ from flask import g
 
 from subhub.sub.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
-from subhub.exceptions import ClientError
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -148,26 +147,33 @@ def delete_customer(uid) -> FlaskResponse:
         return dict(message="Customer does not exist."), 404
     deleted_payment_customer = Customer.delete(subscription_user.cust_id)
     if deleted_payment_customer:
-        deleted_customer = delete_user_from_db(uid)
+        deleted_customer = delete_user(
+            user_id=subscription_user.user_id,
+            cust_id=subscription_user.cust_id,
+            origin_system=subscription_user.origin_system,
+        )
         user = g.subhub_account.get_user(uid)
         if deleted_customer and user is None:
             return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
 
 
-def delete_user_from_db(uid: str) -> bool:
-    to_delete = g.subhub_account.get_user(uid)
-    if not to_delete:
-        raise ClientError(f"userid is None for customer {uid}")
-
+def delete_user(user_id, cust_id, origin_system) -> bool:
+    """
+    Provided with customer data to be deleted
+    - created deleted entry in the deleted table
+    - remove the customer from the active table
+    :param user_id:
+    :param cust_id:
+    :param origin_system:
+    :return:
+    """
     deleted_user = add_user_to_deleted_users_record(
-        user_id=to_delete.user_id,
-        cust_id=to_delete.cust_id,
-        origin_system=to_delete.origin_system,
+        user_id=user_id, cust_id=cust_id, origin_system=origin_system
     )
     if not deleted_user:
         return False
-    return g.subhub_account.remove_from_db(uid)
+    return g.subhub_account.remove_from_db(user_id)
 
 
 def add_user_to_deleted_users_record(user_id, cust_id, origin_system):
