@@ -35,39 +35,6 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
         self.send_to_routes(routes, json.dumps(data))
 
 
-class StripeCustomerDeleted(AbstractStripeHubEvent):
-    def run(self):
-        logger.info("customer deleted", payload=self.payload)
-        cust_name = self.payload.data.object.name
-        if not cust_name:
-            cust_name = ""
-        data = self.create_data(
-            email=self.payload.data.object.email,
-            customer_id=self.payload.data.object.id,
-            name=cust_name,
-            user_id=self.payload.data.object.metadata.get("userid", None),
-        )
-        logger.info("customer deleted", data=data)
-        routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
-
-
-class StripeCustomerUpdated(AbstractStripeHubEvent):
-    def run(self):
-        logger.info("customer updated", payload=self.payload)
-        cust_name = self.payload.data.object.name
-        if not cust_name:
-            cust_name = ""
-        data = self.create_data(
-            email=self.payload.data.object.email,
-            customer_id=self.payload.data.object.id,
-            name=cust_name,
-        )
-        logger.info("customer updated", data=data)
-        routes = [StaticRoutes.SALESFORCE_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
-
-
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
     def run(self):
         try:
@@ -92,7 +59,7 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
             self.send_to_routes(routes, json.dumps(data))
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
-            raise InvalidRequestError(message="Unable to find customer", param=str(e))
+            raise e
 
 
 class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
@@ -104,7 +71,31 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             user_id = updated_customer.metadata.get("userid")
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
-            raise InvalidRequestError(message="Unable to find customer", param=str(e))
+            raise e
+        try:
+            logger.info("invoice", latest=self.payload.data.object.latest_invoice)
+            invoice_id = self.payload.data.object.latest_invoice
+            latest_invoice = stripe.Invoice.retrieve(id=invoice_id)
+            logger.info(
+                "latest invoice",
+                latest_invoice=latest_invoice.number,
+                charge=latest_invoice.charge,
+            )
+            invoice_number = latest_invoice.number
+            charge = latest_invoice.charge
+        except InvalidRequestError as e:
+            logger.error("Unable to retrieve invoice", error=e)
+            raise e
+        try:
+            latest_charge = stripe.Charge.retrieve(id=charge)
+            logger.info(
+                "latest charge", last4=latest_charge.payment_method_details["card"]
+            )
+            last4 = latest_charge.payment_method_details["card"]["last4"]
+            brand = latest_charge.payment_method_details["card"]["brand"]
+        except InvalidRequestError as e:
+            logger.error("Unable to retrieve charge", error=e)
+            raise e
         if user_id:
             data = self.create_data(
                 uid=user_id,
@@ -119,10 +110,17 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 plan_amount=self.payload.data.object.plan.amount,
                 customer_id=self.payload.data.object.customer,
                 nickname=self.payload.data.object.plan.nickname,
-                created=self.payload.data.object.plan.created,
+                created=self.payload.data.object.created,
                 canceled_at=self.payload.data.object.canceled_at,
                 cancel_at=self.payload.data.object.cancel_at,
                 cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+                currency=self.payload.data.object.plan.currency,
+                current_period_start=self.payload.data.object.current_period_start,
+                current_period_end=self.payload.data.object.current_period_end,
+                invoice_number=invoice_number,
+                brand=brand,
+                last4=last4,
+                charge=charge,
             )
             logger.info("customer subscription created", data=data)
             routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
@@ -147,14 +145,14 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
             user_id = updated_customer.metadata.get("userid")
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
-            raise InvalidRequestError(message="Unable to find customer", param=str(e))
+            raise e
         if user_id:
             data = dict(
                 active=self.is_active_or_trialing,
                 subscriptionId=self.payload.data.object.id,
                 productName=self.payload.data.object.plan.nickname,
                 eventId=self.payload.id,  # required by FxA
-                event_id=self.payload.id,  # required by SubHub
+                event_id=self.payload.id,
                 eventCreatedAt=self.payload.created,
                 messageCreatedAt=int(time.time()),
             )
@@ -181,7 +179,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             user_id = updated_customer.metadata.get("userid")
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
-            raise InvalidRequestError(message="Unable to find customer", param=str(e))
+            raise e
         if user_id:
             previous_attributes = dict()
             try:
@@ -198,29 +196,49 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     "cancel at period end",
                     end=self.payload.data.object.cancel_at_period_end,
                 )
-                data = self.create_data(
+                data = dict(
+                    event_id=self.payload.id,
+                    event_type="customer.subscription_cancelled",
                     uid=user_id,
                     customer_id=self.payload.data.object.customer,
-                    subscriptionId=self.payload.data.object.id,  # required by FxA
                     subscription_id=self.payload.data.object.id,
                     plan_amount=self.payload.data.object.plan.amount,
                     canceled_at=self.payload.data.object.canceled_at,
                     cancel_at=self.payload.data.object.cancel_at,
                     cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
                     nickname=self.payload.data.object.plan.nickname,
-                    messageCreatedAt=int(time.time()),  # required by FxA
                     invoice_id=self.payload.data.object.latest_invoice,
-                    eventId=self.payload.id,  # required by FxA
+                    current_period_start=self.payload.data.object.current_period_start,
+                    current_period_end=self.payload.data.object.current_period_end,
                 )
                 logger.info("customer subscription cancel at period end", data=data)
-                routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
+                routes = [StaticRoutes.SALESFORCE_ROUTE]
                 self.send_to_routes(routes, json.dumps(data))
             elif (
                 not self.payload.data.object.cancel_at_period_end
                 and self.payload.data.object.status == "active"
-                and not previous_attributes.get("cancel_at_period_end")
+                # and not previous_attributes.get("cancel_at_period_end")
             ):
-                data = self.create_data(
+                try:
+                    customer_id = self.payload.data.object.customer
+                    updated_customer = stripe.Customer.retrieve(id=customer_id)
+                    user_id = updated_customer.metadata.get("userid")
+                    invoice_id = self.payload.data.object.latest_invoice
+                    latest_invoice = self.get_latest_invoice(invoice_id)
+                    logger.info("latest invoice", latest_invoice=latest_invoice)
+                    invoice_number = latest_invoice.number
+                    charge = latest_invoice.charge
+                    logger.info("charge", charge=charge)
+                    latest_charge = self.get_latest_charge(charge)
+                    logger.info("latest charge", latest_charge=latest_charge)
+                    last4 = latest_charge.payment_method_details.card.last4
+                    brand = latest_charge.payment_method_details.card.brand
+                except InvalidRequestError as e:
+                    logger.error("Unable to gather data", error=e)
+                    raise e
+                data = dict(
+                    event_id=self.payload.id,
+                    event_type="customer.recurring_charge",
                     uid=user_id,
                     active=self.is_active_or_trialing,
                     subscriptionId=self.payload.data.object.id,  # required by FxA
@@ -231,15 +249,22 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     messageCreatedAt=int(time.time()),  # required by FxA
                     invoice_id=self.payload.data.object.latest_invoice,
                     customer_id=self.payload.data.object.customer,
-                    created=self.payload.data.object.plan.created,
+                    created=self.payload.data.object.created,
                     plan_amount=self.payload.data.object.plan.amount,
                     eventId=self.payload.id,  # required by FxA
                     canceled_at=self.payload.data.object.canceled_at,
                     cancel_at=self.payload.data.object.cancel_at,
                     cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+                    currency=self.payload.data.object.plan.currency,
+                    current_period_start=self.payload.data.object.current_period_start,
+                    current_period_end=self.payload.data.object.current_period_end,
+                    invoice_number=invoice_number,
+                    brand=brand,
+                    last4=last4,
+                    charge=charge,
                 )
                 logger.info("customer subscription new recurring", data=data)
-                routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
+                routes = [StaticRoutes.SALESFORCE_ROUTE]
                 self.send_to_routes(routes, json.dumps(data))
             else:
                 logger.info(
@@ -254,3 +279,32 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             raise ClientError(
                 f"userid is None for customer {self.payload.object.customer}"
             )
+
+    def get_latest_invoice(self, invoice_id):
+        attempts = 2
+        latest_invoice = stripe.Invoice.retrieve(id=invoice_id)
+        logger.info("get latest invoice", latest_invoice=latest_invoice)
+        while attempts > 0:
+            attempts -= 1
+            if latest_invoice.charge is None or latest_invoice.number is None:
+                time.sleep(0.2)
+                self.get_latest_invoice(invoice_id)
+            else:
+                return latest_invoice
+        return None
+
+    def get_latest_charge(self, charge):
+        attempts = 2
+        latest_charge = stripe.Charge.retrieve(id=charge)
+        logger.info("get latest charge", latest_charge=latest_charge)
+        while attempts > 0:
+            attempts -= 1
+            if (
+                latest_charge.payment_method_details.card.last4 is None
+                or latest_charge.payment_method_details.card.brand is None
+            ):
+                time.sleep(0.2)
+                self.get_latest_charge(charge)
+            else:
+                return latest_charge
+        return None
