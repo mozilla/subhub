@@ -2,7 +2,7 @@
   "created": 1326853478,
   "livemode": false,
   "id": "evt_00000000000000",
-  "type": "customer.subscription.updated",
+  "type": "customer.subscription_cancelled",
   "object": "event",
   "request": null,
   "pending_webhooks": 1,
@@ -73,6 +73,7 @@
       "latest_invoice": "in_test123",
       "livemode": false,
       "metadata": {
+        "uid": "user123"
       },
       "plan": {
         "id": "subhub-plan-api_00000000000000",

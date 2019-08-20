@@ -7,16 +7,11 @@ from flask import request, Response
 import stripe
 from subhub.cfg import CFG
 from subhub.hub.stripe.customer import StripeCustomerCreated
-from subhub.hub.stripe.customer import StripeCustomerDeleted
 from subhub.hub.stripe.customer import StripeCustomerSubscriptionCreated
-from subhub.hub.stripe.customer import StripeCustomerUpdated
-from subhub.hub.stripe.subscription import StripeSubscriptionCreated
 from subhub.hub.stripe.customer import StripeCustomerSubscriptionUpdated
 from subhub.hub.stripe.customer import StripeCustomerSubscriptionDeleted
 from subhub.hub.stripe.customer import StripeCustomerSourceExpiring
-from subhub.hub.stripe.invoices import StripeInvoiceFinalized
 from subhub.hub.stripe.invoices import StripeInvoicePaymentFailed
-from subhub.hub.stripe.intents import StripePaymentIntentSucceeded
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -37,18 +32,8 @@ class StripeHubEventPipeline:
             StripeCustomerSubscriptionDeleted(self.payload).run()
         elif event_type == "customer.created":
             StripeCustomerCreated(self.payload).run()
-        elif event_type == "customer.updated":
-            StripeCustomerUpdated(self.payload).run()
-        elif event_type == "customer.deleted":
-            StripeCustomerDeleted(self.payload).run()
         elif event_type == "customer.source.expiring":
             StripeCustomerSourceExpiring(self.payload).run()
-        elif event_type == "subscription.created":
-            StripeSubscriptionCreated(self.payload).run()
-        elif event_type == "invoice.finalized":
-            StripeInvoiceFinalized(self.payload).run()
-        elif event_type == "payment_intent.succeeded":
-            StripePaymentIntentSucceeded(self.payload).run()
         elif event_type == "invoice.payment_failed":
             StripeInvoicePaymentFailed(self.payload).run()
         else:
