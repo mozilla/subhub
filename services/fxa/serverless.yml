@@ -28,7 +28,7 @@ custom:
       - '../../src'
   git-repo: https://github.com/mozilla/subhub
   dynamodb:
-    # Permit serverless offline debugging against 
+    # Permit serverless offline debugging against
     # a local dynamodb instance via
     # sls dynamodb start -p 3000 &
     stages:
@@ -132,7 +132,7 @@ provider:
   tags: ${file(resources/tags.yml):${self:custom.stage}, file(resources/tags.yml):default}
   stackTags:
     service: ${self:service}
-  # Reference: https://serverless.com/blog/abcs-of-iam-permissions/  
+  # Reference: https://serverless.com/blog/abcs-of-iam-permissions/
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -182,7 +182,7 @@ functions:
     description: >
       Function for handling subscription services interactions
     handler: subapp.handle
-    timeout: 900
+    timeout: 30
     events:
       - http: ANY /sub/{proxy+}
   hub:
@@ -190,7 +190,7 @@ functions:
     description: >
       Function for handling subscription services interactions
     handler: hubapp.handle
-    timeout: 900
+    timeout: 30
     events:
       - http: ANY /hub/{proxy+}
   mia:
