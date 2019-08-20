@@ -12,6 +12,8 @@
     "serverless-domain-manager": "3.2.7",
     "serverless-offline": "5.10.1",
     "serverless-plugin-tracing": "2.0.0",
-    "serverless-python-requirements": "5.0.0"
+    "serverless-python-requirements": "5.0.0",
+    "serverless-package-external": "1.1.1",
+    "serverless-wsgi": "1.7.3"
   }
 }
