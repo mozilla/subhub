@@ -1,0 +1,15 @@
+default:
+  cost-center: 1440
+  project-name: subhub
+  project-desc: payment subscription REST api for customers
+  project-email: subhub@mozilla.com
+  deployed-by: ${env:DEPLOYED_BY}
+  deployed-env: ${env:DEPLOYED_ENV}
+  deployed-when: ${env:DEPLOYED_WHEN}
+  deployed-method: serverless
+  sources: https://github.com/mozilla/subhub
+  urls: prod.fxa.mozilla-subhub.app/v1
+  keywords: subscriptions:flask:serverless:swagger
+  branch: ${env:BRANCH}
+  revision: ${env:REVISION}
+  version: ${env:VERSION}

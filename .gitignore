@@ -132,3 +132,6 @@ node_modules/
 
 # src tarballs
 .src.tar.gz
+
+# OSX
+.DS_Store
