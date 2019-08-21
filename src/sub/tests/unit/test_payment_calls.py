@@ -356,7 +356,7 @@ def test_delete_user_from_db2(app, create_subscription_for_processing, monkeypat
     THEN validate error message
     """
     delete_error = Mock(side_effect=DeleteError())
-    monkeypatch.setattr("subhub.db.SubHubAccount.remove_from_db", delete_error)
+    monkeypatch.setattr("sub.shared.db.SubHubAccount.remove_from_db", delete_error)
 
     with pytest.raises(DeleteError) as request_error:
         payments.delete_user("process_test_2", "sub_id", "origin")
