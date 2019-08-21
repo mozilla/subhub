@@ -144,12 +144,7 @@ provider:
         - 'dynamodb:DeleteItem'
         - 'dynamodb:DescribeTable'
         - 'dynamodb:CreateTable'
-      # Restrict our IAM role permissions to
-      # the specific table for the stage
-      Resource:
-        - "Fn::GetAtt": [ Users, Arn ]
-        - "Fn::GetAtt": [ Events, Arn ]
-        - "Fn::GetAtt": [ DeletedUsers, Arn ]
+      Resource: 'arn:aws:dynamodb:us-west-2:*:*'
     - Effect: Allow
       Action:
         - 'secretsmanager:GetSecretValue'
@@ -203,7 +198,13 @@ functions:
     description: >
       Function for reconcilation of missing hub events
     handler: miaapp.handle
-    timeout: 30
+    events:
+      # Invoke Lambda function every minute. This fires an
+      # Reference: Serverless Event Scheduling
+      #   https://serverless.com/framework/docs/providers/aws/events/schedule/
+      # Reference: AWS Cloudwatch Scheduled Event:
+      #   https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/EventTypes.html#schedule_event_type
+      - schedule: rate(1 minute)
 resources:
   # DynamoDB
   - ${file(resources/dynamodb-table.yml)}
