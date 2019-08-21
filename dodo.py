@@ -37,6 +37,7 @@ NEWLINE = '\n'
 VENV = f'{CFG.REPO_ROOT}/venv'
 PYTHON3 = f'{VENV}/bin/python3.7'
 PIP3 = f'{PYTHON3} -m pip'
+MYPY = f'{VENV}/bin/mypy'
 NODE_MODULES = f'{CFG.REPO_ROOT}/node_modules'
 SLS = f'{NODE_MODULES}/serverless/bin/serverless'
 DYNALITE = f'{NODE_MODULES}/.bin/dynalite'
@@ -512,6 +513,21 @@ def task_perf_remote():
         ]
     }
 
+def task_mypy():
+    '''
+    run mpyp, a static type checker for Python 3
+    '''
+    return {
+        'task_dep': [
+            'check',
+            'stripe',
+            'yarn',
+            'venv',
+        ],
+        'actions': [
+            f'cd {CFG.REPO_ROOT} && {envs(MYPYPATH="venv")} {MYPY} -p subhub'
+        ],
+    }
 
 def task_test():
     '''
