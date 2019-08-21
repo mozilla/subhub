@@ -1,5 +1,5 @@
 Resources:
-  Users:
+  UsersTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: ${self:custom.usersTable}
@@ -11,8 +11,9 @@ Resources:
           KeyType: HASH
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      # Set the capacity to auto-scale
       BillingMode: PAY_PER_REQUEST
-  DeletedUsers:
+  DeletedUsersTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: ${self:custom.deletedUsersTable}
@@ -24,8 +25,9 @@ Resources:
           KeyType: HASH
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      # Set the capacity to auto-scale
       BillingMode: PAY_PER_REQUEST
-  Events:
+  EventsTable:
     Type: 'AWS::DynamoDB::Table'
     Properties:
       TableName: ${self:custom.eventsTable}
@@ -37,4 +39,5 @@ Resources:
           KeyType: HASH
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
+      # Set the capacity to auto-scale
       BillingMode: PAY_PER_REQUEST

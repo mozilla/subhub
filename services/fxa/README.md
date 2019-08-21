@@ -15,6 +15,10 @@ Once this is done, you can access the DynamoDB Javascript Shell by
 navigating [here](http://localhost:8000/shell/).  Additionally, you may interact with the application as you would on AWS via commands such as:
   * Perform a HTTP GET of `http://localhost:3000/v1/sub/version`
 
+### Domain Creation
+
+`sls create_domain`
+
 ### Packaging
 
 `sls package`
@@ -48,6 +52,11 @@ Where `FUNCTION` is a member of
 ### Running
 
 `sls wsgi serve`
+
+### To-do
+
+* [Investigate Serverless Termination Protection for Production](https://www.npmjs.com/package/serverless-termination-protection)
+* [Investigate metering requests via apiKeySourceType](https://serverless.com/framework/docs/providers/aws/events/apigateway/)
 
 ## References
 
