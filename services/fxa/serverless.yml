@@ -114,7 +114,7 @@ provider:
   name: aws
   runtime: python3.7
   region: us-west-2
-  stage: ${opt:stage, 'dev'}
+  stage: ${opt:stage}
   stackName: ${self:custom.prefix}-stack
   apiName: ${self:custom.prefix}-apigw
   deploymentPrefix: ${self:custom.prefix}
