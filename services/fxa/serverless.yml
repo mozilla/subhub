@@ -184,7 +184,14 @@ functions:
     handler: subapp.handle
     timeout: 900
     events:
-      - http: ANY /sub/{proxy+}
+      - http: 
+          path: /version
+          method: get
+          cors: true
+      - http:
+          path: /deployed
+          method: get
+          cors: true
   hub:
     name: ${self:custom.prefix}-hub
     description: >
