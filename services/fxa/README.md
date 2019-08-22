@@ -11,7 +11,7 @@ you will need to set the follow environment variable.
 
 `serverless offline start`
 
-Once this is done, you can access the DynamoDB Javascript Shell by 
+Once this is done, you can access the DynamoDB Javascript Shell by
 navigating [here](http://localhost:8000/shell/).  Additionally, you may interact with the application as you would on AWS via commands such as:
   * Perform a HTTP GET of `http://localhost:3000/v1/sub/version`
 
