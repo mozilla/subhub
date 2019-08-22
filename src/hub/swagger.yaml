@@ -33,7 +33,7 @@ parameters:
     required: true
     description: Subscription ID
 paths:
-  /version:
+  /hub/version:
     get:
       operationId: hub.shared.version.get_version
       tags:
@@ -47,7 +47,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Version'
-  /deployed:
+  /hub/deployed:
     get:
       operationId: hub.shared.deployed.get_deployed
       tags:

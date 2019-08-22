@@ -26,9 +26,9 @@ custom:
       - '../../src/hub'
       - '../../src/shared'
       - '../../src'
-  git-repo: ${file(config/config.${self:custom.stage}.json):GITHUB_REPO}
+  git-repo: "https://github.com/mozilla/subhub"
   dynamodb:
-    # Permit serverless offline debugging against 
+    # Permit serverless offline debugging against
     # a local dynamodb instance via
     # sls dynamodb start -p 3000 &
     stages:
@@ -125,7 +125,7 @@ provider:
     # NOTE: https://github.com/serverless/serverless/issues/6112
     restApi: true
   # Tracing
-  tracing: 
+  tracing:
     lambda: true
     apiGateway: true
   memorySize: ${file(config/config.${self:custom.stage}.json):LAMBDA_MEMORY_SIZE}
@@ -136,7 +136,7 @@ provider:
   tags: ${file(resources/tags.yml):${self:custom.stage}, file(resources/tags.yml):default}
   stackTags:
     service: ${self:service}
-  # Reference: https://serverless.com/blog/abcs-of-iam-permissions/  
+  # Reference: https://serverless.com/blog/abcs-of-iam-permissions/
   iamRoleStatements:
     - Effect: Allow
       Action:
@@ -188,68 +188,9 @@ functions:
     handler: subapp.handle
     events:
       - http: {
-          path: /version, 
-          method: get, 
+          path: "/sub/{proxy+}",
+          method: get,
           cors: true
-        }
-      - http: {
-          path: /deployed, 
-          method: get, 
-          cors: true
-        }
-      - http: {
-          path: /plans, 
-          method: get, 
-          cors: true
-        }
-      - http: {
-          path: '/support/{uid}/subscriptions', 
-          method: get, 
-          cors: true, 
-          request: {
-            parameters: {
-              paths: {
-                uid: true
-              }
-            }
-          }
-        }
-      - http: {
-          path: '/customer/{uid}', 
-          method: any, 
-          cors: true, 
-          request: {
-            parameters: {
-              paths: {
-                uid: true
-              }
-            }
-          }
-        }
-      - http: {
-          path: '/customer/{uid}/subscriptions', 
-          method: any, 
-          cors: true, 
-          request: {
-            parameters: {
-              paths: {
-                uid: true
-              }
-            }
-          }
-        }
-      - http: {
-          path: '/customer/{uid}/subscriptions/{sub_id}', 
-          method: any, 
-          cors: true, 
-          request: {
-            parameters: {
-              paths: {
-                uid: true,
-                sub_id: true
-              }
-            }
-          }
         }
   hub:
     name: ${self:custom.prefix}-hub
@@ -258,23 +199,44 @@ functions:
     handler: hubapp.handle
     events:
       - http: {
-          path: /hub, 
-          method: post, 
+          path: /hub,
+          method: post,
           cors: true
         }
-      
+      - http: {
+          path: "/hub/{proxy+}",
+          method: post,
+          cors: true
+        }
   mia:
     name: ${self:custom.prefix}-mia
     description: >
       Function for reconcilation of missing hub events
     handler: miaapp.handle
     events:
-      # Invoke Lambda function every minute. This fires an
+      # Invoke Lambda function on a schedule (either cron or rate limited). This fires an
+      #
       # Reference: Serverless Event Scheduling
       #   https://serverless.com/framework/docs/providers/aws/events/schedule/
       # Reference: AWS Cloudwatch Scheduled Event:
       #   https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/EventTypes.html#schedule_event_type
-      - schedule: ${file(config/config.${self:custom.stage}.json):CRON}
+      #
+      # Rate Syntax
+      #     rate(value unit)
+      #         where value is an unsigned integer
+      #         and the unit is a unit of time in the set of (minute, minutes, hour, hours, day, days)
+      #
+      # Cron Syntax
+      #     cron(minutes day-of-month(DOM) month day-of-week(DOW) year)
+      #         where
+      #             Field   |   Values  |   Wildcards
+      #             Minutes |   0-59    |       ,-*/
+      #             Hours   |   0-23    |       ,-*/
+      #             DOM     |   1-31    |   ,-*/?LW
+      #             Month   |   1-12    |       ,-*/
+      #             DOW     |   1-7     |   ,-*?/L#
+      #             Year    |   192199  |       ,-*/
+      - schedule: rate(1 minute)
 resources:
   # DynamoDB
   - ${file(resources/dynamodb-table.yml)}

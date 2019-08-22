@@ -1,6 +1,4 @@
 {
-    "GITHUB_REPO": "https://github.com/mozilla/subhub",
-    "CRON": "rate(30 minute)",
     "LAMBDA_MEMORY_SIZE": 512,
     "LAMBDA_RESERVED_CONCURRENCY": 5,
     "LAMBDA_TIMEOUT": 5

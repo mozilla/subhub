@@ -42,7 +42,7 @@ parameters:
     required: true
     description: Subscription ID
 paths:
-  /version:
+  /sub/version:
     get:
       operationId: sub.shared.version.get_version
       tags:
@@ -56,7 +56,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Version'
-  /deployed:
+  /sub/deployed:
     get:
       operationId: sub.shared.deployed.get_deployed
       tags:
@@ -70,7 +70,7 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/Deployed'
-  /support/{uid}/subscriptions:
+  /sub/support/{uid}/subscriptions:
     get:
       operationId: sub.payments.support_status
       tags:
@@ -104,7 +104,7 @@ paths:
             $ref: '#/definitions/IntermittentError'
       parameters:
         - $ref: '#/parameters/uidParam'
-  /customer/{uid}/subscriptions:
+  /sub/customer/{uid}/subscriptions:
     get:
       operationId: sub.payments.subscription_status
       tags:
@@ -206,7 +206,7 @@ paths:
                 type: string
                 description: User Display Name
                 example: Joe User
-  /plans:
+  /sub/plans:
     get:
       operationId: sub.payments.list_all_plans
       tags:
@@ -230,7 +230,7 @@ paths:
           description: Intermittent Error
           schema:
             $ref: '#/definitions/IntermittentError'
-  /customer/{uid}/subscriptions/{sub_id}:
+  /sub/customer/{uid}/subscriptions/{sub_id}:
     post:
       operationId: sub.payments.reactivate_subscription
       tags:
@@ -301,7 +301,7 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
-  /customer/{uid}:
+  /sub/customer/{uid}:
     get:
       operationId: sub.payments.customer_update
       tags:
