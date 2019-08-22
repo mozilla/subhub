@@ -188,9 +188,68 @@ functions:
     handler: subapp.handle
     events:
       - http: {
-          path: "/sub/{proxy+}",
+          path: /version,
           method: get,
           cors: true
+        }
+      - http: {
+          path: /deployed,
+          method: get,
+          cors: true
+        }
+      - http: {
+          path: /plans,
+          method: get,
+          cors: true
+        }
+      - http: {
+          path: '/support/{uid}/subscriptions',
+          method: get,
+          cors: true,
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}',
+          method: any,
+          cors: true,
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}/subscriptions',
+          method: any,
+          cors: true,
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}/subscriptions/{sub_id}',
+          method: any,
+          cors: true,
+          request: {
+            parameters: {
+              paths: {
+                uid: true,
+                sub_id: true
+              }
+            }
+          }
         }
   hub:
     name: ${self:custom.prefix}-hub
@@ -203,11 +262,7 @@ functions:
           method: post,
           cors: true
         }
-      - http: {
-          path: "/hub/{proxy+}",
-          method: any,
-          cors: true
-        }
+
   mia:
     name: ${self:custom.prefix}-mia
     description: >

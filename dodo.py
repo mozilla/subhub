@@ -800,7 +800,8 @@ def task_rmrf():
         yield {
             'name': name,
             'actions': [
-                f'sudo find {CFG.REPO_ROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in targets.items()
+                f'sudo find {CFG.REPO_ROOT} -depth -name {name} -type {type} -exec {rmrf}'
+                for name, type in targets.items()
             ],
         }
 
