@@ -26,7 +26,7 @@ custom:
       - '../../src/hub'
       - '../../src/shared'
       - '../../src'
-  git-repo: https://github.com/mozilla/subhub
+  git-repo: ${file(config/config.${self:custom.stage}.json):GITHUB_REPO}
   dynamodb:
     # Permit serverless offline debugging against 
     # a local dynamodb instance via
@@ -120,13 +120,17 @@ provider:
   deploymentPrefix: ${self:custom.prefix}
   endpointType: regional
   logRetentionInDays: 90
-  # NOTE: https://github.com/serverless/serverless/issues/6112
+  # Logging
   logs:
+    # NOTE: https://github.com/serverless/serverless/issues/6112
     restApi: true
-  memorySize: 512
-  reservedConcurrency: 5
-  timeout: 5
-  tracing: true
+  # Tracing
+  tracing: 
+    lambda: true
+    apiGateway: true
+  memorySize: ${file(config/config.${self:custom.stage}.json):LAMBDA_MEMORY_SIZE}
+  reservedConcurrency: ${file(config/config.${self:custom.stage}.json):LAMBDA_RESERVED_CONCURRENCY}
+  timeout: ${file(config/config.${self:custom.stage}.json):LAMBDA_TIMEOUT}
   snsaccount: ${file(accounts.yml):fxa.${self:provider.stage}}
   environment: ${file(env.yml):${self:custom.stage}, file(env.yml):default}
   tags: ${file(resources/tags.yml):${self:custom.stage}, file(resources/tags.yml):default}
@@ -177,29 +181,88 @@ provider:
   resourcePolicy: ${self:custom.resourcePolicies.${self:custom.access.${self:provider.stage}}}
 
 functions:
+  # Sub function
   sub:
-    name: ${self:custom.prefix}-sub
-    description: >
-      Function for handling subscription services interactions
+    name: '${self:custom.prefix}-sub'
+    description: "Function for handling subscription services interactions\n"
     handler: subapp.handle
-    timeout: 900
     events:
-      - http: 
-          path: /version
-          method: get
+      - http: {
+          path: /version, 
+          method: get, 
           cors: true
-      - http:
-          path: /deployed
-          method: get
+        }
+      - http: {
+          path: /deployed, 
+          method: get, 
           cors: true
+        }
+      - http: {
+          path: /plans, 
+          method: get, 
+          cors: true
+        }
+      - http: {
+          path: '/support/{uid}/subscriptions', 
+          method: get, 
+          cors: true, 
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}', 
+          method: any, 
+          cors: true, 
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}/subscriptions', 
+          method: any, 
+          cors: true, 
+          request: {
+            parameters: {
+              paths: {
+                uid: true
+              }
+            }
+          }
+        }
+      - http: {
+          path: '/customer/{uid}/subscriptions/{sub_id}', 
+          method: any, 
+          cors: true, 
+          request: {
+            parameters: {
+              paths: {
+                uid: true,
+                sub_id: true
+              }
+            }
+          }
+        }
   hub:
     name: ${self:custom.prefix}-hub
     description: >
       Function for handling subscription services interactions
     handler: hubapp.handle
-    timeout: 900
     events:
-      - http: ANY /hub/{proxy+}
+      - http: {
+          path: /hub, 
+          method: post, 
+          cors: true
+        }
+      
   mia:
     name: ${self:custom.prefix}-mia
     description: >
@@ -211,7 +274,7 @@ functions:
       #   https://serverless.com/framework/docs/providers/aws/events/schedule/
       # Reference: AWS Cloudwatch Scheduled Event:
       #   https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/EventTypes.html#schedule_event_type
-      - schedule: rate(1 minute)
+      - schedule: ${file(config/config.${self:custom.stage}.json):CRON}
 resources:
   # DynamoDB
   - ${file(resources/dynamodb-table.yml)}
