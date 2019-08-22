@@ -27,8 +27,8 @@ logger = get_logger()
 xray_recorder.configure(service="fxa.hub")
 patch_all()
 
-sub_app = create_app()
-XRayMiddleware(sub_app.app, xray_recorder)
+hub_app = create_app()
+XRayMiddleware(hub_app.app, xray_recorder)
 
 # @newrelic.agent.lambda_handler()
 def handle(event, context):

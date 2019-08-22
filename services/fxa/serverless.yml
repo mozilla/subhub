@@ -205,7 +205,7 @@ functions:
         }
       - http: {
           path: "/hub/{proxy+}",
-          method: post,
+          method: any,
           cors: true
         }
   mia:
@@ -221,12 +221,12 @@ functions:
       # Reference: AWS Cloudwatch Scheduled Event:
       #   https://docs.aws.amazon.com/AmazonCloudWatch/latest/events/EventTypes.html#schedule_event_type
       #
-      # Rate Syntax
+      # Rate Syntax, http://docs.aws.amazon.com/AmazonCloudWatch/latest/events/ScheduledEvents.html#RateExpressions
       #     rate(value unit)
       #         where value is an unsigned integer
       #         and the unit is a unit of time in the set of (minute, minutes, hour, hours, day, days)
       #
-      # Cron Syntax
+      # Cron Syntax, http://docs.aws.amazon.com/lambda/latest/dg/tutorial-scheduled-events-schedule-expressions.html
       #     cron(minutes day-of-month(DOM) month day-of-week(DOW) year)
       #         where
       #             Field   |   Values  |   Wildcards
