@@ -47,21 +47,21 @@ def view() -> tuple:
         logger.info("payload type", type=type(payload))
         sig_header = request.headers["Stripe-Signature"]
         event = stripe.Webhook.construct_event(payload, sig_header, CFG.HUB_API_KEY)
-        pipeline = StripeHubEventPipeline(event)
-        pipeline.run()
+        return {"message": ""}, 200
     except ValueError as e:
         # Invalid payload
         logger.error("ValueError", error=e)
-        return Response(status=400)
+        return {"message": e}, 400
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
         logger.error("SignatureVerificationError", error=e)
-        return Response(status=400)
+        return {"message": e}, 400
     except Exception as e:
         logger.error("General Exception", error=e)
-        return Response(e, status=500)
-
-    return Response("Success", status=200)
+        return {"message": e}, 500
+    finally:
+        pipeline = StripeHubEventPipeline(event)
+        pipeline.run()
 
 
 def event_process(missing_event):

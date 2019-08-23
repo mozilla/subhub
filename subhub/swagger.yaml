@@ -511,6 +511,10 @@ paths:
             properties:
               message:
                 type: string
+        400:
+          description: Error - webhook not valid.
+          schema:
+            $ref: '#/definitions/Errormessage'
         500:
           description: Error - unable to receive webhook.
           schema:
