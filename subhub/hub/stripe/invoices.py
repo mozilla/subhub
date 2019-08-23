@@ -26,11 +26,9 @@ class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
             subscription_id=self.payload.data.object.subscription,
             currency=self.payload.data.object.currency,
             charge_id=self.payload.data.object.charge,
-            invoice_number=self.payload.data.object.number,
             amount_due=self.payload.data.object.amount_due,
             created=self.payload.data.object.created,
             nickname=nickname,
-            invoice_id=self.payload.data.object.id,
         )
         logger.info("invoice payment failed", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
