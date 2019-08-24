@@ -10,6 +10,8 @@ Payment subscription REST api for customers:
 - yarn (https://yarnpkg.com): package manager for node modules for setting up serverless for running and deploying subhub
 - cloc
 - [GraphViz](https://graphviz.org/)
+- Docker
+- Docker Compose
 
 ## Important Environment Variables
 The CFG object is for accessing values either from the `subhub/.env` file and|or superseded by env vars.
@@ -123,7 +125,7 @@ The `check` task have several subtasks:
 - `doit check:json` This makes sure all of the json files in the git repo can be loaded.
 - `doit check:yaml` This makes sure all of the yaml files in the git repo can be loaded.
 - `doit check:black` This runs `black --check` to ensure formatting.
-- `doit check:reqs` This compares subhub/requirements.txt vs what is installed via pip freeze.
+- `doit check:reqs` This compares automation_requirements.txt vs what is installed via pip freeze.
 
 ## setup the virtualenv (venv)
 This task will create the virtual env and install all of the requirements for use in running code locally.
@@ -177,13 +179,23 @@ This run the `serverless deploy` command and requires the user to be logged into
 doit deploy
 ```
 
+Alternatively you may deploy a subset of the `deploy` function by specifying the component as such:
+
+```
+doit deploy SERVICE FUNCTION
+```
+
+Where,
+    SERVICE is the service that you are deploying from the set of fxa.
+    FUNCTION is the function that you are deploying from the set of sub, hub, mia.
+
 ## dependency graph
 This command will generate a GraphViz `dot` file that can be used to generate a media file.
 ```
 doit graph
 ```
 
-## dependency graph image 
+## dependency graph image
 This command will generate a PNG of the dependency graph.
 ```
 doit draw
@@ -202,12 +214,12 @@ doit draw
 A [Postman](https://www.getpostman.com/) URL collection is available for testing, learning,
 etc [here](https://www.getpostman.com/collections/ab233178aa256e424668).
 
-## [Performance Tests](./subhub/tests/performance/README.md)
+## [Performance Tests](./{sub,hub}/tests/performance/README.md)
 
 ## Behave Tests
 
-The `behave` tests for this project are located in the `subhub/tests/bdd` directory.  The
+The `behave` tests for this project are located in the `src/{sub,hub}/tests/bdd` directory.  The
 steps that are available presently are available in the `steps`subdirectory.  You can run this in a
 few ways:
   * Jetbrains PyCharm: A runtime configuration is loaded in that allows for debugging and running of the feature files.
-  * Command line: `cd subhub/tests/bdd && behave` after satisfying the `requirements.txt` in that directory.
+  * Command line: `cd src/{sub,hub}/tests/bdd && behave` after satisfying the `src/test_requirements.txt`.

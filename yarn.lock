@@ -604,7 +604,7 @@ async-limiter@^1.0.0:
   resolved "https://registry.yarnpkg.com/async-limiter/-/async-limiter-1.0.1.tgz#dd379e94f0db8310b08291f9d64c3209766617fd"
   integrity sha512-csOlWGAcRFJaI6m+F2WKdnMKr4HhdhFVBk0H/QbJFMCr+uO2kwohwXQPxw/9OCxp05r5ghVBFSyioixx3gfkNQ==
 
-async@^1.5.2:
+async@^1.5.2, async@~1.5:
   version "1.5.2"
   resolved "https://registry.yarnpkg.com/async/-/async-1.5.2.tgz#ec6a61ae56480c0c3cb241c95618e20892f9672a"
   integrity sha1-7GphrlZIDAw8skHJVhjiCJL5Zyo=
@@ -1886,6 +1886,15 @@ fs-extra@^7.0.0, fs-extra@^7.0.1:
     jsonfile "^4.0.0"
     universalify "^0.1.0"
 
+fs-extra@^8.1.0:
+  version "8.1.0"
+  resolved "https://registry.yarnpkg.com/fs-extra/-/fs-extra-8.1.0.tgz#49d43c45a88cd9677668cb7be1b46efdb8d2e1c0"
+  integrity sha512-yhlQgA6mnOJUKOsRUFsgJdQCvkKhcz8tlZG5HBQfReYZy46OwLcY+Zia0mtdHsOo9y/hP+CxMN0TU9QxoOtG4g==
+  dependencies:
+    graceful-fs "^4.2.0"
+    jsonfile "^4.0.0"
+    universalify "^0.1.0"
+
 fs.realpath@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/fs.realpath/-/fs.realpath-1.0.0.tgz#1504ad2523158caa40db4a2787cb01411994ea4f"
@@ -2174,6 +2183,13 @@ has@^1.0.1, has@^1.0.3:
   integrity sha512-f2dvO0VU6Oej7RkWJGrehjbzMAjFp5/VKPp5tTpWIV4JHHZK1/BxbFRtf/siA2SWTe09caDmVtYYzWEIbBS4zw==
   dependencies:
     function-bind "^1.1.1"
+
+hasbin@^1.2.3:
+  version "1.2.3"
+  resolved "https://registry.yarnpkg.com/hasbin/-/hasbin-1.2.3.tgz#78c5926893c80215c2b568ae1fd3fcab7a2696b0"
+  integrity sha1-eMWSaJPIAhXCtWiuH9P8q3omlrA=
+  dependencies:
+    async "~1.5"
 
 http-cache-semantics@^4.0.0:
   version "4.0.3"
@@ -3945,6 +3961,14 @@ serverless-offline@5.10.1:
     update-notifier "^3.0.1"
     velocityjs "^1.1.3"
 
+serverless-package-external@1.1.1:
+  version "1.1.1"
+  resolved "https://registry.yarnpkg.com/serverless-package-external/-/serverless-package-external-1.1.1.tgz#46c268ad1b41bfc44cf15fc3d070d1cc98147518"
+  integrity sha512-9DnMWkafTua4a6YNwKfxq8m/JkVaUyPFCAdokp6NyZRh7djVrBmysyYf5Or/vF3eogcmRayBzT7SYa8AAjlYsQ==
+  dependencies:
+    rimraf "^2.6.2"
+    yesno "0.0.1"
+
 serverless-plugin-tracing@2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/serverless-plugin-tracing/-/serverless-plugin-tracing-2.0.0.tgz#df6b8b3166ac9bb70a37c7fc875014b2369158f6"
@@ -3969,6 +3993,16 @@ serverless-python-requirements@5.0.0:
     rimraf "^2.6.2"
     sha256-file "1.0.0"
     shell-quote "^1.6.1"
+
+serverless-wsgi@1.7.3:
+  version "1.7.3"
+  resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-1.7.3.tgz#34c7989718a3cb52a9148bdba8d7d6c2da0f0328"
+  integrity sha512-LKzAbLBFam9m7Iu9t5/Oa0AVfd9qRDRNKkrG35h2enlourDebooia3p638bu0nCOqs4VTQ2IqdBlv8devjFYGQ==
+  dependencies:
+    bluebird "^3.5.5"
+    fs-extra "^8.1.0"
+    hasbin "^1.2.3"
+    lodash "^4.17.15"
 
 serverless@1.49.0:
   version "1.49.0"
@@ -4790,6 +4824,11 @@ yauzl@^2.4.2:
   dependencies:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
+
+yesno@0.0.1:
+  version "0.0.1"
+  resolved "https://registry.yarnpkg.com/yesno/-/yesno-0.0.1.tgz#ffbc04ff3d6f99dad24f7463134e9b92ae41bef6"
+  integrity sha1-/7wE/z1vmdrST3RjE06bkq5BvvY=
 
 zip-stream@^1.1.0:
   version "1.2.0"
