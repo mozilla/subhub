@@ -27,3 +27,7 @@ node_modules
 .tox
 venv
 .doit.db
+
+# Dockerfiles
+src/sub/Dockerfile
+src/hub/Dockerfile

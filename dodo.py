@@ -14,8 +14,11 @@ from functools import lru_cache
 from doit.tools import LongRunning
 from pathlib import Path
 from pkg_resources import parse_version
+from os.path import join, dirname, realpath
 
-from subhub.cfg import CFG, call, CalledProcessError
+sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
+
+from shared.cfg import CFG, call, CalledProcessError
 
 DOIT_CONFIG = {
     'default_tasks': [
@@ -44,6 +47,10 @@ DYNALITE = f'{NODE_MODULES}/.bin/dynalite'
 SVCS = [
     svc for svc in os.listdir('services')
     if os.path.isdir(f'services/{svc}') if os.path.isfile(f'services/{svc}/serverless.yml')
+]
+SRCS = [
+    src for src in os.listdir('src/')
+    if os.path.isdir(f'src/{src}') if src != 'shared'
 ]
 
 mutex = threading.Lock()
@@ -105,6 +112,54 @@ def has_header(content):
 def pyfiles(path, exclude=None):
     pyfiles = set(Path(path).rglob('*.py')) - set(Path(exclude).rglob('*.py') if exclude else [])
     return [pyfile.as_posix() for pyfile in pyfiles]
+
+def load_serverless(svc):
+    return yaml.safe_load(open(f'services/{svc}/serverless.yml'))
+
+def get_svcs_to_funcs():
+    return {svc: list(load_serverless(svc)['functions'].keys()) for svc in SVCS}
+
+def svc_func(svc, func=None):
+    assert svc in SVCS, f"svc '{svc}' not in {SVCS}"
+    funcs = get_svcs_to_funcs()[svc]
+    if func:
+        assert func in funcs, f"for svc '{svc}', func '{func}' not in {funcs}"
+    return svc, func
+
+def parameterized(dec):
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+        return repl
+    layer.__name__ = dec.__name__
+    layer.__doc__ = dec.__doc__
+    return layer
+
+@parameterized
+def guard(func, env):
+    def wrapper(*args, **kwargs):
+        task_dict = func(*args, **kwargs)
+        if CFG.DEPLOYED_ENV == env and CFG('DEPLOY_TO', None) != env:
+            task_dict['actions'] = [
+                f'attempting to run {func.__name__} without env var DEPLOY_TO={env} set',
+                'false',
+            ]
+        return task_dict
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
+
+@parameterized
+def skip(func, taskname):
+    def wrapper(*args, **kwargs):
+        task_dict = func(*args, **kwargs)
+        envvar = f'SKIP_{taskname.upper()}'
+        if CFG(envvar, None):
+            task_dict['uptodate'] = [True]
+        return task_dict
+    wrapper.__name__ = func.__name__
+    wrapper.__doc__ = func.__doc__
+    return wrapper
 
 # TODO: This needs to check for the existence of the dependency prior to execution or update project requirements.
 def task_count():
@@ -203,9 +258,9 @@ def gen_file_check(name, func, *patterns, message=None):
 
 def check_black():
     '''
-    run black --check in subhub directory
+    run black --check in src/ directory
     '''
-    black_check = f'black --check {CFG.PROJECT_PATH}'
+    black_check = f'black --check src/'
     return {
         'name': 'black',
         'task_dep': [
@@ -273,7 +328,7 @@ def task_check():
     yield gen_file_check('json', json.load, 'services/**/*.json')
     yield gen_file_check('yaml', yaml.safe_load, 'services/**/*.yaml', 'services/**/*.yml')
     header_message = "consider running 'doit header:<filename>'"
-    yield gen_file_check('header', check_header, 'subhub/**/*.py', message=header_message)
+    yield gen_file_check('header', check_header, 'src/**/*.py', message=header_message)
     yield check_black()
     yield check_reqs()
 
@@ -300,13 +355,12 @@ def task_creds():
         ],
     }
 
+@skip('test')
 def task_stripe():
     '''
     check to see if STRIPE_API_KEY is set
     '''
     def stripe_check():
-        if os.environ.get('SKIP_TESTS', None):
-            return True
         try:
             CFG.STRIPE_API_KEY
         except:
@@ -327,20 +381,20 @@ def task_stripe():
 
 def task_black():
     '''
-    run black on subhub/
+    run black on src/
     '''
     return {
         'actions': [
-            f'black {CFG.PROJECT_PATH}',
+            f'black src/'
         ],
     }
 
 def task_header():
     '''
-    apply the HEADER to all the py files under subhub/
+    apply the HEADER to all the py files under src/
     '''
     def ensure_headers():
-        for pyfile in pyfiles('subhub/'):
+        for pyfile in pyfiles('src/'):
             with open(pyfile, 'r') as old:
                 content = old.read()
                 if has_header(content):
@@ -356,12 +410,13 @@ def task_header():
         ],
     }
 
+@skip('venv')
 def task_venv():
     '''
     setup virtual env
     '''
-    app_requirements = f'{CFG.PROJECT_PATH}/requirements.txt'
-    test_requirements = f'{CFG.PROJECT_PATH}/tests/requirements.txt'
+    app_requirements = f'src/app_requirements.txt'
+    test_requirements = f'src/test_requirements.txt'
     return {
         'task_dep': [
             'check',
@@ -371,9 +426,6 @@ def task_venv():
             f'{PIP3} install --upgrade pip',
             f'[ -f "{app_requirements}" ] && {PIP3} install -r "{app_requirements}"',
             f'[ -f "{test_requirements}" ] && {PIP3} install -r "{test_requirements}"',
-        ],
-        'uptodate': [
-            lambda: os.environ.get('SKIP_VENV', None),
         ],
     }
 
@@ -435,22 +487,12 @@ def task_local():
     '''
     run local deployment
     '''
-    ENVS=envs(
-        AWS_ACCESS_KEY_ID='fake-id',
-        AWS_SECRET_ACCESS_KEY='fake-key',
-        PYTHONPATH='.'
-    )
     return {
         'task_dep': [
             'check',
-            'stripe',
-            'venv',
-            'dynalite:start', #FIXME: test removed as a dep due to concurrency bug
         ],
         'actions': [
-            f'{PYTHON3} -m setup develop',
-            'echo $PATH',
-            f'env {ENVS} {PYTHON3} subhub/app.py',
+            f'docker-compose up --build'
         ],
     }
 
@@ -479,7 +521,7 @@ def task_perf_local():
         AWS_SECRET_ACCESS_KEY='fake-key',
         PYTHONPATH='.'
     )
-    cmd = f'env {ENVS} {PYTHON3} subhub/app.py'
+    cmd = f'env {ENVS} {PYTHON3} src/sub/app.py' #FIXME: should work on hub too...
     return {
         'basename': 'perf-local',
         'task_dep':[
@@ -491,8 +533,8 @@ def task_perf_local():
         'actions':[
             f'{PYTHON3} -m setup develop',
             'echo $PATH',
-            LongRunning(f'nohup env {envs} {PYTHON3} subhub/app.py > /dev/null &'),
-            f'cd subhub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}'
+            LongRunning(f'nohup env {envs} {PYTHON3} src/sub/app.py > /dev/null &'), #FIXME: same as above
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}' #FIXME: same
         ]
     }
 
@@ -509,25 +551,29 @@ def task_perf_remote():
         ],
         'actions':[
             f'{PYTHON3} -m setup develop',
-            f'cd subhub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}'
+            f'cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}' #FIXME: same as above
         ]
     }
 
+@skip('mypy')
 def task_mypy():
     '''
     run mpyp, a static type checker for Python 3
     '''
-    return {
-        'task_dep': [
-            'check',
-            'yarn',
-            'venv',
-        ],
-        'actions': [
-            f'cd {CFG.REPO_ROOT} && {envs(MYPYPATH="venv")} {MYPY} -p subhub'
-        ],
-    }
+    for pkg in ('sub', 'hub'):
+        yield {
+            'name': pkg,
+            'task_dep': [
+                'check',
+                'yarn',
+                'venv',
+            ],
+            'actions': [
+                f'cd {CFG.REPO_ROOT}/src && {envs(MYPYPATH="../venv")} {MYPY} -p {pkg}'
+            ],
+        }
 
+@skip('test')
 def task_test():
     '''
     run tox in tests/
@@ -539,13 +585,10 @@ def task_test():
             'yarn',
             'venv',
             'dynalite:stop',
-            'mypy',
+            #'mypy', FIXME: this needs to be activated once mypy is figured out
         ],
         'actions': [
             f'cd {CFG.REPO_ROOT} && tox',
-        ],
-        'uptodate': [
-            lambda: os.environ.get('SKIP_TESTS', None),
         ],
     }
 
@@ -553,7 +596,7 @@ def task_pytest():
     '''
     run pytest per test file
     '''
-    for filename in Path('subhub/tests').glob('**/*.py'):
+    for filename in Path('src/sub/tests').glob('**/*.py'): #FIXME: should work on hub too...
         yield {
             'name': filename,
             'task_dep': [
@@ -585,40 +628,71 @@ def task_package():
             ],
         }
 
-def task_deploy():
+def task_tar():
     '''
-    run serverless deploy -v for every service
+    tar up source files, dereferncing symlinks
     '''
-    def deploy_to_prod():
-        if CFG.DEPLOYED_ENV == 'prod':
-            if CFG('DEPLOY_TO', None) == 'prod':
-                return True
-            return False
-        return True
-    for svc in SVCS:
-        servicepath = f'services/{svc}'
-        curl = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/version'
-        describe = 'git describe --abbrev=7'
+    excludes = ' '.join([
+        f'--exclude={CFG.SRCTAR}',
+        '--exclude=__pycache__',
+        '--exclude=*.pyc',
+        '--exclude=.env',
+        '--exclude=.git',
+    ])
+    for src in SRCS:
+        ## it is important to note that this is required to keep the tarballs from
+        ## genereating different checksums and therefore different layers in docker
+        cmd = f'cd {CFG.REPO_ROOT}/src/{src} && echo "$(git status -s)" > {CFG.REVISION} && tar cvh {excludes} . | gzip -n > {CFG.SRCTAR} && rm {CFG.REVISION}'
         yield {
-            'name': svc,
+            'name': src,
             'task_dep': [
-                'check',
-                'creds',
-                'stripe',
-                'yarn',
+                'check:noroot',
                 'test',
             ],
             'actions': [
-                f'cd {servicepath} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v',
-                f'echo "{curl}"',
-                f'{curl}',
-                f'echo "{describe}"',
-                f'{describe}',
-            ] if deploy_to_prod() else [
-                f'attempting to deploy to prod without env var DEPLOY_TO=prod set',
-                'false',
+                f'echo "{cmd}"',
+                f'{cmd}',
             ],
         }
+
+@guard('prod')
+def task_deploy():
+    '''
+    deploy <svc> [<func>]
+    '''
+    def deploy(args):
+        svc, func = svc_func(*args)
+        if func:
+            deploy_cmd = f'cd services/{svc} && env {envs()} {SLS} deploy function --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v --function {func}'
+        else:
+            deploy_cmd = f'cd services/{svc} && env {envs()} {SLS} deploy --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v'
+        call(deploy_cmd, stdout=None, stderr=None)
+    return {
+        'task_dep': [
+            'check',
+            'creds',
+            'stripe',
+            'yarn',
+            'test',
+        ],
+        'pos_arg': 'args',
+        'actions': [(deploy,)],
+    }
+
+@guard('prod')
+def task_domain():
+    '''
+    domain <svc> [create|delete]
+    '''
+    def domain(args):
+        svc, action = svc_func(*args)
+        assert action in ('create', 'delete'), "provide 'create' or 'delete'"
+        domain_cmd = f'cd services/{svc} && env {envs()} {SLS} {action}_domain --stage {CFG.DEPLOYED_ENV} -v'
+        call(domain_cmd, stdout=None, stderr=None)
+    return {
+        'pos_arg': 'args',
+        'actions': [(domain,)],
+    }
 
 def task_remove():
     '''
@@ -655,13 +729,17 @@ def task_curl():
     '''
     curl again remote deployment url: /version, /deployed
     '''
-    for route in ('deployed', 'version'):
-        yield {
-            'name': route,
-            'actions': [
-                f'curl --silent https://{CFG.DEPLOYED_ENV}.fxa.mozilla-subhub.app/v1/{route}',
-            ],
-        }
+    def curl(args):
+        svc, func = svc_func(*args)
+        funcs = [func] if func else [func for func in get_svcs_to_funcs()[svc] if func != 'mia']
+        for func in funcs:
+            for route in ('version', 'deployed'):
+                cmd = f'curl --silent https://{CFG.DEPLOYED_ENV}.{svc}.mozilla-subhub.app/v1/{func}/{route}'
+                call(f'echo "{cmd}"; {cmd}', stdout=None, stderr=None)
+    return {
+        'pos_arg': 'args',
+        'actions': [(curl,)],
+    }
 
 def task_rmrf():
     '''
@@ -687,7 +765,8 @@ def task_rmrf():
         yield {
             'name': name,
             'actions': [
-                f'sudo find {CFG.REPO_ROOT} -depth -name {name} -type {type} -exec {rmrf}' for name, type in targets.items()
+                f'sudo find {CFG.REPO_ROOT} -depth -name {name} -type {type} -exec {rmrf}'
+                for name, type in targets.items()
             ],
         }
 
