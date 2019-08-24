@@ -1,14 +1,19 @@
 version: "3.7"
 
 services:
-  subhub:
-    container_name: subhub
-    image: mozilla/subhub
-    # The `command` section below can take any command from
-    # `doit list` and run them here.
-    command: local
+  base:
+    image: mozilla/subhub-base
+    container_name: base
     build:
       context: .
+      dockerfile: Dockerfile.base
+  sub:
+    container_name: sub
+    image: mozilla/sub
+    command: python3 sub/app.py
+    build:
+      context: src/sub
+      dockerfile: Dockerfile
       args:
         AWS_ACCESS_KEY_ID: "fake-id"
         AWS_SECRET_ACCESS_KEY: "fake-key"
@@ -17,3 +22,22 @@ services:
         LOCAL_FLASK_PORT: 5000
     ports:
       - "5000:5000"
+    depends_on:
+      - base
+  hub:
+    container_name: hub
+    image: mozilla/hub
+    command: python3 hub/app.py
+    build:
+      context: src/hub
+      dockerfile: Dockerfile
+      args:
+        AWS_ACCESS_KEY_ID: "fake-id"
+        AWS_SECRET_ACCESS_KEY: "fake-key"
+        STRIPE_API_KEY: "sk_test_123"
+        SUPPORT_API_KEY: "support_test"
+        LOCAL_FLASK_PORT: 5001
+    ports:
+      - "5001:5001"
+    depends_on:
+      - base

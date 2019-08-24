@@ -1,0 +1,228 @@
+swagger: "2.0"
+
+info:
+  title: "SubHub"
+  version: "1.0"
+
+consumes:
+  - "application/json"
+produces:
+  - "application/json"
+
+basePath: /v1
+
+securityDefinitions:
+  HubApiKey:
+    type: apiKey
+    in: header
+    name: Authorization
+    description: |
+      Hub validation
+    x-apikeyInfoFunc: hub.shared.authentication.hub_auth
+parameters:
+  uidParam:
+    in: path
+    name: uid
+    type: string
+    required: true
+    description: User ID
+  subIdParam:
+    in: path
+    name: sub_id
+    type: string
+    required: true
+    description: Subscription ID
+paths:
+  /hub/version:
+    get:
+      operationId: hub.shared.version.get_version
+      tags:
+        - Version
+      summary: SubHub version
+      description: Show Subhub version string (git desribe --abbrev=7)
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Version'
+  /hub/deployed:
+    get:
+      operationId: hub.shared.deployed.get_deployed
+      tags:
+        - Deployed
+      summary: SubHub deployed
+      description: Show Subhub deployed env vars
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/Deployed'
+  /hub:
+    post:
+      operationId: hub.stripe.controller.view
+      tags:
+        - Hub
+      summary: Receives hub calls
+      description: Receives hub calls.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: Hub call received successfully.
+          schema:
+            type: object
+            properties:
+              message:
+                type: string
+        500:
+          description: Error - unable to receive webhook.
+          schema:
+            $ref: '#/definitions/Errormessage'
+      parameters:
+        - in: body
+          name: data
+          schema:
+            type: object
+definitions:
+  Version:
+    type: object
+    properties:
+      BRANCH:
+        type: string
+        example: master
+      VERSION:
+        type: string
+        example: v0.0.3-11-gaf8af91
+      REVISION:
+        type: string
+        example: af8af912255d204bcd178fe47e9a1af3215e09d4
+  Deployed:
+    type: object
+    properties:
+      DEPLOYED_BY:
+        type: string
+        example: sidler@76
+      DEPLOYED_ENV:
+        type: string
+        example: dev
+      DEPLOYED_WHEN:
+        type: string
+        example: 2019-07-26T21:21:16.180200
+  Plans:
+    type: array
+    items:
+      type: object
+      properties:
+        plan_id:
+          type: string
+          example: pro_basic_823
+        product_id:
+          type: string
+          example: pro_basic
+        product_name:
+          type: string
+          example: Moz Sub
+        interval:
+          type: string
+          example: month
+          enum:
+            - day
+            - week
+            - month
+            - year
+        amount:
+          type: integer
+          example: 500
+          description: A positive number in cents representing how much to charge on a recurring basis.
+        currency:
+          type: string
+          example: usd
+        plan_name:
+          type: string
+          example: Monthly Rocket Launches
+  Subscriptions:
+    type: object
+    properties:
+      subscriptions:
+        type: array
+        required: [
+          "subscription_id",
+          "status",
+          "plan_name",
+          "plan_id",
+          "ended_at",
+          "current_period_start",
+          "current_period_end",
+          "cancel_at_period_end"
+        ]
+        items:
+          type: object
+          properties:
+            subscription_id:
+              type: string
+              example: sub_abc123
+            plan_id:
+              type: string
+              example: pro_basic_823
+            plan_name:
+              type: string
+              example: "pro_basic"
+            current_period_end:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            current_period_start:
+              type: number
+              description: Seconds since UNIX epoch.
+              example: 1557361022
+            end_at:
+              type: number
+              description: Non-null if the subscription is ending at a period in time.
+              example: 1557361022
+            status:
+              type: string
+              description: Subscription status.
+              example: active
+            cancel_at_period_end:
+              type: boolean
+              description: Shows if subscription will be cancelled at the end of the period.
+              example: true
+            failure_code:
+              type: string
+              description: Shows the failure code for subscription that is incomplete.  This is an optional field.
+              example: Card declined
+            failure_message:
+              type: string
+              description: Shows the failure message for subscription that is incomplete.  This is an optional field.
+              example: Your card was declined.
+  Errormessage:
+    type: object
+    properties:
+      message:
+        type: string
+        example: The resource is not available.
+      code:
+        type: number
+        example: 404
+  IntermittentError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Connection cannot be completed.
+  ServerError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Server not available
+      param:
+        type: string
+        example: Customer not found
+      code:
+        type: string
+        example: Invalid Account
