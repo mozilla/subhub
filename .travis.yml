@@ -31,7 +31,6 @@ before_install:
 stages:
   - name: Graph
   - name: Unit Test
-  - name: Docker Build
 
 jobs:
   include:
@@ -42,6 +41,3 @@ jobs:
     - stage: Unit Test
       script:
         - doit test
-    - stage: Docker Build
-      script:
-        - docker-compose build
