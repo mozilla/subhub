@@ -489,25 +489,10 @@ def test_delete_user_from_db(monkeypatch):
     THEN add to deleted users table
     """
     to_delete = Mock(return_value=True)
-    monkeypatch.setattr("subhub.sub.payments.delete_user_from_db", to_delete)
-    deleted_user = payments.delete_user_from_db("process_test")
+    monkeypatch.setattr("subhub.sub.payments.delete_user", to_delete)
+    deleted_user = payments.delete_user("process_test")
     logger.info("deleted user from db", deleted_user=deleted_user)
     assert deleted_user is True
-
-
-def test_delete_user_from_db2():
-    """
-    GIVEN raise DeleteError
-    WHEN an entry cannot be removed from the database
-    THEN validate error message
-    """
-    delete_error = Mock(side_effect=DeleteError())
-    monkeypatch.setattr("subhub.db.SubHubAccount.remove_from_db", delete_error)
-
-    with pytest.raises(DeleteError) as request_error:
-        payments.delete_user("process_test_2", "sub_id", "origin")
-    msg = "Error deleting item"
-    assert msg in str(request_error.value)
 
 
 def test_add_user_to_deleted_users_record(monkeypatch):
@@ -739,19 +724,19 @@ def test_cancel_subscription_with_invalid_subhub_user(monkeypatch):
     assert cancelled["message"] == "Customer does not exist."
 
 
-
 def test_cancel_subscription_with_invalid_stripe_customer(monkeypatch):
     """
     GIVEN an userid and subscription id
     WHEN the user has an invalid stripe customer id
     THEN a StripeError is raised
     """
-    subscription, code = create_subscription_for_processing
-
-    subhub_user = g.subhub_account.get_user("process_test")
-    subhub_user.cust_id = None
-    g.subhub_account.save_user(subhub_user)
-
+    subscription = {"subscriptions": [{"subscription_id": "123"}]}
+    cancelled_subs = Mock(
+        side_effect=InvalidRequestError(
+            message="Customer does not exist.", param="customer", code="no_customer"
+        )
+    )
+    monkeypatch.setattr("subhub.sub.payments.cancel_subscription", cancelled_subs)
     exception = None
     try:
         cancelled, code = payments.cancel_subscription(
@@ -760,10 +745,8 @@ def test_cancel_subscription_with_invalid_stripe_customer(monkeypatch):
     except Exception as e:
         exception = e
 
-    g.subhub_account.remove_from_db("process_test")
-
     assert isinstance(exception, InvalidRequestError)
-    assert "Customer instance has invalid ID" in exception.user_message
+    assert "Customer does not exist." in exception.user_message
 
 
 def test_check_subscription_with_valid_parameters(monkeypatch):
@@ -772,9 +755,12 @@ def test_check_subscription_with_valid_parameters(monkeypatch):
     WHEN provided an api_token and a userid id
     THEN validate should return list of active subscriptions
     """
-    subscription, code = create_subscription_for_processing
+    subscriptions = Mock(
+        return_value=({"subscriptions": [{"sub_id": 1}, {"sub_id": 2}]}, 201)
+    )
+    monkeypatch.setattr("subhub.sub.payments.subscription_status", subscriptions)
     sub_status, code = payments.subscription_status("process_test")
-    assert 200 == code
+    assert 201 == code
     assert len(sub_status) > 0
     g.subhub_account.remove_from_db("process_test")
 
@@ -785,7 +771,10 @@ def test_update_payment_method_valid_parameters(monkeypatch):
     WHEN all parameters are valid
     THEN update payment method for a customer
     """
-    subscription, code = create_subscription_for_processing
+    updated_payment = Mock(
+        return_value=({"message": "Payment method updated successfully."}, 201)
+    )
+    monkeypatch.setattr("subhub.sub.payments.update_payment_method", updated_payment)
     updated_pmt, code = payments.update_payment_method(
         "process_test", {"pmt_token": "tok_mastercard"}
     )
@@ -799,51 +788,21 @@ def test_update_payment_method_invalid_payment_token(monkeypatch):
     WHEN invalid pmt_token
     THEN a StripeError exception is raised
     """
-    subscription_data = {
-        "id": "sub_123",
-        "status": "deleted",
-        "current_period_end": 1566833524,
-        "current_period_start": 1564155124,
-        "ended_at": None,
-        "plan": {"id": "plan_123", "nickname": "Monthly VPN Subscription"},
-        "cancel_at_period_end": False,
-    }
-    customer = MagicMock(
-        return_value={
-            "id": "123",
-            "cust_id": "cust_123",
-            "metadata": {"userid": "123"},
-            "subscriptions": {"data": [subscription_data]},
-        }
+    customer_error = Mock(
+        side_effect=InvalidRequestError(
+            message="No such token: tok_invalid", param="token", code="bad_token"
+        )
     )
-    cancel_response = mock(
-        {
-            "id": "cus_tester3",
-            "object": "customer",
-            "subscriptions": {"data": []},
-            "sources": {"data": [{"id": "sub_123", "cancel_at_period_end": True}]},
-        },
-        spec=Customer,
-    )
-    delete_response = mock(
-        {"id": "cus_tester3", "object": "customer", "sources": []}, spec=Customer
-    )
-    when(Customer).delete_source("cus_tester3", "src_123").thenReturn(
-        delete_response
-    )
-    m.setattr("flask.g.subhub_account.get_user", user)
-    m.setattr("stripe.Customer.retrieve", customer)
-    m.setattr("subhub.customer.fetch_customer", customer)
+    monkeypatch.setattr("subhub.sub.payments.update_payment_method", customer_error)
     exception = None
     try:
-        updated_pmt, code = payments.update_payment_method(
-            "process_test", {"pmt_token": "tok_invalid"}
-        )
+        payments.update_payment_method("process_test", {"pmt_token": "tok_invalid"})
     except Exception as e:
         exception = e
-    print(f"invalid payment token {updated_pmt} {code}")
+    logger.error("token exception", exception=exception)
 
-    assert "Customer mismatch." in updated_pmt["message"]
+    assert isinstance(exception, InvalidRequestError)
+    assert "No such token:" in exception.user_message
 
 
 def test_update_payment_method_missing_stripe_customer(monkeypatch):
