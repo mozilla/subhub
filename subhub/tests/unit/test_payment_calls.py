@@ -305,37 +305,6 @@ def test_subscribe_customer_existing(app, monkeypatch):
     assert response.status_code == 409
 
 
-def test_create_subscription_with_invalid_plan_id(monkeypatch):
-    """
-    GIVEN a api_token, userid, pmt_token, plan_id, email
-    WHEN the plan_id provided is invalid
-    THEN a StripeError is raised
-    """
-    subs = Mock(
-        side_effect=InvalidRequestError(
-            message="No such plan:", param="plan", code="no_plan", http_status=404
-        )
-    )
-    monkeypatch.setattr("subhub.sub.payments.subscribe_to_plan", subs)
-    exception = None
-    try:
-        plan, code = payments.subscribe_to_plan(
-            "invalid_plan",
-            {
-                "pmt_token": "tok_visa",
-                "plan_id": "plan_abc123",
-                "email": "invalid_plan@tester.com",
-                "origin_system": "Test_system",
-                "display_name": "Jon Tester",
-            },
-        )
-    except Exception as e:
-        exception = e
-
-    assert isinstance(exception, InvalidRequestError)
-    assert "No such plan:" in exception.user_message
-
-
 def test_cancel_subscription_no_subscription_found(monkeypatch):
 
     """
@@ -425,22 +394,6 @@ def test_add_user_to_deleted_users_record(monkeypatch):
     assert deleted_user.user_id == "process_customer"
     assert deleted_user.origin_system == "Test_system"
     assert "cus_" in deleted_user.cust_id
-
-
-def test_cancel_subscription_with_invalid_data(monkeypatch):
-    cancelled_subs = Mock(
-        return_value=({"message": "Subscription not available."}, 400)
-    )
-    subscription = {"subscriptions": [{"subscription_id": "sub_123"}]}
-    monkeypatch.setattr("subhub.sub.payments.cancel_subscription", cancelled_subs)
-    if subscription.get("subscriptions"):
-        cancelled, code = payments.cancel_subscription(
-            "process_test",
-            subscription["subscriptions"][0]["subscription_id"] + "invalid",
-        )
-        assert cancelled["message"] == "Subscription not available."
-        assert 400 == code
-    g.subhub_account.remove_from_db("process_test")
 
 
 def test_cancel_subscription_with_invalid_subhub_user(monkeypatch):
