@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Optional
+from typing import Optional, Any, List, cast, Type, TYPE_CHECKING, Union
 
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.connection import Connection
@@ -14,7 +14,17 @@ from subhub.log import get_logger
 logger = get_logger()
 
 
-def _create_account_model(table_name_, region_, host_):
+# This exists purely for type-checking, the actual model is dynamically
+# created in DbAccount
+class SubHubAccountModel(Model):
+
+    user_id = UnicodeAttribute(hash_key=True)
+    cust_id = UnicodeAttribute(null=True)
+    origin_system = UnicodeAttribute()
+    customer_status = UnicodeAttribute()
+
+
+def _create_account_model(table_name_, region_, host_) -> Any:
     class SubHubAccountModel(Model):
         class Meta:
             table_name = table_name_
@@ -25,38 +35,14 @@ def _create_account_model(table_name_, region_, host_):
         user_id = UnicodeAttribute(hash_key=True)
         cust_id = UnicodeAttribute(null=True)
         origin_system = UnicodeAttribute()
+        customer_status = UnicodeAttribute()
 
     return SubHubAccountModel
 
 
-# This exists purely for type-checking, the actual model is dynamically
-# created in DbAccount
-class SubHubAccountModel(Model):
-    user_id = UnicodeAttribute(hash_key=True)
-    cust_id = UnicodeAttribute(null=True)
-    origin_system = UnicodeAttribute()
-    customer_status = UnicodeAttribute()
-
-
 class SubHubAccount:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        _table = table_name
-        _region = region
-        _host = host
-
-        class SubHubAccountModel(Model):
-            class Meta:
-                table_name = _table
-                region = _region
-                if _host:
-                    host = _host
-
-            user_id = UnicodeAttribute(hash_key=True)
-            cust_id = UnicodeAttribute(null=True)
-            origin_system = UnicodeAttribute()
-            customer_status = UnicodeAttribute()
-
-        self.model = SubHubAccountModel
+        self.model = _create_account_model(table_name, region, host)
 
     def new_user(
         self, uid: str, origin_system: str, cust_id: Optional[str] = None
@@ -70,7 +56,9 @@ class SubHubAccount:
 
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
         try:
-            subscription_user = self.model.get(uid, consistent_read=True)
+            subscription_user: SubHubAccountModel = self.model.get(
+                uid, consistent_read=True
+            )
             return subscription_user
         except DoesNotExist:
             logger.error("get user", uid=uid)
@@ -117,7 +105,7 @@ class SubHubAccount:
             return False
 
 
-def _create_hub_model(table_name_, region_, host_):
+def _create_hub_model(table_name_, region_, host_) -> Any:
     class HubEventModel(Model):
         class Meta:
             table_name = table_name_
@@ -126,14 +114,14 @@ def _create_hub_model(table_name_, region_, host_):
                 host = host_
 
         event_id = UnicodeAttribute(hash_key=True)
-        sent_system = ListAttribute()
+        sent_system = ListAttribute()  # type: ignore
 
     return HubEventModel
 
 
 class HubEventModel(Model):
     event_id = UnicodeAttribute(hash_key=True)
-    sent_system = ListAttribute(default=list)
+    sent_system: Any = ListAttribute(default=list)
 
 
 class HubEvent:
@@ -167,6 +155,7 @@ class HubEvent:
                 update_event.sent_system.append(sent_system)
                 update_event.save()
                 return True
+            return False
         except DoesNotExist:
             logger.error("append event", event_id=event_id, sent_system=sent_system)
             return False
@@ -183,7 +172,16 @@ class HubEvent:
             return False
 
 
-def _create_deleted_account_model(table_name_, region_, host_):
+# This exists purely for type-checking, the actual model is dynamically
+# created in DbAccount
+class SubHubDeletedAccountModel(Model):
+    user_id = UnicodeAttribute(hash_key=True)
+    cust_id = UnicodeAttribute(null=True)
+    origin_system = UnicodeAttribute()
+    customer_status = UnicodeAttribute()
+
+
+def _create_deleted_account_model(table_name_, region_, host_) -> Any:
     class SubHubDeletedAccountModel(Model):
         class Meta:
             table_name = table_name_
@@ -194,38 +192,14 @@ def _create_deleted_account_model(table_name_, region_, host_):
         user_id = UnicodeAttribute(hash_key=True)
         cust_id = UnicodeAttribute(null=True)
         origin_system = UnicodeAttribute()
+        customer_status = UnicodeAttribute()
 
     return SubHubDeletedAccountModel
 
 
-# This exists purely for type-checking, the actual model is dynamically
-# created in DbAccount
-class SubHubDeletedAccountModel(Model):
-    user_id = UnicodeAttribute(hash_key=True)
-    cust_id = UnicodeAttribute(null=True)
-    origin_system = UnicodeAttribute()
-    customer_status = UnicodeAttribute()
-
-
 class SubHubDeletedAccount:
     def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        _table = table_name
-        _region = region
-        _host = host
-
-        class SubHubDeletedAccountModel(Model):
-            class Meta:
-                table_name = _table
-                region = _region
-                if _host:
-                    host = _host
-
-            user_id = UnicodeAttribute(hash_key=True)
-            cust_id = UnicodeAttribute(null=True)
-            origin_system = UnicodeAttribute()
-            customer_status = UnicodeAttribute()
-
-        self.model = SubHubDeletedAccountModel
+        self.model = _create_deleted_account_model(table_name, region, host)
 
     def new_user(
         self, uid: str, origin_system: str, cust_id: Optional[str] = None
@@ -239,7 +213,7 @@ class SubHubDeletedAccount:
 
     def get_user(self, uid: str) -> Optional[SubHubDeletedAccountModel]:
         try:
-            subscription_user = self.model.get(uid, consistent_read=True)
+            subscription_user: Optional[Any] = self.model.get(uid, consistent_read=True)
             return subscription_user
         except DoesNotExist:
             logger.error("get user", uid=uid)

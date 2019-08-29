@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from datetime import datetime
+from typing import List, Dict, Any, Optional
 
 import cachetools
 from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
@@ -11,11 +12,12 @@ from flask import g
 from subhub.sub.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
 from subhub.log import get_logger
+from subhub.db import SubHubDeletedAccount
 
 logger = get_logger()
 
 
-def subscribe_to_plan(uid, data) -> FlaskResponse:
+def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
     """
     Subscribe to a plan given a user id, payment token, email, orig_system
     :param uid:
@@ -45,7 +47,7 @@ def subscribe_to_plan(uid, data) -> FlaskResponse:
     return dict(message=None), 400
 
 
-def find_newest_subscription(subscriptions):
+def find_newest_subscription(subscriptions: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     result = None
 
     if not subscriptions:
@@ -80,7 +82,7 @@ def list_all_plans() -> FlaskListResponse:
 
 
 @cachetools.cached(cachetools.TTLCache(10, 600))
-def _get_all_plans():
+def _get_all_plans() -> List[Dict[str, str]]:
     plans = Plan.list(limit=100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
@@ -100,7 +102,7 @@ def _get_all_plans():
     return stripe_plans
 
 
-def retrieve_stripe_subscriptions(customer: Customer) -> list:
+def retrieve_stripe_subscriptions(customer: Customer) -> List[Dict[str, Any]]:
     logger.info("customer", customer=customer)
     try:
         customer_subscriptions_data = customer.subscriptions
@@ -111,7 +113,7 @@ def retrieve_stripe_subscriptions(customer: Customer) -> list:
         raise e
 
 
-def cancel_subscription(uid, sub_id) -> FlaskResponse:
+def cancel_subscription(uid: str, sub_id: str) -> FlaskResponse:
     """
     Cancel an existing subscription for a user.
     :param uid:
@@ -140,7 +142,7 @@ def cancel_subscription(uid, sub_id) -> FlaskResponse:
     return dict(message="Subscription not available."), 400
 
 
-def delete_customer(uid) -> FlaskResponse:
+def delete_customer(uid: str) -> FlaskResponse:
     """
     Delete an existing customer, cancel active subscriptions
     and delete from payment provider
@@ -165,7 +167,7 @@ def delete_customer(uid) -> FlaskResponse:
     return dict(message="Customer not available"), 400
 
 
-def delete_user(user_id, cust_id, origin_system) -> bool:
+def delete_user(user_id: str, cust_id: str, origin_system: str) -> bool:
     """
     Provided with customer data to be deleted
     - created deleted entry in the deleted table
@@ -183,13 +185,15 @@ def delete_user(user_id, cust_id, origin_system) -> bool:
     return g.subhub_account.remove_from_db(user_id)
 
 
-def add_user_to_deleted_users_record(user_id, cust_id, origin_system):
+def add_user_to_deleted_users_record(
+    user_id: str, cust_id: Optional[str], origin_system: str
+) -> Optional[Any]:
     return g.subhub_deleted_users.new_user(
         uid=user_id, cust_id=cust_id, origin_system=origin_system
     )
 
 
-def reactivate_subscription(uid, sub_id):
+def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
     """
     Given a user's subscription that is flagged for cancellation, but is still active
     remove the cancellation flag to ensure the subscription remains active
@@ -213,11 +217,11 @@ def reactivate_subscription(uid, sub_id):
     return dict(message="Current subscription not found."), 404
 
 
-def support_status(uid) -> FlaskResponse:
+def support_status(uid: str) -> FlaskResponse:
     return subscription_status(uid)
 
 
-def subscription_status(uid) -> FlaskResponse:
+def subscription_status(uid: str) -> FlaskResponse:
     """
     Given a user id return the current subscription status
     :param uid:
@@ -241,7 +245,7 @@ def create_return_data(subscriptions) -> JsonDict:
     :param subscriptions:
     :return: JSON data to be consumed by client.
     """
-    return_data = dict()
+    return_data: Dict[str, Any] = dict()
     return_data["subscriptions"] = []
     for subscription in subscriptions["data"]:
         if subscription["status"] == "incomplete":
@@ -274,7 +278,9 @@ def create_return_data(subscriptions) -> JsonDict:
     return return_data
 
 
-def create_subscription_object_without_failure(subscription: object) -> object:
+def create_subscription_object_without_failure(
+    subscription: Dict[str, Any]
+) -> Dict[str, Any]:
     return {
         "current_period_end": subscription["current_period_end"],
         "current_period_start": subscription["current_period_start"],
@@ -326,14 +332,14 @@ def customer_update(uid) -> tuple:
         return dict(message=f"Customer does not exist: missing {e}"), 404
 
 
-def create_update_data(customer) -> dict:
+def create_update_data(customer) -> Dict[str, Any]:
     """
     Provide readable data for customer update to display
     :param customer:
     :return: return_data dict
     """
     payment_sources = customer["sources"]["data"]
-    return_data = dict()
+    return_data: Dict[str, Any] = dict()
     return_data["subscriptions"] = []
     if len(payment_sources) > 0:
         first_payment_source = payment_sources[0]

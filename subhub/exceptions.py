@@ -8,7 +8,7 @@ class SubHubError(Exception):
 
     status_code = 500
 
-    def __init__(self, message, status_code, payload):
+    def __init__(self, message, status_code, payload) -> None:
         super().__init__(message)
         self.status_code = status_code
         self.payload = payload
@@ -29,7 +29,7 @@ class IntermittentError(SubHubError):
 
     status_code = 503
 
-    def __init__(self, message, status_code=None, payload=None):
+    def __init__(self, message, status_code=None, payload=None) -> None:
         super().__init__(
             message,
             status_code=status_code or IntermittentError.status_code,
@@ -42,7 +42,7 @@ class ClientError(SubHubError):
 
     status_code = 400
 
-    def __init__(self, message, status_code=None, payload=None):
+    def __init__(self, message, status_code=None, payload=None) -> None:
         super().__init__(
             message, status_code=status_code or ClientError.status_code, payload=payload
         )
@@ -53,13 +53,13 @@ class ServerError(SubHubError):
 
     status_code = 500
 
-    def __init__(self, message, status_code=None, payload=None):
+    def __init__(self, message, status_code=None, payload=None) -> None:
         super().__init__(
             message, status_code=status_code or ServerError.status_code, payload=payload
         )
 
 
 class SecretStringMissingError(Exception):
-    def __init__(self, secret):
+    def __init__(self, secret) -> None:
         message = f"SecretString missing from secret={secret}"
         super().__init__(message)
