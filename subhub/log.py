@@ -32,6 +32,8 @@ import threading
 import collections
 import structlog
 
+from typing import Any, Dict, Optional
+
 from subhub.cfg import CFG
 
 IS_CONFIGURED = False
@@ -91,7 +93,7 @@ def _order_keys(logger, method_name, event_dict):
     )
 
 
-def _setup_once():
+def _setup_once() -> None:
 
     structlog.configure_once(
         processors=[
@@ -130,12 +132,13 @@ def _setup_once():
     )
 
 
-def get_logger(logger_name=None):
+def get_logger(logger_name=None) -> structlog._config.BoundLoggerLazyProxy:
     global IS_CONFIGURED
     if not IS_CONFIGURED:
         IS_CONFIGURED = True
         _setup_once()
     if logger_name is None:
-        logger_name = inspect.currentframe().f_back.f_globals["__name__"]
+        frame = inspect.currentframe().f_back  # type: ignore
+        logger_name = frame.f_globals["__name__"]
     logger_name = CFG.PROJECT_NAME if logger_name == "__main__" else logger_name
     return structlog.wrap_logger(logging.getLogger(logger_name))

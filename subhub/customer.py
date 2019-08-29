@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 """Customer functions"""
+from typing import Union, Optional
 from stripe import Customer, Subscription
 import stripe
 from stripe.error import InvalidRequestError
@@ -32,7 +33,8 @@ def create_customer(
         if possible_customer.email == email:
             # If the userid doesn't match, the system is damaged.
             if possible_customer.metadata.get("userid") != user_id:
-                raise ServerError("customer email exists but userid mismatch")
+                customer_message = "customer email exists but userid mismatch"
+                raise ServerError(customer_message)
 
             customer = possible_customer
             # If we have a mis-match on the source_token, overwrite with the
@@ -62,10 +64,12 @@ def create_customer(
         uid=user_id, origin_system=origin_system, cust_id=customer.id
     )
 
-    if not subhub_account.save_user(db_account):
-        # Clean-up the Stripe customer record since we can't link it
-        Customer.delete(customer.id)
-        e = IntermittentError("error saving db record")
+    try:
+        new_user = subhub_account.save_user(db_account)
+        if not new_user:
+            # Clean-up the Stripe customer record since we can't link it
+            Customer.delete(customer.id)
+    except IntermittentError("error saving db record") as e:  # type: ignore
         logger.error("unable to save user or link it", error=e)
         raise e
     return customer
