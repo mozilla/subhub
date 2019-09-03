@@ -8,11 +8,11 @@ from subhub.hub.routes.static import StaticRoutes
 
 
 class RoutesPipeline:
-    def __init__(self, report_routes, data):
+    def __init__(self, report_routes, data) -> None:
         self.report_routes = report_routes
         self.data = data
 
-    def run(self):
+    def run(self) -> None:
         for r in self.report_routes:
             if r == StaticRoutes.SALESFORCE_ROUTE:
                 SalesforceRoute(self.data).route()

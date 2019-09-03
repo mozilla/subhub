@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+from typing import Dict, Any
 
 
 class SubHubError(Exception):
@@ -13,7 +14,7 @@ class SubHubError(Exception):
         self.status_code = status_code
         self.payload = payload
 
-    def to_dict(self):
+    def to_dict(self) -> Dict[str, Any]:
         result = dict(self.payload or ())
         result["message"] = self.args[0]
         return result

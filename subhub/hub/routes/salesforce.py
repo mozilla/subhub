@@ -5,6 +5,8 @@
 import json
 import requests
 
+from typing import Dict
+
 from subhub.hub.routes.abstract import AbstractRoute
 from subhub.cfg import CFG
 
@@ -14,7 +16,7 @@ logger = get_logger()
 
 
 class SalesforceRoute(AbstractRoute):
-    def route(self):
+    def route(self) -> None:
         route_payload = json.loads(self.payload)
         basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
         request_post = requests.post(basket_url, json=route_payload)

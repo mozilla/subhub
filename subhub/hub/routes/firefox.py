@@ -5,6 +5,8 @@
 import boto3
 import json
 
+from typing import Dict
+
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 
@@ -16,7 +18,7 @@ logger = get_logger()
 
 
 class FirefoxRoute(AbstractRoute):
-    def route(self):
+    def route(self) -> None:
         try:
             sns_client = boto3.client("sns", region_name=CFG.AWS_REGION)
             response = sns_client.publish(

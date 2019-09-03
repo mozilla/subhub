@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Dict, Any, Union, Iterable
+
 from flask import request, Response
 
 import stripe
@@ -18,11 +20,11 @@ logger = get_logger()
 
 
 class StripeHubEventPipeline:
-    def __init__(self, payload):
-        assert isinstance(payload, object)
-        self.payload = payload
+    def __init__(self, payload) -> None:
+        assert isinstance(payload, dict)
+        self.payload: dict = payload
 
-    def run(self):
+    def run(self) -> None:
         event_type = self.payload["type"]
         if event_type == "customer.subscription.created":
             StripeCustomerSubscriptionCreated(self.payload).run()
@@ -64,7 +66,7 @@ def view() -> tuple:
         pipeline.run()
 
 
-def event_process(missing_event):
+def event_process(missing_event) -> Response:
     logger.info("event process", missing_event=missing_event)
     try:
         payload = missing_event
@@ -75,6 +77,6 @@ def event_process(missing_event):
         pipeline.run()
     except Exception as e:
         logger.error("General Exception", error=e)
-        return Response(e, status=500)
+        return Response(str(e), status=500)
 
     return Response("Success", status=200)

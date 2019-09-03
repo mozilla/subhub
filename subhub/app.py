@@ -5,6 +5,8 @@
 import os
 import sys
 
+from typing import Optional, Union
+
 import connexion
 import stripe
 import stripe.error
@@ -54,14 +56,15 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
-def create_app(config=None):
+def create_app(config=None) -> connexion.FlaskApp:
     logger.info("creating flask app", config=config)
-    region = "localhost"
-    host = f"http://localhost:{CFG.DYNALITE_PORT}"
     stripe.api_key = CFG.STRIPE_API_KEY
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
         host = None
+    else:
+        region = "localhost"
+        host = f"http://localhost:{CFG.DYNALITE_PORT}"
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)

@@ -5,44 +5,47 @@
 import os
 import json
 
+from typing import Dict, List, Optional, Any
+
 from subhub.cfg import CFG
 from subhub import secrets
 from subhub.hub.stripe.controller import StripeHubEventPipeline, event_process, view
+from flask import Response
 
 __location__ = os.path.realpath(os.path.dirname(__file__))
 
 
-def run_test(filename):
+def run_test(filename) -> None:
     with open(os.path.join(__location__, filename)) as f:
         pipeline = StripeHubEventPipeline(json.load(f))
         pipeline.run()
 
 
-def run_view(request):
+def run_view(request) -> None:
     view()
 
 
-def run_event_process(event):
+def run_event_process(event) -> Response:
     return event_process(event)
 
 
 class MockSqsClient:
-    def list_queues(QueueNamePrefix={}):
+    def list_queues(QueueNamePrefix={}) -> Any:  # type: ignore
         return {"QueueUrls": ["DevSub"]}
 
-    def send_message(QueueUrl={}, MessageBody={}):
+    def send_message(QueueUrl={}, MessageBody={}) -> Any:  # type: ignore
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 
 class MockSnsClient:
-    def publish(
+    def publish(  # type: ignore
         Message: dict = None, MessageStructure: str = "json", TopicArn: str = None
-    ):
+    ) -> Dict[str, Dict[str, int]]:
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 
 class MockSubhubAccount:
-    def subhub_account(self):
+    def subhub_account(self) -> None:
         pass
 
 
