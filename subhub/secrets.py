@@ -7,11 +7,13 @@ import boto3
 import base64
 import json
 
+from typing import Dict, Any
+
 from subhub.cfg import CFG
 from subhub.exceptions import SecretStringMissingError
 
 
-def get_secret(secret_id):
+def get_secret(secret_id) -> Dict[str, Any]:
     """Fetch secret via boto3."""
     client = boto3.client(service_name="secretsmanager")
     get_secret_value_response = client.get_secret_value(SecretId=secret_id)

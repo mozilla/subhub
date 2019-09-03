@@ -12,10 +12,10 @@ logger = get_logger()
 
 
 class AbstractRoute(ABC):
-    def __init__(self, payload):
+    def __init__(self, payload) -> None:
         self.payload = payload
 
-    def report_route(self, payload: dict, sent_system: str):
+    def report_route(self, payload: dict, sent_system: str) -> None:
         logger.info("report route", payload=payload, sent_system=sent_system)
         existing = flask.g.hub_table.get_event(payload["event_id"])
         if not existing:
@@ -30,5 +30,5 @@ class AbstractRoute(ABC):
             )
             logger.info("updated event", existing=existing, updated=updated)
 
-    def report_route_error(self, payload):
+    def report_route_error(self, payload) -> None:
         logger.error("report route error", payload=payload)

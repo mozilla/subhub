@@ -14,7 +14,7 @@ logger = get_logger()
 
 
 class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         try:
             nickname_list = self.payload.data.object.lines.data
             nickname = nickname_list[0]["plan"]["nickname"]

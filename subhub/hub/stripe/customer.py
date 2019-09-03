@@ -5,6 +5,7 @@
 import json
 import time
 from datetime import datetime
+from typing import Optional, Dict, Any
 
 import stripe
 from stripe.error import InvalidRequestError
@@ -19,7 +20,7 @@ logger = get_logger()
 
 
 class StripeCustomerCreated(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         logger.info("customer created", payload=self.payload)
         cust_name = self.payload.data.object.name
         if not cust_name:
@@ -36,7 +37,7 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
 
 
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         try:
             logger.info("customer source expiring")
             customer_id = self.payload.data.object.customer
@@ -63,7 +64,7 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
 
 
 class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         logger.info("customer subscription created", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
@@ -137,7 +138,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
 
 
 class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         logger.info("customer subscription deleted", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
@@ -171,7 +172,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
-    def run(self):
+    def run(self) -> None:
         logger.info("customer subscription updated", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
@@ -181,7 +182,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             logger.error("Unable to find customer", error=e)
             raise e
         if user_id:
-            previous_attributes = dict()
+            previous_attributes: Dict[str, Any] = dict()
             try:
                 previous_attributes = self.payload.data.previous_attributes
             except AttributeError:
@@ -226,13 +227,17 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     invoice_id = self.payload.data.object.latest_invoice
                     latest_invoice = self.get_latest_invoice(invoice_id)
                     logger.info("latest invoice", latest_invoice=latest_invoice)
-                    invoice_number = latest_invoice.number
-                    charge = latest_invoice.charge
+                    invoice_number = latest_invoice.number  # type: ignore
+                    charge = latest_invoice.charge  # type: ignore
                     logger.info("charge", charge=charge)
                     latest_charge = self.get_latest_charge(charge)
                     logger.info("latest charge", latest_charge=latest_charge)
-                    last4 = latest_charge.payment_method_details.card.last4
-                    brand = latest_charge.payment_method_details.card.brand
+                    last4 = (
+                        latest_charge.payment_method_details.card.last4  # type: ignore
+                    )
+                    brand = (
+                        latest_charge.payment_method_details.card.brand  # type: ignore
+                    )
                 except InvalidRequestError as e:
                     logger.error("Unable to gather data", error=e)
                     raise e
@@ -280,7 +285,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                 f"userid is None for customer {self.payload.object.customer}"
             )
 
-    def get_latest_invoice(self, invoice_id):
+    def get_latest_invoice(self, invoice_id) -> Optional[Dict[str, Any]]:
         attempts = 2
         latest_invoice = stripe.Invoice.retrieve(id=invoice_id)
         logger.info("get latest invoice", latest_invoice=latest_invoice)
@@ -293,7 +298,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                 return latest_invoice
         return None
 
-    def get_latest_charge(self, charge):
+    def get_latest_charge(self, charge) -> Optional[Dict[str, Any]]:
         attempts = 2
         latest_charge = stripe.Charge.retrieve(id=charge)
         logger.info("get latest charge", latest_charge=latest_charge)

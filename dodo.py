@@ -520,7 +520,6 @@ def task_mypy():
     return {
         'task_dep': [
             'check',
-            'stripe',
             'yarn',
             'venv',
         ],
@@ -540,6 +539,7 @@ def task_test():
             'yarn',
             'venv',
             'dynalite:stop',
+            'mypy',
         ],
         'actions': [
             f'cd {CFG.REPO_ROOT} && tox',
