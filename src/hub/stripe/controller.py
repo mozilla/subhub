@@ -2,9 +2,10 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Dict, Any, Union, Iterable
+import stripe
 
 from flask import request, Response
+from typing import Dict, Any, Union, Iterable
 
 from hub.stripe.invoices import StripeInvoicePaymentFailed
 from hub.stripe.customer import StripeCustomerCreated

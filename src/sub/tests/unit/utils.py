@@ -12,14 +12,17 @@ __location__ = os.path.realpath(os.path.dirname(__file__))
 
 
 class MockSqsClient:
+    @staticmethod
     def list_queues(QueueNamePrefix={}):
         return {"QueueUrls": ["DevSub"]}
 
+    @staticmethod
     def send_message(QueueUrl={}, MessageBody={}):
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 
 class MockSnsClient:
+    @staticmethod
     def publish(
         Message: dict = None, MessageStructure: str = "json", TopicArn: str = None
     ):
