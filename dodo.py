@@ -570,7 +570,7 @@ def task_mypy():
                 'venv',
             ],
             'actions': [
-                f'cd {CFG.REPO_ROOT}/src && {envs(MYPYPATH="../venv")} {MYPY} -p {pkg}'
+                f'cd {CFG.REPO_ROOT}/src && env {envs(MYPYPATH=VENV)} {MYPY} -p {pkg}',
             ],
         }
 
