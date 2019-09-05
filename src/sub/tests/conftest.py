@@ -8,10 +8,14 @@ import signal
 import subprocess
 import uuid
 import logging
+import json
+
+from unittest.mock import Mock, MagicMock, PropertyMock
 
 import psutil
 import pytest
 import stripe
+
 from flask import g
 
 from sub import payments
@@ -24,6 +28,30 @@ from sub.shared.log import get_logger
 logger = get_logger()
 
 ddb_process = None
+THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))
+UID = str(uuid.uuid4())
+
+
+class MockCustomer:
+    id = None
+    object = "customer"
+    subscriptions = [{"data": "somedata"}]
+
+    def properties(self, cls):
+        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
+
+    def get(self, key, default=None):
+        properties = self.properties(MockCustomer)
+        if key in properties:
+            return key
+        else:
+            return default
+
+
+def get_file(filename, path=THIS_PATH, **overrides):
+    with open(f"{path}/unit/customer/{filename}") as f:
+        obj = json.load(f)
+        return dict(obj, **overrides)
 
 
 def pytest_configure():
@@ -93,16 +121,42 @@ def create_customer_for_processing():
 
 
 @pytest.fixture(scope="function")
-def create_subscription_for_processing():
-    uid = uuid.uuid4()
-    subscription = payments.subscribe_to_plan(
-        "process_test",
+def create_subscription_for_processing(monkeypatch):
+    subhub_account = MagicMock()
+
+    get_user = MagicMock()
+    user_id = PropertyMock(return_value=UID)
+    cust_id = PropertyMock(return_value="cust123")
+    type(get_user).user_id = user_id
+    type(get_user).cust_id = cust_id
+
+    subhub_account.get_user = get_user
+
+    customer = Mock(return_value=MockCustomer())
+    none = Mock(return_value=None)
+    updated_customer = Mock(
+        return_value={
+            "subscriptions": {"data": [get_file("subscription1.json")]},
+            "metadata": {"userid": "process_test"},
+            "id": "cust_123",
+        }
+    )
+
+    monkeypatch.setattr("flask.g.subhub_account", subhub_account)
+    monkeypatch.setattr("sub.payments.existing_or_new_customer", customer)
+    monkeypatch.setattr("sub.payments.has_existing_plan", none)
+    monkeypatch.setattr("stripe.Subscription.create", Mock)
+    monkeypatch.setattr("stripe.Customer.retrieve", updated_customer)
+
+    data = json.dumps(
         {
             "pmt_token": "tok_visa",
             "plan_id": "plan_EtMcOlFMNWW4nd",
             "origin_system": "Test_system",
-            "email": "subtest@{}tester.com".format(uid),
+            "email": "subtest@tester.com",
             "display_name": "John Tester",
-        },
+        }
     )
+
+    subscription = payments.subscribe_to_plan("process_test", json.loads(data))
     yield subscription

@@ -90,7 +90,7 @@ class SubHubAccount:
                 self.model.Meta.table_name, hash_key=uid, range_key=None
             )  # Note that range key is optional
             return True
-        except DeleteError:
+        except DeleteError as e:
             logger.error("failed to remove user from db", uid=uid)
             return False
 

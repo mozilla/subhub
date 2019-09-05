@@ -59,7 +59,7 @@
   },
   "latest_invoice": null,
   "livemode": false,
-  "metadata": {},
+  "metadata": null,
   "plan": {
     "id": "ivory-freelance-040",
     "object": "plan",

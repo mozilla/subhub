@@ -170,7 +170,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
 
-    @property
+    @property  # type: ignore
     @lru_cache()
     def DEPLOYED_WHEN(self):
         """

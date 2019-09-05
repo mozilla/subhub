@@ -305,9 +305,12 @@ def update_payment_method(uid, data) -> FlaskResponse:
     if not customer:
         return dict(message="Customer does not exist."), 404
 
-    if customer["metadata"]["userid"] == uid:
-        customer.modify(customer.id, source=data["pmt_token"])
-        return {"message": "Payment method updated successfully."}, 201
+    metadata = customer.get("metadata")
+    logger.info("metadata", metadata=metadata, customer=type(customer))
+    if metadata:
+        if metadata["userid"] == uid:
+            Customer.modify(customer.id, source=data["pmt_token"])
+            return {"message": "Payment method updated successfully."}, 201
 
     return dict(message="Customer mismatch."), 400
 
