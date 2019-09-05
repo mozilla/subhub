@@ -490,6 +490,7 @@ def task_local():
     return {
         'task_dep': [
             'check',
+            'tar'
         ],
         'actions': [
             f'docker-compose up --build'
