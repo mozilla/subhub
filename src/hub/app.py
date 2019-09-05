@@ -73,7 +73,6 @@ def create_app(config=None):
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
 
-    # Setup error handlers
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
         if e.status_code == 500:

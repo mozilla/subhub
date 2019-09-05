@@ -1,7 +1,7 @@
 swagger: "2.0"
 
 info:
-  title: "SubHub"
+  title: "SubHub - Sub API"
   version: "1.0"
 
 consumes:
@@ -47,8 +47,8 @@ paths:
       operationId: sub.shared.version.get_version
       tags:
         - Version
-      summary: SubHub version
-      description: Show Subhub version string (git desribe --abbrev=7)
+      summary: SubHub - Sub API Version
+      description: Show Subhub version string (git describe --abbrev=7)
       produces:
         - application/json
       responses:

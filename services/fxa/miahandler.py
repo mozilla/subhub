@@ -3,6 +3,7 @@
 import os
 import sys
 
+# TODO!
 # import newrelic.agent
 import serverless_wsgi
 
@@ -11,6 +12,7 @@ from os.path import join, dirname, realpath
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
 
+# TODO!
 # newrelic.agent.initialize()
 
 from aws_xray_sdk.core import xray_recorder, patch_all
@@ -25,6 +27,7 @@ logger = get_logger()
 xray_recorder.configure(service="fxa.mia")
 patch_all()
 
+# TODO!
 # @newrelic.agent.lambda_handler()
 def handle_mia(event, context):
     try:

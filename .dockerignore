@@ -31,3 +31,4 @@ venv
 # Dockerfiles
 src/sub/Dockerfile
 src/hub/Dockerfile
+Dockerfile.base

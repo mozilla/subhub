@@ -1,7 +1,7 @@
 default:
   cost-center: 1440
-  project-name: subhub
-  project-desc: payment subscription REST api for customers
+  project-name: Subhub
+  project-desc: Payment subscription REST API for customers
   project-email: subhub@mozilla.com
   deployed-by: ${env:DEPLOYED_BY}
   deployed-env: ${env:DEPLOYED_ENV}

@@ -10,6 +10,8 @@ Payment subscription REST api for customers:
 - yarn (https://yarnpkg.com): package manager for node modules for setting up serverless for running and deploying subhub
 - cloc
 - [GraphViz](https://graphviz.org/)
+- Docker
+- Docker Compose
 
 ## Important Environment Variables
 The CFG object is for accessing values either from the `subhub/.env` file and|or superseded by env vars.
