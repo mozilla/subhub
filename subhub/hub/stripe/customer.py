@@ -12,6 +12,7 @@ from stripe.error import InvalidRequestError
 
 from subhub.hub.stripe.abstract import AbstractStripeHubEvent
 from subhub.hub.routes.static import StaticRoutes
+from subhub.universal import format_plan_nickname
 from subhub.exceptions import ClientError
 
 from subhub.log import get_logger
@@ -43,10 +44,22 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
             customer_id = self.payload.data.object.customer
             updated_customer = stripe.Customer.retrieve(id=customer_id)
             email = updated_customer.email
+
             nicknames = list()
+            products = {}  # type: Dict
             for subs in updated_customer.subscriptions["data"]:
                 if subs["status"] in ["active", "trialing"]:
-                    nicknames.append(subs["plan"]["nickname"])
+                    try:
+                        product = products[subs["plan"]["product"]]
+                    except KeyError:
+                        product = stripe.Product.retrieve(subs["plan"]["product"])
+                        products[subs["plan"]["product"]] = product
+
+                    plan_nickname = format_plan_nickname(
+                        product_name=product["name"],
+                        plan_interval=subs["plan"]["interval"],
+                    )
+                    nicknames.append(plan_nickname)
             data = self.create_data(
                 email=email,
                 nickname=nicknames[0],
@@ -98,19 +111,27 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             logger.error("Unable to retrieve charge", error=e)
             raise e
         if user_id:
+            product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+            product_name = product["name"]
+
+            plan_nickname = format_plan_nickname(
+                product_name=product_name,
+                plan_interval=self.payload.data.object.plan.interval,
+            )
+
             data = self.create_data(
                 uid=user_id,
                 active=self.is_active_or_trialing,
                 subscriptionId=self.payload.data.object.id,
                 subscription_id=self.payload.data.object.id,
-                productName=self.payload.data.object.plan.nickname,
+                productName=product_name,
                 eventId=self.payload.id,  # required by FxA
                 eventCreatedAt=self.payload.created,  # required by FxA
                 messageCreatedAt=int(time.time()),  # required by FxA
                 invoice_id=self.payload.data.object.latest_invoice,
                 plan_amount=self.payload.data.object.plan.amount,
                 customer_id=self.payload.data.object.customer,
-                nickname=self.payload.data.object.plan.nickname,
+                nickname=plan_nickname,
                 created=self.payload.data.object.created,
                 canceled_at=self.payload.data.object.canceled_at,
                 cancel_at=self.payload.data.object.cancel_at,
@@ -148,10 +169,12 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
             logger.error("Unable to find customer", error=e)
             raise e
         if user_id:
+            product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+
             data = dict(
                 active=self.is_active_or_trialing,
                 subscriptionId=self.payload.data.object.id,
-                productName=self.payload.data.object.plan.nickname,
+                productName=product["name"],
                 eventId=self.payload.id,  # required by FxA
                 event_id=self.payload.id,
                 eventCreatedAt=self.payload.created,
@@ -197,6 +220,13 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     "cancel at period end",
                     end=self.payload.data.object.cancel_at_period_end,
                 )
+
+                product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+                plan_nickname = format_plan_nickname(
+                    product_name=product["name"],
+                    plan_interval=self.payload.data.object.plan.interval,
+                )
+
                 data = dict(
                     event_id=self.payload.id,
                     event_type="customer.subscription_cancelled",
@@ -207,7 +237,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     canceled_at=self.payload.data.object.canceled_at,
                     cancel_at=self.payload.data.object.cancel_at,
                     cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-                    nickname=self.payload.data.object.plan.nickname,
+                    nickname=plan_nickname,
                     invoice_id=self.payload.data.object.latest_invoice,
                     current_period_start=self.payload.data.object.current_period_start,
                     current_period_end=self.payload.data.object.current_period_end,
@@ -241,6 +271,14 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                 except InvalidRequestError as e:
                     logger.error("Unable to gather data", error=e)
                     raise e
+
+                product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+                product_name = product["name"]
+
+                plan_nickname = format_plan_nickname(
+                    product_name=product_name,
+                    plan_interval=self.payload.data.object.plan.interval,
+                )
                 data = dict(
                     event_id=self.payload.id,
                     event_type="customer.recurring_charge",
@@ -248,8 +286,8 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                     active=self.is_active_or_trialing,
                     subscriptionId=self.payload.data.object.id,  # required by FxA
                     subscription_id=self.payload.data.object.id,
-                    productName=self.payload.data.object.plan.nickname,
-                    nickname=self.payload.data.object.plan.nickname,
+                    productName=product_name,
+                    nickname=plan_nickname,
                     eventCreatedAt=self.payload.created,  # required by FxA
                     messageCreatedAt=int(time.time()),  # required by FxA
                     invoice_id=self.payload.data.object.latest_invoice,

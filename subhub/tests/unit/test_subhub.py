@@ -8,6 +8,7 @@ import mock
 
 import connexion
 import stripe.error
+from stripe.util import convert_to_stripe_object
 
 from subhub.app import create_app
 from subhub.tests.unit.stripe.utils import MockSubhubUser
@@ -41,41 +42,30 @@ def test_subhub():
     assert isinstance(app, connexion.FlaskApp)
 
 
-def test_list_plans(app, monkeypatch):
+@mock.patch("stripe.Product.retrieve")
+@mock.patch("stripe.Plan.list")
+def test_list_plans(mock_plans, mock_product, app):
     """
     GIVEN a valid token
     WHEN a request for plans is made
     THEN a success status of 200 is returned
     """
+    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    plan_test1 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_plan_test2.json")
+    plan_test2 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+
+    mock_plans.return_value = [plan_test1, plan_test2]
+    mock_product.return_value = prod_test1
+
     client = app.app.test_client()
-
-    plans_data = [
-        {
-            "id": "plan_1",
-            "product": "prod_1",
-            "interval": "month",
-            "amount": 25,
-            "currency": "usd",
-            "nickname": "Plan 1",
-        },
-        {
-            "id": "plan_2",
-            "product": "prod_1",
-            "interval": "year",
-            "amount": 250,
-            "currency": "usd",
-            "nickname": "Plan 2",
-        },
-    ]
-
-    product_data = {"name": "Product 1"}
-
-    plans = Mock(return_value=plans_data)
-
-    product = Mock(return_value=product_data)
-
-    monkeypatch.setattr("stripe.Plan.list", plans)
-    monkeypatch.setattr("stripe.Product.retrieve", product)
 
     path = "v1/plans"
 
@@ -166,7 +156,21 @@ def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
     assert "No such plan" in loaded_data["message"]
 
 
-def test_subscribe_success(app, monkeypatch):
+@mock.patch("stripe.Product.retrieve")
+@mock.patch("subhub.sub.payments.find_newest_subscription")
+@mock.patch("subhub.sub.payments.fetch_customer")
+@mock.patch("stripe.Subscription.create")
+@mock.patch("subhub.sub.payments.has_existing_plan")
+@mock.patch("subhub.sub.payments.existing_or_new_customer")
+def test_subscribe_success(
+    mock_new_customer,
+    mock_has_plan,
+    mock_subscription,
+    mock_fetch_customer,
+    mock_new_sub,
+    mock_product,
+    app,
+):
     """
     GIVEN a route that attempts to make a subscribe a customer
     WHEN valid data is provided
@@ -174,34 +178,28 @@ def test_subscribe_success(app, monkeypatch):
     """
 
     client = app.app.test_client()
+    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    cust_test1 = json.loads(fh.read())
+    fh.close()
 
-    subscription_data = {
-        "id": "sub_123",
-        "status": "active",
-        "current_period_end": 1566833524,
-        "current_period_start": 1564155124,
-        "ended_at": None,
-        "plan": {"id": "plan_123", "nickname": "Monthly VPN Subscription"},
-        "cancel_at_period_end": False,
-    }
+    mock_new_customer.return_value = convert_to_stripe_object(cust_test1)
+    mock_has_plan.return_value = False
+    mock_fetch_customer.return_value = convert_to_stripe_object(cust_test1)
 
-    mock_false = Mock(return_value=False)
+    fh = open("tests/unit/fixtures/stripe_sub_test1.json")
+    sub_test1 = json.loads(fh.read())
+    fh.close()
+    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    plan_test1 = json.loads(fh.read())
+    fh.close()
+    sub_test1["plan"] = plan_test1
+    mock_subscription.return_value = sub_test1
+    mock_new_sub.return_value = {"data": [sub_test1]}
 
-    customer = Mock(return_value=MockCustomer())
-
-    customer_updated = MagicMock(
-        return_value={"id": "cust_123", "subscriptions": {"data": [subscription_data]}}
-    )
-
-    create = Mock(return_value={"id": "sub_234"})
-
-    user = Mock(return_value=MockSubhubUser())
-
-    monkeypatch.setattr("flask.g.subhub_account.get_user", user)
-    monkeypatch.setattr("stripe.Customer.retrieve", customer_updated)
-    monkeypatch.setattr("subhub.sub.payments.has_existing_plan", mock_false)
-    monkeypatch.setattr("subhub.sub.payments.existing_or_new_customer", customer)
-    monkeypatch.setattr("stripe.Subscription.create", create)
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+    mock_product.return_value = prod_test1
 
     path = "v1/customer/subtest/subscriptions"
     data = {

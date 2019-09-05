@@ -12,6 +12,7 @@ from flask import g
 from subhub.sub.types import JsonDict, FlaskResponse, FlaskListResponse
 from subhub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
 from subhub.log import get_logger
+from subhub.universal import format_plan_nickname
 from subhub.db import SubHubDeletedAccount
 
 logger = get_logger()
@@ -86,8 +87,18 @@ def _get_all_plans() -> List[Dict[str, str]]:
     plans = Plan.list(limit=100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
+    products = {}  # type: Dict
     for plan in plans:
-        product = Product.retrieve(plan["product"])
+        try:
+            product = products[plan["product"]]
+        except KeyError:
+            product = Product.retrieve(plan["product"])
+            products[plan["product"]] = product
+
+        plan_name = format_plan_nickname(
+            product_name=product["name"], plan_interval=plan["interval"]
+        )
+
         stripe_plans.append(
             {
                 "plan_id": plan["id"],
@@ -95,7 +106,7 @@ def _get_all_plans() -> List[Dict[str, str]]:
                 "interval": plan["interval"],
                 "amount": plan["amount"],
                 "currency": plan["currency"],
-                "plan_name": plan["nickname"],
+                "plan_name": plan_name,
                 "product_name": product["name"],
             }
         )
@@ -245,20 +256,33 @@ def create_return_data(subscriptions) -> JsonDict:
     :param subscriptions:
     :return: JSON data to be consumed by client.
     """
-    return_data: Dict[str, Any] = dict()
+    return_data: Dict[str, Any] = {}
     return_data["subscriptions"] = []
+
+    products = {}  # type: Dict
     for subscription in subscriptions["data"]:
+        try:
+            product = products[subscription["plan"]["product"]]
+        except KeyError:
+            product = Product.retrieve(subscription["plan"]["product"])
+            products[subscription["plan"]["product"]] = product
+
+        plan_name = format_plan_nickname(
+            product_name=product["name"], plan_interval=subscription["plan"]["interval"]
+        )
+
         if subscription["status"] == "incomplete":
             invoice = Invoice.retrieve(subscription["latest_invoice"])
             if invoice["charge"]:
                 intents = Charge.retrieve(invoice["charge"])
                 logger.debug("intents", intents=intents)
+
                 return_data["subscriptions"].append(
                     {
                         "current_period_end": subscription["current_period_end"],
                         "current_period_start": subscription["current_period_start"],
                         "ended_at": subscription["ended_at"],
-                        "plan_name": subscription["plan"]["nickname"],
+                        "plan_name": plan_name,
                         "plan_id": subscription["plan"]["id"],
                         "status": subscription["status"],
                         "subscription_id": subscription["id"],
@@ -267,25 +291,22 @@ def create_return_data(subscriptions) -> JsonDict:
                         "failure_message": intents["failure_message"],
                     }
                 )
-            else:
-                return_data["subscriptions"].append(
-                    create_subscription_object_without_failure(subscription)
-                )
-        else:
-            return_data["subscriptions"].append(
-                create_subscription_object_without_failure(subscription)
-            )
+                continue
+
+        return_data["subscriptions"].append(
+            create_subscription_object_without_failure(subscription, plan_name)
+        )
     return return_data
 
 
 def create_subscription_object_without_failure(
-    subscription: Dict[str, Any]
+    subscription: Dict[str, Any], plan_name: str
 ) -> Dict[str, Any]:
     return {
         "current_period_end": subscription["current_period_end"],
         "current_period_start": subscription["current_period_start"],
         "ended_at": subscription["ended_at"],
-        "plan_name": subscription["plan"]["nickname"],
+        "plan_name": plan_name,
         "plan_id": subscription["plan"]["id"],
         "status": subscription["status"],
         "subscription_id": subscription["id"],
@@ -341,19 +362,31 @@ def create_update_data(customer) -> Dict[str, Any]:
     payment_sources = customer["sources"]["data"]
     return_data: Dict[str, Any] = dict()
     return_data["subscriptions"] = []
+
+    return_data["payment_type"] = ""
+    return_data["last4"] = ""
+    return_data["exp_month"] = ""
+    return_data["exp_year"] = ""
+
     if len(payment_sources) > 0:
         first_payment_source = payment_sources[0]
         return_data["payment_type"] = first_payment_source.get("funding")
         return_data["last4"] = first_payment_source.get("last4")
         return_data["exp_month"] = first_payment_source.get("exp_month")
         return_data["exp_year"] = first_payment_source.get("exp_year")
-    else:
-        return_data["payment_type"] = ""
-        return_data["last4"] = ""
-        return_data["exp_month"] = ""
-        return_data["exp_year"] = ""
 
+    products = {}  # type: Dict
     for subscription in customer["subscriptions"]["data"]:
+        try:
+            product = products[subscription["plan"]["product"]]
+        except KeyError:
+            product = Product.retrieve(subscription["plan"]["product"])
+            products[subscription["plan"]["product"]] = product
+
+        plan_name = format_plan_nickname(
+            product_name=product["name"], plan_interval=subscription["plan"]["interval"]
+        )
+
         if subscription["status"] == "incomplete":
             invoice = Invoice.retrieve(subscription["latest_invoice"])
             if invoice["charge"]:
@@ -363,7 +396,7 @@ def create_update_data(customer) -> Dict[str, Any]:
                         "current_period_end": subscription["current_period_end"],
                         "current_period_start": subscription["current_period_start"],
                         "ended_at": subscription["ended_at"],
-                        "plan_name": subscription["plan"]["nickname"],
+                        "plan_name": plan_name,
                         "plan_id": subscription["plan"]["id"],
                         "status": subscription["status"],
                         "cancel_at_period_end": subscription["cancel_at_period_end"],
@@ -372,17 +405,11 @@ def create_update_data(customer) -> Dict[str, Any]:
                         "failure_message": intents["failure_message"],
                     }
                 )
-            else:
-                return_data["cancel_at_period_end"] = subscription[
-                    "cancel_at_period_end"
-                ]
-                return_data["subscriptions"].append(
-                    create_subscription_object_without_failure(subscription)
-                )
-        else:
-            return_data["cancel_at_period_end"] = subscription["cancel_at_period_end"]
-            return_data["subscriptions"].append(
-                create_subscription_object_without_failure(subscription)
-            )
+                continue
+
+        return_data["cancel_at_period_end"] = subscription["cancel_at_period_end"]
+        return_data["subscriptions"].append(
+            create_subscription_object_without_failure(subscription, plan_name)
+        )
 
     return return_data
