@@ -2,21 +2,15 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import os
-import uuid
 import json
-import asyncio
-
+from mock import patch
 import pytest
-import stripe
 
 from flask import g
 from stripe.error import InvalidRequestError
 from stripe import Customer
-from subhub.exceptions import ClientError
-from subhub.app import create_app
-from unittest.mock import Mock, MagicMock, PropertyMock, patch
-from mockito import when, mock, unstub, ANY
+from unittest.mock import Mock, MagicMock, PropertyMock
+from mockito import when, mock
 
 from subhub.sub import payments
 from subhub.customer import (
@@ -26,8 +20,6 @@ from subhub.customer import (
 )
 from subhub.tests.unit.stripe.utils import MockSubhubUser
 from subhub.log import get_logger
-from subhub.cfg import CFG
-from pynamodb.exceptions import DeleteError
 
 
 logger = get_logger()
@@ -669,3 +661,110 @@ def test_reactivate_subscription_bad_user_id(monkeypatch):
 
     assert 404 == code
     assert "Customer does not exist." == response["message"]
+
+
+def test_format_nickname():
+    product_name = "Test product"
+    plan_interval = "month"
+
+    nickname = payments.format_plan_nickname(product_name, plan_interval)
+
+    assert nickname == "Test Product (Monthly)"
+
+
+def test_format_nickname_non_standard_interval():
+    product_name = "Test product"
+    plan_interval = "2 month"
+
+    nickname = payments.format_plan_nickname(product_name, plan_interval)
+
+    assert nickname == "Test Product (2 Month)"
+
+
+@patch("stripe.Charge.retrieve")
+@patch("stripe.Invoice.retrieve")
+@patch("stripe.Product.retrieve")
+def test_create_update_data(mock_product, mock_invoice, mock_charge):
+
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+    fh = open("tests/unit/fixtures/stripe_prod_test2.json")
+    prod_test2 = json.loads(fh.read())
+    fh.close()
+    mock_product.side_effect = [prod_test1, prod_test2]
+
+    fh = open("tests/unit/fixtures/stripe_in_test1.json")
+    invoice_test1 = json.loads(fh.read())
+    fh.close()
+    mock_invoice.return_value = invoice_test1
+
+    fh = open("tests/unit/fixtures/stripe_ch_test1.json")
+    charge_test1 = json.loads(fh.read())
+    fh.close()
+    mock_charge.return_value = charge_test1
+
+    update_data_response = payments.create_return_data(get_test_subscriptions())
+
+    assert update_data_response["subscriptions"][0]["current_period_end"] == 1570226953
+    assert (
+        update_data_response["subscriptions"][0]["current_period_start"] == 1567634953
+    )
+    assert update_data_response["subscriptions"][0]["ended_at"] is None
+    assert (
+        update_data_response["subscriptions"][0]["plan_name"]
+        == "Project Guardian (Monthly)"
+    )
+    assert update_data_response["subscriptions"][0]["plan_id"] == "plan_test1"
+    assert update_data_response["subscriptions"][0]["status"] == "active"
+    assert update_data_response["subscriptions"][0]["cancel_at_period_end"] == False
+    assert update_data_response["subscriptions"][0]["subscription_id"] == "sub_test1"
+
+    assert update_data_response["subscriptions"][1]["current_period_end"] == 1570226953
+    assert (
+        update_data_response["subscriptions"][1]["current_period_start"] == 1567634953
+    )
+    assert update_data_response["subscriptions"][1]["ended_at"] is None
+    assert (
+        update_data_response["subscriptions"][1]["plan_name"] == "Firefox Vpn (Yearly)"
+    )
+    assert update_data_response["subscriptions"][1]["plan_id"] == "plan_test3"
+    assert update_data_response["subscriptions"][1]["status"] == "incomplete"
+    assert update_data_response["subscriptions"][1]["cancel_at_period_end"] == False
+    assert update_data_response["subscriptions"][1]["subscription_id"] == "sub_test2"
+    assert update_data_response["subscriptions"][1]["failure_code"] == "card_declined"
+    assert (
+        update_data_response["subscriptions"][1]["failure_message"]
+        == "Your card was declined."
+    )
+
+
+def get_test_subscriptions():
+    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    cust_test1 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_sub_test1.json")
+    sub_test1 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_sub_test2.json")
+    sub_test2 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    plan_test1 = json.loads(fh.read())
+    fh.close()
+
+    fh = open("tests/unit/fixtures/stripe_plan_test3.json")
+    plan_test3 = json.loads(fh.read())
+    fh.close()
+
+    sub_test1["plan"] = plan_test1
+
+    sub_test2["plan"] = plan_test3
+
+    cust_test1["subscriptions"]["data"].append(sub_test1)
+    cust_test1["subscriptions"]["data"].append(sub_test2)
+
+    return {"data": [sub_test1, sub_test2]}

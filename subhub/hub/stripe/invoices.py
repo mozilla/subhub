@@ -5,9 +5,11 @@
 import json
 
 from stripe.error import InvalidRequestError
+from stripe import Product
 
 from subhub.hub.stripe.abstract import AbstractStripeHubEvent
 from subhub.hub.routes.static import StaticRoutes
+from subhub.universal import format_plan_nickname
 from subhub.log import get_logger
 
 logger = get_logger()
@@ -16,8 +18,13 @@ logger = get_logger()
 class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
     def run(self) -> None:
         try:
-            nickname_list = self.payload.data.object.lines.data
-            nickname = nickname_list[0]["plan"]["nickname"]
+            invoice_data = self.payload.data.object.lines.data
+
+            product = Product.retrieve(invoice_data[0]["plan"]["product"])
+            nickname = format_plan_nickname(
+                product_name=product["name"],
+                plan_interval=invoice_data[0]["plan"]["interval"],
+            )
         except InvalidRequestError as e:
             nickname = ""
             logger.error("payment failed error", error=e)

@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import mock
+import json
 import mockito
 import requests
 import boto3
@@ -21,7 +23,13 @@ def run_customer(mocker, data, filename):
     run_test(filename)
 
 
-def test_stripe_invoice_payment_failed(mocker):
+@mock.patch("stripe.Product.retrieve")
+def test_stripe_invoice_payment_failed(mock_product, mocker):
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+    mock_product.return_value = prod_test1
+
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "invoice.payment_failed",
@@ -31,7 +39,7 @@ def test_stripe_invoice_payment_failed(mocker):
         "charge_id": "ch_000000",
         "amount_due": 100,
         "created": 1558624628,
-        "nickname": "Daily Subscription",
+        "nickname": "Project Guardian (Daily)",
     }
     basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)

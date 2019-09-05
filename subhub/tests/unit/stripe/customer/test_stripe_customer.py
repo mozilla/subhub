@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import time
+from mock import patch
+import json
 
 import boto3
 import flask
@@ -82,18 +84,25 @@ def test_stripe_hub_customer_updated(mocker):
     run_customer(mocker, data, filename)
 
 
-def test_stripe_hub_customer_source_expiring(mocker):
+@patch("stripe.Product.retrieve")
+def test_stripe_hub_customer_source_expiring(mock_product, mocker):
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+    mock_product.return_value = prod_test1
+
     data = {
         "event_id": "evt_00000000000000",
         "event_type": "customer.source.expiring",
+        "email": "tester@johnson.com",
+        "nickname": "Project Guardian (Monthly)",
         "customer_id": "cus_00000000000000",
         "last4": "4242",
         "brand": "Visa",
         "exp_month": 5,
         "exp_year": 2019,
-        "nickname": "moz plan",
-        "email": "tester@johnson.com",
     }
+
     customer_response = mock(
         {
             "id": "cus_00000000000000",
@@ -105,8 +114,24 @@ def test_stripe_hub_customer_source_expiring(mocker):
             "email": "tester@johnson.com",
             "subscriptions": {
                 "data": [
-                    {"id": "1", "status": "active", "plan": {"nickname": "moz plan"}},
-                    {"id": "2", "status": "canceled", "plan": {"nickname": "fxa plan"}},
+                    {
+                        "id": "1",
+                        "status": "active",
+                        "plan": {
+                            "nickname": "moz plan",
+                            "product": "prod_test1",
+                            "interval": "month",
+                        },
+                    },
+                    {
+                        "id": "2",
+                        "status": "canceled",
+                        "plan": {
+                            "nickname": "fxa plan",
+                            "product": "prod_test1",
+                            "interval": "month",
+                        },
+                    },
                 ]
             },
         },
@@ -263,7 +288,12 @@ def test_stripe_hub_customer_subscription_updated_no_cancel(mocker):
     unstub()
 
 
-def test_stripe_hub_customer_subscription_deleted(mocker):
+@patch("stripe.Product.retrieve")
+def test_stripe_hub_customer_subscription_deleted(mock_product, mocker):
+    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    prod_test1 = json.loads(fh.read())
+    fh.close()
+    mock_product.return_value = prod_test1
     data = {
         "active": False,
         "subscriptionId": "sub_00000000000000",

@@ -1,0 +1,57 @@
+{
+  "id": "cus_test1",
+  "object": "customer",
+  "account_balance": 0,
+  "address": null,
+  "balance": 0,
+  "created": 1567635511,
+  "currency": "usd",
+  "default_source": null,
+  "delinquent": false,
+  "description": null,
+  "discount": null,
+  "email": null,
+  "invoice_prefix": "F351DA7",
+  "invoice_settings": {
+    "custom_fields": null,
+    "default_payment_method": null,
+    "footer": null
+  },
+  "livemode": false,
+  "metadata": {},
+  "name": null,
+  "phone": null,
+  "preferred_locales": [],
+  "shipping": null,
+  "sources": {
+    "object": "list",
+    "data": [
+      {
+        "funding": "credit",
+        "last4": "1234",
+        "exp_month": 12,
+        "exp_year": 2020
+      }
+    ],
+    "has_more": false,
+    "total_count": 0,
+    "url": "/v1/customers/cus_test1/sources"
+  },
+  "subscriptions": {
+    "object": "list",
+    "data": [],
+    "has_more": false,
+    "total_count": 0,
+    "url": "/v1/customers/cus_test1/subscriptions"
+  },
+  "tax_exempt": "none",
+  "tax_ids": {
+    "object": "list",
+    "data": [],
+    "has_more": false,
+    "total_count": 0,
+    "url": "/v1/customers/cus_test1/tax_ids"
+  },
+  "tax_info": null,
+  "tax_info_verification": null
+}
