@@ -7,16 +7,16 @@ import sys
 
 import connexion
 import stripe
-import stripe.error
+
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
 
-from sub.shared import secrets
-from sub.shared.cfg import CFG
-from sub.shared.exceptions import SubHubError
-from sub.shared.db import HubEvent
-from sub.shared.log import get_logger
+from hub.shared import secrets
+from hub.shared.cfg import CFG
+from hub.shared.exceptions import SubHubError
+from hub.shared.db import HubEvent
+from hub.shared.log import get_logger
 
 logger = get_logger()
 
