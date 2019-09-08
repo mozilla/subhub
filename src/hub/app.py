@@ -12,11 +12,11 @@ from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
 
-from hub.shared import secrets
-from hub.shared.cfg import CFG
-from hub.shared.exceptions import SubHubError
-from hub.shared.db import HubEvent
-from hub.shared.log import get_logger
+from shared import secrets
+from shared.cfg import CFG
+from shared.exceptions import SubHubError
+from shared.db import HubEvent
+from shared.log import get_logger
 
 logger = get_logger()
 
