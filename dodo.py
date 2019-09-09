@@ -126,6 +126,11 @@ def svc_func(svc, func=None):
         assert func in funcs, f"for svc '{svc}', func '{func}' not in {funcs}"
     return svc, func
 
+def svc_action(svc, action=None):
+    assert svc in SVCS, f"svc '{svc}' not in {SVCS}"
+    assert action in ('create', 'delete')
+    return svc, action
+
 def parameterized(dec):
     def layer(*args, **kwargs):
         def repl(f):
@@ -686,11 +691,16 @@ def task_domain():
     domain <svc> [create|delete]
     '''
     def domain(args):
-        svc, action = svc_func(*args)
+        svc, action = svc_action(*args)
         assert action in ('create', 'delete'), "provide 'create' or 'delete'"
         domain_cmd = f'cd services/{svc} && env {envs()} {SLS} {action}_domain --stage {CFG.DEPLOYED_ENV} -v'
         call(domain_cmd, stdout=None, stderr=None)
     return {
+        'task_dep': [
+            'check',
+            'creds',
+            'yarn',
+        ],
         'pos_arg': 'args',
         'actions': [(domain,)],
     }
