@@ -164,10 +164,6 @@ def test_customer_update_subscription_cancel_at_period_end(monkeypatch):
     assert result[0]["subscriptions"][0]["cancel_at_period_end"] == True
 
 
-def test_customer_update_subscription_incomplete(monkeypatch):
-    customer_update_subscription_incomplete(monkeypatch, True)
-
-
 def test_customer_update_subscription_incomplete_charge_null(monkeypatch):
     customer_update_subscription_incomplete(monkeypatch, False)
 
@@ -212,4 +208,4 @@ def customer_update_subscription_incomplete(monkeypatch, charge):
 
     updated_customer.assert_called()
     invoice_retrieve.assert_called()
-    assert result[0]["subscriptions"][0]["cancel_at_period_end"] == True
+    assert result[0]["subscriptions"][0]["cancel_at_period_end"] is True

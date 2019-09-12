@@ -11,6 +11,8 @@
   "description": null,
   "discount": null,
   "email": null,
+  "failure_code": "card_declined",
+  "failure_message": "Your card was declined.",
   "invoice_prefix": "F351DA7",
   "invoice_settings": {
     "custom_fields": null,

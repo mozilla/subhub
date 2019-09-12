@@ -6,9 +6,10 @@ import cachetools
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from stripe import Charge, Customer, Invoice, Plan, Product, Subscription
+from stripe import Customer, Product
 from flask import g
 
+from sub.shared import vendor, universal
 from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.shared.universal import format_plan_nickname
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
@@ -38,7 +39,10 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
         return dict(message="User already subscribed."), 409
 
     if not customer.get("deleted"):
-        Subscription.create(customer=customer.id, items=[{"plan": data["plan_id"]}])
+
+        vendor.build_stripe_subscription(
+            customer.id, data["plan_id"], universal.get_indempotency_key()
+        )
         updated_customer = fetch_customer(g.subhub_account, user_id=uid)
         newest_subscription = find_newest_subscription(
             updated_customer["subscriptions"]
@@ -84,7 +88,7 @@ def list_all_plans() -> FlaskListResponse:
 
 @cachetools.cached(cachetools.TTLCache(10, 600))
 def _get_all_plans() -> List[Dict[str, str]]:
-    plans = Plan.list(limit=100)
+    plans = vendor.retrieve_plan_list(100)
     logger.info("number of plans", count=len(plans))
     stripe_plans = []
     products = {}  # type: Dict
@@ -92,7 +96,7 @@ def _get_all_plans() -> List[Dict[str, str]]:
         try:
             product = products[plan["product"]]
         except KeyError:
-            product = Product.retrieve(plan["product"])
+            product = vendor.retrieve_stripe_product(plan["product"])
             products[plan["product"]] = product
 
         plan_name = format_plan_nickname(
@@ -141,7 +145,9 @@ def cancel_subscription(uid: str, sub_id: str) -> FlaskResponse:
             "trialing",
             "incomplete",
         ]:
-            Subscription.modify(sub_id, cancel_at_period_end=True)
+            vendor.cancel_stripe_subscription_period_end(
+                sub_id, universal.get_indempotency_key()
+            )
             updated_customer = fetch_customer(g.subhub_account, uid)
             logger.info("updated customer", updated_customer=updated_customer)
             subs = retrieve_stripe_subscriptions(updated_customer)
@@ -164,7 +170,7 @@ def delete_customer(uid: str) -> FlaskResponse:
     if not subscription_user:
         return dict(message="Customer does not exist."), 404
 
-    deleted_payment_customer = Customer.delete(subscription_user.cust_id)
+    deleted_payment_customer = vendor.delete_stripe_customer(subscription_user.cust_id)
     if deleted_payment_customer:
         deleted_customer = delete_user(
             user_id=subscription_user.user_id,
@@ -221,7 +227,9 @@ def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
-                Subscription.modify(sub_id, cancel_at_period_end=False)
+                vendor.cancel_stripe_subscription_period_end(
+                    sub_id, universal.get_indempotency_key()
+                )
                 return dict(message="Subscription reactivation was successful."), 200
             return dict(message="Subscription is already active."), 200
 
@@ -242,7 +250,7 @@ def subscription_status(uid: str) -> FlaskResponse:
     if not items or not items.cust_id:
         return dict(message="Customer does not exist."), 404
 
-    subscriptions = Subscription.list(customer=items.cust_id, limit=100, status="all")
+    subscriptions = vendor.list_customer_subscriptions(items.cust_id)
     if not subscriptions:
         return dict(message="No subscriptions for this customer."), 403
 
@@ -264,7 +272,7 @@ def create_return_data(subscriptions) -> JsonDict:
         try:
             product = products[subscription["plan"]["product"]]
         except KeyError:
-            product = Product.retrieve(subscription["plan"]["product"])
+            product = vendor.retrieve_stripe_product(subscription["plan"]["product"])
             products[subscription["plan"]["product"]] = product
 
         plan_name = format_plan_nickname(
@@ -272,9 +280,9 @@ def create_return_data(subscriptions) -> JsonDict:
         )
 
         if subscription["status"] == "incomplete":
-            invoice = Invoice.retrieve(subscription["latest_invoice"])
+            invoice = vendor.retrieve_stripe_invoice(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = Charge.retrieve(invoice["charge"])
+                intents = vendor.retrieve_stripe_customer(invoice["charge"])
                 logger.debug("intents", intents=intents)
 
                 return_data["subscriptions"].append(
@@ -330,7 +338,11 @@ def update_payment_method(uid, data) -> FlaskResponse:
     logger.info("metadata", metadata=metadata, customer=type(customer))
     if metadata:
         if metadata["userid"] == uid:
-            Customer.modify(customer.id, source=data["pmt_token"])
+            vendor.modify_customer(
+                customer_id=customer.id,
+                source_token=data["pmt_token"],
+                idempotency_key=universal.get_indempotency_key(),
+            )
             return {"message": "Payment method updated successfully."}, 201
 
     return dict(message="Customer mismatch."), 400
@@ -384,7 +396,7 @@ def create_update_data(customer) -> Dict[str, Any]:
         try:
             product = products[subscription["plan"]["product"]]
         except KeyError:
-            product = Product.retrieve(subscription["plan"]["product"])
+            product = vendor.retrieve_stripe_product(subscription["plan"]["product"])
             products[subscription["plan"]["product"]] = product
 
         plan_name = format_plan_nickname(
@@ -392,9 +404,9 @@ def create_update_data(customer) -> Dict[str, Any]:
         )
 
         if subscription["status"] == "incomplete":
-            invoice = Invoice.retrieve(subscription["latest_invoice"])
+            invoice = vendor.retrieve_stripe_invoice(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = Charge.retrieve(invoice["charge"])
+                intents = vendor.retrieve_stripe_customer(invoice["charge"])
                 return_data["subscriptions"].append(
                     {
                         "current_period_end": subscription["current_period_end"],

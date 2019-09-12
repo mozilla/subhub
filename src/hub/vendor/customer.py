@@ -6,6 +6,7 @@ import json
 import time
 import stripe
 
+from stripe.error import InvalidRequestError
 from datetime import datetime
 from typing import Optional, Dict, Any
 

@@ -2,12 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import stripe
-
 from stripe import Customer, Subscription
 from stripe.error import InvalidRequestError
 from typing import Union, Optional
 
+from sub.shared import vendor, universal
 from sub.shared.exceptions import IntermittentError, ServerError
 from sub.shared.db import SubHubAccount
 from sub.shared.cfg import CFG
@@ -28,7 +27,7 @@ def create_customer(
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
     customer = None
-    customers = Customer.list(email=email)
+    customers = vendor.get_customer_list(email=email)
     for possible_customer in customers.data:
         if possible_customer.email == email:
             # If the userid doesn't match, the system is damaged.
@@ -40,25 +39,22 @@ def create_customer(
             # If we have a mis-match on the source_token, overwrite with the
             # new one.
             if customer.default_source != source_token:
-                Customer.modify(customer.id, source=source_token)
+                vendor.modify_customer(
+                    customer_id=customer.id,
+                    source_token=source_token,
+                    idempotency_key=universal.get_indempotency_key(),
+                )
             break
 
     # No existing Stripe customer, create one.
     if not customer:
-        try:
-            customer = Customer.create(
-                source=source_token,
-                email=email,
-                description=user_id,
-                name=display_name,
-                metadata={"userid": user_id},
-            )
-
-        except InvalidRequestError as e:
-            logger.error("create customer error", error=e)
-            raise InvalidRequestError(
-                message="Unable to create customer.", param=str(e)
-            )
+        customer = vendor.create_stripe_customer(
+            source_token=source_token,
+            email=email,
+            userid=user_id,
+            name=display_name,
+            idempotency_key=universal.get_indempotency_key(),
+        )
     # Link the Stripe customer to the origin system id
     db_account = subhub_account.new_user(
         uid=user_id, origin_system=origin_system, cust_id=customer.id
@@ -68,7 +64,7 @@ def create_customer(
         new_user = subhub_account.save_user(db_account)
         if not new_user:
             # Clean-up the Stripe customer record since we can't link it
-            Customer.delete(customer.id)
+            vendor.delete_stripe_customer(customer_id=customer.id)
     except IntermittentError("error saving db record") as e:  # type: ignore
         logger.error("unable to save user or link it", error=e)
         raise e
@@ -96,15 +92,17 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
     customer = None
     db_account = subhub_account.get_user(user_id)
     if db_account:
-        customer = Customer.retrieve(db_account.cust_id)
+        customer = vendor.retrieve_stripe_customer(customer_id=db_account.cust_id)
     return customer
 
 
 def existing_payment_source(existing_customer: Customer, source_token: str) -> Customer:
     if not existing_customer.get("sources"):
         if not existing_customer.get("deleted"):
-            existing_customer = Customer.modify(
-                existing_customer["id"], source=source_token
+            existing_customer = vendor.modify_customer(
+                customer_id=existing_customer["id"],
+                source_token=source_token,
+                idempotency_key=universal.get_indempotency_key(),
             )
             logger.info("add source", existing_customer=existing_customer)
         else:
@@ -116,15 +114,13 @@ def subscribe_customer(customer: Customer, plan_id: str) -> Subscription:
     """
     Subscribe Customer to Plan
     :param customer:
-    :param plan:
+    :param plan_id:
     :return: Subscription Object
     """
-    try:
-        sub = Subscription.create(customer=customer, items=[{"plan": plan_id}])
-        return sub
-    except Exception as e:
-        logger.error("sub error", error=e)
-        raise InvalidRequestError("Unable to create plan", param=plan_id)
+    sub = vendor.build_stripe_subscription(
+        customer.id, plan_id=plan_id, idempotency_key=universal.get_indempotency_key()
+    )
+    return sub
 
 
 def has_existing_plan(customer: Customer, plan_id: str) -> bool:
