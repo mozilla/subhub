@@ -63,3 +63,10 @@ def test_hub_auth_with_valid_support_token():
 def test_hub_auth_with_valid_payment_token():
     hub_auth = authentication.hub_auth("fake_payment_api_key", None)
     assert hub_auth is None
+
+# This should fail if tests are working
+
+
+def test_support_auth_insta_fail():
+    support_auth = authentication.support_auth("bad_hub_api_key", None)
+    assert support_auth["value"] is True
