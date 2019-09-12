@@ -4,6 +4,7 @@ mockito==1.1.1
 pytest==5.0.1
 pytest-cov==2.7.1
 pytest-mock==1.10.4
+pytest-socket==0.3.3
 mock==3.0.5
 patch==1.16
 pytest-watch==4.2.0

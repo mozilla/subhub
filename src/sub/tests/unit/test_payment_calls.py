@@ -204,7 +204,9 @@ def test_subscribe_customer_invalid_data(monkeypatch):
     id = PropertyMock(return_value="cust_123")
     type(mock_customer).id = id
 
-    mock_subscribe = Mock(side_effect=InvalidRequestError)
+    mock_subscribe = Mock(
+        side_effect=InvalidRequestError(message="invalid data", param="bad data")
+    )
 
     monkeypatch.setattr("stripe.Subscription.create", mock_subscribe)
 
@@ -685,10 +687,11 @@ def test_format_nickname_non_standard_interval():
     assert nickname == "Test Product (2 Month)"
 
 
+@patch("stripe.Customer.retrieve")
 @patch("stripe.Charge.retrieve")
 @patch("stripe.Invoice.retrieve")
 @patch("stripe.Product.retrieve")
-def test_create_update_data(mock_product, mock_invoice, mock_charge):
+def test_create_update_data(mock_product, mock_invoice, mock_charge, mock_customer):
 
     fh = open("tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
@@ -707,6 +710,11 @@ def test_create_update_data(mock_product, mock_invoice, mock_charge):
     charge_test1 = json.loads(fh.read())
     fh.close()
     mock_charge.return_value = charge_test1
+
+    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    cust_test1 = json.loads(fh.read())
+    fh.close()
+    mock_customer.return_value = cust_test1
 
     update_data_response = payments.create_return_data(get_test_subscriptions())
 
