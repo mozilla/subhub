@@ -7,10 +7,10 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
-with open('subhub/requirements.txt') as f:
+with open('src/app_requirements.txt') as f:
     app_requirements = f.read().splitlines()
 
-with open('subhub/tests/requirements.txt') as f:
+with open('src/test_requirements.txt') as f:
     test_requirements = f.read().splitlines()
 
 setup_requirements = [
@@ -37,7 +37,7 @@ setup(
     install_requires=app_requirements,
     license='Mozilla Public License 2.0',
     include_package_data=True,
-    packages=find_packages(include=['subhub']),
+    packages=find_packages(include=['src']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,

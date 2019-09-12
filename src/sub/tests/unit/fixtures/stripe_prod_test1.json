@@ -1,0 +1,21 @@
+{
+  "id": "prod_test1",
+  "object": "product",
+  "active": true,
+  "attributes": [],
+  "caption": null,
+  "created": 1567100773,
+  "deactivate_on": [],
+  "description": null,
+  "images": [],
+  "livemode": false,
+  "metadata": {},
+  "name": "Project Guardian",
+  "package_dimensions": null,
+  "shippable": null,
+  "statement_descriptor": "Firefox Guardian",
+  "type": "service",
+  "unit_label": null,
+  "updated": 1567100794,
+  "url": null
+}
