@@ -21,7 +21,7 @@ def test_payment_auth_with_valid_support_token():
 
 
 def test_payment_auth_with_valid_hub_token():
-    payments_auth = authentication.hub_auth("fake_hub_api_key", None)
+    payments_auth = authentication.payment_auth("fake_hub_api_key", None)
     assert payments_auth is None
 
 
