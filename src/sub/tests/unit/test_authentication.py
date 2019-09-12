@@ -15,6 +15,16 @@ def test_payment_auth_bad_token():
     assert payments_auth is None
 
 
+def test_payment_auth_with_valid_support_token():
+    payments_auth = authentication.payment_auth("fake_support_api_key", None)
+    assert payments_auth is None
+
+
+def test_payment_auth_with_valid_hub_token():
+    payments_auth = authentication.payment_auth("fake_hub_api_key", None)
+    assert payments_auth is None
+
+
 def test_support_auth():
     support_auth = authentication.support_auth("fake_support_api_key", None)
     assert support_auth["value"] is True
@@ -25,6 +35,16 @@ def test_support_auth_bad_token():
     assert support_auth is None
 
 
+def test_support_auth_with_valid_payment_token():
+    support_auth = authentication.support_auth("fake_payment_api_key", None)
+    assert support_auth is None
+
+
+def test_support_auth_with_valid_hub_token():
+    support_auth = authentication.support_auth("fake_hub_api_key", None)
+    assert support_auth is None
+
+
 def test_hub_auth():
     hub_auth = authentication.hub_auth("fake_hub_api_key", None)
     assert hub_auth["value"] is True
@@ -32,4 +52,14 @@ def test_hub_auth():
 
 def test_hub_auth_bad_token():
     hub_auth = authentication.hub_auth("bad_hub_api_key", None)
+    assert hub_auth is None
+
+
+def test_hub_auth_with_valid_support_token():
+    hub_auth = authentication.hub_auth("fake_support_api_key", None)
+    assert hub_auth is None
+
+
+def test_hub_auth_with_valid_payment_token():
+    hub_auth = authentication.hub_auth("fake_payment_api_key", None)
     assert hub_auth is None
