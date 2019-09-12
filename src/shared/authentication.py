@@ -11,20 +11,20 @@ logger = get_logger()
 
 def payment_auth(api_token, required_scopes=None):
     logger.info(f"api token {api_token}")
-    if api_token in (CFG.PAYMENT_API_KEY,):
+    if api_token == CFG.PAYMENT_API_KEY:
         return {"value": True}
     return None
 
 
 def support_auth(api_token, required_scopes=None):
     logger.info(f"api token {api_token}")
-    if api_token in (CFG.SUPPORT_API_KEY,):
+    if api_token == CFG.SUPPORT_API_KEY:
         return {"value": True}
     return None
 
 
 def hub_auth(api_token, required_scopes=None):
     logger.info(f"api token {api_token}")
-    if api_token in (CFG.HUB_API_KEY,):
+    if api_token == CFG.HUB_API_KEY:
         return {"value": True}
     return None
