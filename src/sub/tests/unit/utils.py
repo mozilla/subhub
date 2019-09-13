@@ -13,11 +13,11 @@ __location__ = os.path.realpath(os.path.dirname(__file__))
 
 class MockSqsClient:
     @staticmethod
-    def list_queues(QueueNamePrefix={}):
+    def list_queues(QueueNamePrefix=None):
         return {"QueueUrls": ["DevSub"]}
 
     @staticmethod
-    def send_message(QueueUrl={}, MessageBody={}):
+    def send_message(QueueUrl=None, MessageBody=None):
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 

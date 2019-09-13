@@ -28,10 +28,10 @@ def run_event_process(event) -> Response:
 
 
 class MockSqsClient:
-    def list_queues(QueueNamePrefix={}) -> Any:  # type: ignore
+    def list_queues(QueueNamePrefix=None) -> Any:  # type: ignore
         return {"QueueUrls": ["DevSub"]}
 
-    def send_message(QueueUrl={}, MessageBody={}) -> Any:  # type: ignore
+    def send_message(QueueUrl=None, MessageBody=None) -> Any:  # type: ignore
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 
