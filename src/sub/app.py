@@ -22,6 +22,11 @@ from sub.shared.log import get_logger
 
 logger = get_logger()
 
+if not CFG.AWS_EXECUTION_ENV:
+    stripe.log = "debug"
+    stripe.api_base = stripe.upload_api_base = "https://stripe:12112"
+    stripe.verify_ssl_certs = False
+
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):
     logger.error("intermittent stripe error", error=e)

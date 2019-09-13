@@ -21,6 +21,7 @@ services:
         AWS_ACCESS_KEY_ID: "fake-id"
         AWS_SECRET_ACCESS_KEY: "fake-key"
         STRIPE_API_KEY: $STRIPE_API_KEY
+        SUPPORT_API_KEY: $SUPPORT_API_KEY
         PAYMENT_API_KEY: $PAYMENT_API_KEY
         SUPPORT_API_KEY: $SUPPORT_API_KEY
     ports:
@@ -55,3 +56,8 @@ services:
     ports:
       - 4567
 
+  stripe:
+    image: stripemock/stripe-mock:latest
+    ports:
+      - "12111:12111"
+      - "12112:12112"
