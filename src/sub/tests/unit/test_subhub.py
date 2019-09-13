@@ -11,7 +11,7 @@ import stripe.error
 from stripe.util import convert_to_stripe_object
 
 from sub.app import create_app
-from sub.tests.unit.utils import MockSubhubUser
+from sub.shared.tests.unit.utils import MockSubhubUser
 
 from sub.shared.log import get_logger
 

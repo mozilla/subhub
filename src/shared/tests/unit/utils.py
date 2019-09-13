@@ -10,11 +10,11 @@ from typing import Dict, Any
 
 from hub.vendor.controller import StripeHubEventPipeline, event_process, view
 
-__location__ = os.path.realpath(os.path.dirname(__file__))
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
-def run_test(filename) -> None:
-    with open(os.path.join(__location__, filename)) as f:
+def run_test(filename, cwd=CWD) -> None:
+    with open(os.path.join(cwd, filename)) as f:
         pipeline = StripeHubEventPipeline(json.load(f))
         pipeline.run()
 
@@ -28,14 +28,17 @@ def run_event_process(event) -> Response:
 
 
 class MockSqsClient:
-    def list_queues(QueueNamePrefix={}) -> Any:  # type: ignore
+    @staticmethod
+    def list_queues(QueueNamePrefix=None) -> Any:  # type: ignore
         return {"QueueUrls": ["DevSub"]}
 
-    def send_message(QueueUrl={}, MessageBody={}) -> Any:  # type: ignore
+    @staticmethod
+    def send_message(QueueUrl=None, MessageBody=None) -> Any:  # type: ignore
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
 
 
 class MockSnsClient:
+    @staticmethod
     def publish(  # type: ignore
         Message: dict = None, MessageStructure: str = "json", TopicArn: str = None
     ) -> Dict[str, Dict[str, int]]:

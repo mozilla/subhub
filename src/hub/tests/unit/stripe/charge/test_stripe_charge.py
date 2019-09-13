@@ -2,13 +2,16 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import mockito
 import requests
 import boto3
 import flask
 from hub.shared.cfg import CFG
 
-from hub.tests.unit.stripe.utils import run_test, MockSqsClient
+from hub.shared.tests.unit.utils import run_test, MockSqsClient
+
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def test_stripe_hub_succeeded(mocker):
@@ -46,11 +49,11 @@ def test_stripe_hub_succeeded(mocker):
     flask.g.hub_table.get_event.return_value = ""
 
     # run the test
-    run_test("charge/charge-succeeded.json")
+    run_test("charge-succeeded.json", cwd=CWD)
 
 
 def test_stripe_hub_badpayload():
     try:
-        run_test("charge/badpayload.json")
+        run_test("badpayload.json", cwd=CWD)
     except ValueError as e:
         assert "this.will.break is not supported" == str(e)
