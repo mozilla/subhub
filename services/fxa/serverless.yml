@@ -3,7 +3,7 @@ service:
   name: fxa
 
 package:
-  individually: true
+  individually: false
   exclude:
     - 'node_modules/*'
   include:
