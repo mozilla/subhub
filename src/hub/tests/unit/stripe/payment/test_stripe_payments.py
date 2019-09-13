@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import mockito
 import requests
 import boto3
@@ -13,7 +14,9 @@ from mockito import when, mock, unstub
 from hub.shared.cfg import CFG
 from hub.shared import secrets
 
-from hub.tests.unit.stripe.utils import run_test, MockSqsClient
+from hub.shared.tests.unit.utils import run_test, MockSqsClient
+
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def run_customer(mocker, data, filename):
@@ -21,7 +24,7 @@ def run_customer(mocker, data, filename):
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""
 
-    run_test(filename)
+    run_test(filename, cwd=CWD)
 
 
 def test_stripe_payment_intent_succeeded(mocker):
@@ -62,6 +65,6 @@ def test_stripe_payment_intent_succeeded(mocker):
         MockSqsClient
     )
     mockito.when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "payment/payment-intent-succeeded.json"
+    filename = "payment-intent-succeeded.json"
     run_customer(mocker, data, filename)
     unstub()

@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import mock
 import json
 import mockito
@@ -12,7 +13,9 @@ import flask
 from hub.shared.cfg import CFG
 from hub.shared import secrets
 
-from hub.tests.unit.stripe.utils import run_test, MockSqsClient
+from hub.shared.tests.unit.utils import run_test, MockSqsClient
+
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def run_customer(mocker, data, filename):
@@ -20,7 +23,7 @@ def run_customer(mocker, data, filename):
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""
 
-    run_test(filename)
+    run_test(filename, cwd=CWD)
 
 
 @mock.patch("stripe.Product.retrieve")
@@ -47,5 +50,5 @@ def test_stripe_invoice_payment_failed(mock_product, mocker):
         MockSqsClient
     )
     mockito.when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "invoice/invoice-payment-failed.json"
+    filename = "invoice-payment-failed.json"
     run_customer(mocker, data, filename)

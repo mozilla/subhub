@@ -2,22 +2,24 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
 import time
-from mock import patch
 import json
-
 import boto3
 import flask
 import stripe
 import requests
 
+from mock import patch
 from mockito import when, mock, unstub
 
-from hub.tests.unit.stripe.utils import run_test, MockSqsClient, MockSnsClient
+from hub.shared.tests.unit.utils import run_test, MockSqsClient, MockSnsClient
 from hub.shared.cfg import CFG
 from hub.shared.log import get_logger
 
 logger = get_logger()
+
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def run_customer(mocker, data, filename):
@@ -25,7 +27,7 @@ def run_customer(mocker, data, filename):
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""
 
-    run_test(filename)
+    run_test(filename, cwd=CWD)
 
 
 def test_stripe_hub_customer_created(mocker):
@@ -41,7 +43,7 @@ def test_stripe_hub_customer_created(mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(MockSqsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-created.json"
+    filename = "customer-created.json"
     run_customer(mocker, data, filename)
 
 
@@ -63,7 +65,7 @@ def test_stripe_hub_customer_deleted(mocker):
         aws_secret_access_key=CFG.AWS_SECRET_ACCESS_KEY,
     ).thenReturn(MockSnsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-deleted.json"
+    filename = "customer-deleted.json"
     run_customer(mocker, data, filename)
 
 
@@ -80,7 +82,7 @@ def test_stripe_hub_customer_updated(mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(MockSqsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-updated.json"
+    filename = "customer-updated.json"
     run_customer(mocker, data, filename)
 
 
@@ -144,7 +146,7 @@ def test_stripe_hub_customer_source_expiring(mock_product, mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     # when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(MockSqsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-source-expiring.json"
+    filename = "customer-source-expiring.json"
     run_customer(mocker, data, filename)
 
 
@@ -161,7 +163,7 @@ def test_stripe_hub_customer_subscription_created(mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSqsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-created.json"
+    filename = "customer-created.json"
     run_customer(mocker, data, filename)
     unstub()
 
@@ -218,7 +220,7 @@ def test_stripe_hub_customer_subscription_updated_cancel(mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-subscription-updated.json"
+    filename = "customer-subscription-updated.json"
     run_customer(mocker, data, filename)
     unstub()
 
@@ -283,7 +285,7 @@ def test_stripe_hub_customer_subscription_updated_no_cancel(mocker):
     response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer/customer-subscription-updated-no-cancel.json"
+    filename = "customer-subscription-updated-no-cancel.json"
     run_customer(mocker, data, filename)
     unstub()
 
@@ -318,6 +320,6 @@ def test_stripe_hub_customer_subscription_deleted(mock_product, mocker):
         customer_response
     )
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
-    filename = "customer/customer-subscription-deleted.json"
+    filename = "customer-subscription-deleted.json"
     run_customer(mocker, data, filename)
     unstub()

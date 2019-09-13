@@ -2,8 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-import time
 import os
+import time
 import json
 import boto3
 import flask
@@ -14,14 +14,14 @@ from flask import Response
 from mockito import when, mock, unstub
 from datetime import datetime, timedelta
 
-from hub.tests.unit.stripe.utils import run_view, run_event_process
+from hub.shared.tests.unit.utils import run_view, run_event_process
 from hub.verifications.events_check import EventCheck, process_events
 from hub.shared.cfg import CFG
 from hub.shared.log import get_logger
 
 logger = get_logger()
 
-__location__ = os.path.realpath(os.path.dirname(__file__))
+CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def test_hours_back():
@@ -34,7 +34,7 @@ def test_hours_back():
 
 def test_process_missing_event():
     missing_event = "event.json"
-    with open(os.path.join(__location__, missing_event)) as f:
+    with open(os.path.join(CWD, missing_event)) as f:
         event_check = EventCheck(6)
         event_check.process_missing_event(json.load(f))
 
@@ -46,7 +46,7 @@ def test_retrieve_events():
         h_hours_ago = datetime.now() - timedelta(hours=6)
         return int(time.mktime(h_hours_ago.timetuple()))
 
-    with open(os.path.join(__location__, missing_event)) as f:
+    with open(os.path.join(CWD, missing_event)) as f:
         event_response = mock(json.load(f))
 
         when(stripe.Event).list(
@@ -64,7 +64,7 @@ def test_retrieve_events_more():
         h_hours_ago = datetime.now() - timedelta(hours=6)
         return int(time.mktime(h_hours_ago.timetuple()))
 
-    with open(os.path.join(__location__, missing_event)) as f:
+    with open(os.path.join(CWD, missing_event)) as f:
         event_response = mock(json.load(f))
 
         when(stripe.Event).list(
@@ -85,7 +85,7 @@ def test_process_events():
         h_hours_ago = datetime.now() - timedelta(hours=6)
         return int(time.mktime(h_hours_ago.timetuple()))
 
-    with open(os.path.join(__location__, missing_event)) as f:
+    with open(os.path.join(CWD, missing_event)) as f:
         event_response = mock(json.load(f))
 
         when(stripe.Event).list(
