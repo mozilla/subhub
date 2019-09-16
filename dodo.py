@@ -119,17 +119,17 @@ def load_serverless(svc):
 def get_svcs_to_funcs():
     return {svc: list(load_serverless(svc)['functions'].keys()) for svc in SVCS}
 
-def svc_func(svc, func=None):
-    assert svc in SVCS, f"svc '{svc}' not in {SVCS}"
-    funcs = get_svcs_to_funcs()[svc]
-    if func:
-        assert func in funcs, f"for svc '{svc}', func '{func}' not in {funcs}"
-    return svc, func
-
-def svc_action(svc, action=None):
-    assert svc in SVCS, f"svc '{svc}' not in {SVCS}"
-    assert action in ('create', 'delete')
-    return svc, action
+def defaults(*args, **kwargs):
+    results = [None] * len(kwargs)
+    len_args = len(args)
+    len_kwargs = len(kwargs)
+    for i, (k, v) in enumerate(kwargs.items()):
+        index = i + (len_args - len_kwargs)
+        if index >= 0:
+            results[i] = args[index]
+        else:
+            results[i] = v
+    return results
 
 def parameterized(dec):
     def layer(*args, **kwargs):
@@ -667,7 +667,11 @@ def task_deploy():
     deploy <svc> [<func>]
     '''
     def deploy(args):
-        svc, func = svc_func(*args)
+        svc, func = defaults(*args, svc='fxa', func=None)
+        assert svc in SVCS, f'{svc} is not a valid service in {SVCS}'
+        if func:
+            funcs = get_svcs_to_funcs()[svc]
+            assert func in funcs, f'{func} is not a valid function in {funcs}'
         if func:
             deploy_cmd = f'cd services/{svc} && env {envs()} {SLS} deploy function --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v --function {func}'
         else:
@@ -691,7 +695,7 @@ def task_domain():
     domain <svc> [create|delete]
     '''
     def domain(args):
-        svc, action = svc_action(*args)
+        svc, action = defaults(svc='fxa', action=None)
         assert action in ('create', 'delete'), "provide 'create' or 'delete'"
         domain_cmd = f'cd services/{svc} && env {envs()} {SLS} {action}_domain --stage {CFG.DEPLOYED_ENV} -v'
         call(domain_cmd, stdout=None, stderr=None)
@@ -741,7 +745,8 @@ def task_curl():
     curl again remote deployment url: /version, /deployed
     '''
     def curl(args):
-        svc, func = svc_func(*args)
+        svc, func = defaults(*args, svc='fxa', func=None)
+        assert svc in SVCS, f'{svc} is not a valid service in {SVCS}'
         funcs = [func] if func else [func for func in get_svcs_to_funcs()[svc] if func != 'mia']
         for func in funcs:
             for route in ('version', 'deployed'):
