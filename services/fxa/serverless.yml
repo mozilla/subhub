@@ -190,7 +190,7 @@ functions:
     events:
       - http: {
           path: "/sub/{proxy+}",
-          method: get,
+          method: any,
           cors: false,
           private: false
         }
