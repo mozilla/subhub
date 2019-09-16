@@ -3,9 +3,9 @@ libgit2-dev==0.28.2-r0
 libc-dev==0.7.1-r0
 python3-dev==3.7.3-r0
 libffi-dev==3.2.1-r6
-openssl-dev==1.1.1c-r0
 zeromq-dev==4.3.2-r1
 linux-headers==4.19.36-r0
+openssl-dev==1.1.1d-r0
 nodejs
 curl==7.65.1-r0
 yarn==1.16.0-r0
