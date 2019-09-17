@@ -10,5 +10,7 @@ def test_get_version():
     """
     test get_version
     """
-    version = dict(BRANCH=CFG.BRANCH, VERSION=CFG.VERSION, REVISION=CFG.REVISION)
-    assert get_version() == (version, 200)
+    expect = dict(BRANCH=CFG.BRANCH, VERSION=CFG.VERSION, REVISION=CFG.REVISION)
+    actual, rc = get_version()
+    assert rc == 200
+    assert actual == expect
