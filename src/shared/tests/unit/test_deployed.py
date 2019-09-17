@@ -10,10 +10,12 @@ def test_get_deployed():
     """
     test get_deployed
     """
-    deployed = dict(
+    expect = dict(
         DEPLOYED_BY=CFG.DEPLOYED_BY,
         DEPLOYED_ENV=CFG.DEPLOYED_ENV,
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
     )
-    current_deployed = get_deployed()
-    assert current_deployed[0]["DEPLOYED_BY"] == deployed["DEPLOYED_BY"]
+    actual, rc = get_deployed()
+    assert rc == 200
+    assert actual["DEPLOYED_BY"] == expect["DEPLOYED_BY"]
+    assert actual["DEPLOYED_ENV"] == expect["DEPLOYED_ENV"]
