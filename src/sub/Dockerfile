@@ -16,14 +16,10 @@ ENV SUPPORT_API_KEY=$SUPPORT_API_KEY
 ENV PAYMENT_API_KEY=$PAYMENT_API_KEY
 ENV DYNALITE_PORT=$DYNALITE_PORT
 ENV FLASK_ENV=development
-ENV BRANCH=local
-ENV REMOTE_ORIGIN_URL=git@github.com:mozilla/subhub.git
-ENV REVISION=latest
-ENV VERSION=latest
 
 EXPOSE $LOCAL_FLASK_PORT
 
-RUN mkdir -p /subhub/sub
+RUN mkdir -p /subhub
 ADD .src.tar.gz /subhub/sub
 WORKDIR /subhub
 ENV PYTHONPATH=.

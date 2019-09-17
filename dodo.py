@@ -57,21 +57,26 @@ mutex = threading.Lock()
 
 def envs(sep=' ', **kwargs):
     envs = dict(
-        DEPLOYED_ENV=CFG.DEPLOYED_ENV,
-        PROJECT_NAME=CFG.PROJECT_NAME,
         BRANCH=CFG.BRANCH,
-        REVISION=CFG.REVISION,
-        VERSION=CFG.VERSION,
-        REMOTE_ORIGIN_URL=CFG.REMOTE_ORIGIN_URL,
+        DEPLOY_DOMAIN=CFG.DEPLOY_DOMAIN,
+        DEPLOYED_BY=CFG.DEPLOYED_BY,
+        DEPLOYED_ENV=CFG.DEPLOYED_ENV,
+        DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
+        HUB_API_KEY=CFG.HUB_API_KEY,
         LOG_LEVEL=CFG.LOG_LEVEL,
         NEW_RELIC_ACCOUNT_ID=CFG.NEW_RELIC_ACCOUNT_ID,
         NEW_RELIC_TRUSTED_ACCOUNT_ID=CFG.NEW_RELIC_TRUSTED_ACCOUNT_ID,
         NEW_RELIC_SERVERLESS_MODE_ENABLED=CFG.NEW_RELIC_SERVERLESS_MODE_ENABLED,
         NEW_RELIC_DISTRIBUTED_TRACING_ENABLED=CFG.NEW_RELIC_DISTRIBUTED_TRACING_ENABLED,
+        PAYMENT_API_KEY=CFG.PAYMENT_API_KEY,
         PROFILING_ENABLED=CFG.PROFILING_ENABLED,
-        DEPLOY_DOMAIN=CFG.DEPLOY_DOMAIN,
-        DEPLOYED_BY=CFG.DEPLOYED_BY,
-        DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
+        REMOTE_ORIGIN_URL=CFG.REMOTE_ORIGIN_URL,
+        REVISION=CFG.REVISION,
+        STRIPE_MOCK_HOST=CFG.STRIPE_MOCK_HOST,
+        STRIPE_MOCK_PORT=CFG.STRIPE_MOCK_PORT,
+        SUPPORT_API_KEY=CFG.SUPPORT_API_KEY,
+        PROJECT_NAME=CFG.PROJECT_NAME,
+        VERSION=CFG.VERSION,
     )
     return sep.join([
         f'{key}={value}' for key, value in sorted(dict(envs, **kwargs).items())
@@ -328,6 +333,7 @@ def task_check():
     yield check_noroot()
     yield gen_prog_check('python3.7')
     yield gen_prog_check('yarn')
+    yield gen_prog_check('docker-compose')
     if not CFG('TRAVIS', None):
         yield gen_prog_check('awscli', 'aws')
     yield gen_file_check('json', json.load, 'services/**/*.json')
@@ -498,7 +504,7 @@ def task_local():
             'tar'
         ],
         'actions': [
-            f'docker-compose up --build'
+            f'env {envs()} docker-compose up --build'
         ],
     }
 
@@ -643,7 +649,10 @@ def task_tar():
         '--exclude=__pycache__',
         '--exclude=*.pyc',
         '--exclude=.env',
-        '--exclude=.git',
+        '--exclude=sub/tests',
+        '--exclude=hub/tests',
+        '--exclude=shared/tests',
+        '--exclude=.git'
     ])
     for src in SRCS:
         ## it is important to note that this is required to keep the tarballs from
@@ -653,7 +662,6 @@ def task_tar():
             'name': src,
             'task_dep': [
                 'check:noroot',
-                # 'test',
             ],
             'actions': [
                 f'echo "{cmd}"',
