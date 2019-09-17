@@ -274,6 +274,20 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("EVENT_TABLE", "events-testing")
 
     @property
+    def STRIPE_MOCK_HOST(self):
+        """
+        Stripe API Host
+        """
+        return self("STRIPE_MOCK_HOST", "stripe")
+
+    @property
+    def STRIPE_MOCK_PORT(self):
+        """
+        Stripe API port
+        """
+        return self("STRIPE_MOCK_PORT", 12112, cast=int)
+
+    @property
     def LOCAL_FLASK_PORT(self):
         """
         local flask port

@@ -16,16 +16,9 @@ ENV HUB_API_KEY=$HUB_API_KEY
 ENV DYNALITE_PORT=$DYNALITE_PORT
 ENV FLASK_ENV=development
 
-ENV DEPLOYED_ENV=local
-ENV BRANCH=local
-ENV REVISION=latest
-ENV VERSION=latest
-ENV PROJECT_NAME=subhub
-ENV REMOTE_ORIGIN_URL=git@github.com:mozilla/subhub.git
-
 EXPOSE $LOCAL_FLASK_PORT
 
-RUN mkdir -p /subhub/hub
+RUN mkdir -p /subhub
 ADD .src.tar.gz /subhub/hub
-WORKDIR /subhub/
+WORKDIR /subhub
 ENV PYTHONPATH=.

@@ -22,6 +22,24 @@ from sub.shared.log import get_logger
 
 logger = get_logger()
 
+
+def is_docker() -> bool:
+    path = "/proc/self/cgroup"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.path.isfile(path)
+        and any("docker" in line for line in open(path))
+    )
+
+
+if is_docker():
+    stripe.log = "DEBUG"
+    stripe.api_base = (
+        stripe.upload_api_base
+    ) = f"https://{CFG.STRIPE_MOCK_HOST}:{CFG.STRIPE_MOCK_PORT}"
+    logger.info("Stripe API URL", url=stripe.api_base)
+    stripe.verify_ssl_certs = False
+
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):
     logger.error("intermittent stripe error", error=e)
@@ -55,22 +73,11 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
-def is_container() -> bool:
-    import requests
-
-    try:
-        requests.get(f"http://dynalite:{CFG.DYNALITE_PORT}")
-        return True
-    except Exception as e:
-        pass
-    return False
-
-
 def create_app(config=None) -> connexion.FlaskApp:
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"
-    if is_container():
+    if is_docker():
         host = f"http://dynalite:{CFG.DYNALITE_PORT}"
     stripe.api_key = CFG.STRIPE_API_KEY
     logger.info("aws", aws=CFG.AWS_EXECUTION_ENV)
