@@ -1,6 +1,7 @@
 Resources:
   UsersTable:
     Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.usersTable}
       AttributeDefinitions:
@@ -15,6 +16,7 @@ Resources:
       BillingMode: PAY_PER_REQUEST
   DeletedUsersTable:
     Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.deletedUsersTable}
       AttributeDefinitions:
@@ -29,6 +31,7 @@ Resources:
       BillingMode: PAY_PER_REQUEST
   EventsTable:
     Type: 'AWS::DynamoDB::Table'
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.eventsTable}
       AttributeDefinitions:
