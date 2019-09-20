@@ -81,6 +81,7 @@ def existing_or_new_customer(
 ) -> Customer:
     _validate_origin_system(origin_system)
     customer = fetch_customer(subhub_account, user_id)
+    logger.debug("fetch customer", customer=customer)
     if not customer:
         return create_customer(
             subhub_account, user_id, email, source_token, origin_system, display_name

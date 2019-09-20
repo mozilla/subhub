@@ -288,6 +288,13 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("STRIPE_MOCK_PORT", 12112, cast=int)
 
     @property
+    def STRIPE_LOCAL(self):
+        """
+        Use Stripe local?
+        """
+        return self("STRIPE_LOCAL", False, cast=bool)
+
+    @property
     def LOCAL_FLASK_PORT(self):
         """
         local flask port

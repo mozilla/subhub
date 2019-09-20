@@ -4,7 +4,7 @@
 
 from typing import List, Optional, Dict, Any
 
-from stripe import Customer, Subscription, Charge, Invoice, Plan, Product
+from stripe import Customer, Subscription, Charge, Invoice, Plan, Product, api_key
 from stripe.error import (
     InvalidRequestError,
     APIConnectionError,
@@ -13,6 +13,7 @@ from stripe.error import (
     RateLimitError,
     IdempotencyError,
     StripeErrorWithParamCode,
+    AuthenticationError,
 )
 from tenacity import retry, wait_exponential, stop_after_attempt
 
@@ -186,7 +187,9 @@ def build_stripe_subscription(
     """
     try:
         sub = Subscription.create(
-            customer_id, items=[{"plan": plan_id}], idempotency_key=idempotency_key
+            customer=customer_id,
+            items=[{"plan": plan_id}],
+            idempotency_key=idempotency_key,
         )
         return sub
     except (
@@ -196,6 +199,7 @@ def build_stripe_subscription(
         RateLimitError,
         IdempotencyError,
         StripeErrorWithParamCode,
+        AuthenticationError,
     ) as e:
         logger.error("sub error", error=e)
         raise e
