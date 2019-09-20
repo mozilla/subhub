@@ -34,11 +34,12 @@ def is_docker() -> bool:
 
 if is_docker():
     stripe.log = "DEBUG"
-    stripe.api_base = (
-        stripe.upload_api_base
-    ) = f"https://{CFG.STRIPE_MOCK_HOST}:{CFG.STRIPE_MOCK_PORT}"
-    logger.info("Stripe API URL", url=stripe.api_base)
-    stripe.verify_ssl_certs = False
+    if CFG.STRIPE_LOCAL is not True:
+        stripe.verify_ssl_certs = False
+        stripe.api_base = (
+            stripe.upload_api_base
+        ) = f"https://{CFG.STRIPE_MOCK_HOST}:{CFG.STRIPE_MOCK_PORT}"
+    logger.info("Stripe API URL", url=stripe.api_base, local=CFG.STRIPE_LOCAL)
 
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):

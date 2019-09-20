@@ -39,7 +39,6 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
         return dict(message="User already subscribed."), 409
 
     if not customer.get("deleted"):
-
         vendor.build_stripe_subscription(
             customer.id, data["plan_id"], universal.get_indempotency_key()
         )
