@@ -19,9 +19,9 @@ from decouple import UndefinedValueError, AutoConfig, config
 from functools import lru_cache
 from subprocess import Popen, CalledProcessError, PIPE
 
-from logging import getLogger
+from structlog import get_logger
 
-logger = getLogger()  # to avoid installing structlog for doit automation
+logger = get_logger()
 
 
 class NotGitRepoError(Exception):

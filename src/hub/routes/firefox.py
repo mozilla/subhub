@@ -12,7 +12,7 @@ from stripe.error import APIConnectionError
 
 from hub.routes.abstract import AbstractRoute
 from hub.shared.cfg import CFG
-from hub.shared.log import get_logger
+from structlog import get_logger
 
 logger = get_logger()
 

@@ -4,21 +4,29 @@
 
 import os
 import sys
+import inspect
 
 from typing import Optional, Union
 
+import logging.config
+import structlog
 import connexion
 import stripe
 import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
+from structlog import configure, processors, stdlib, threadlocal, get_logger
+from pythonjsonlogger import jsonlogger
 
-from sub.shared import secrets
-from sub.shared.cfg import CFG
-from sub.shared.exceptions import SubHubError
-from sub.shared.db import SubHubAccount, SubHubDeletedAccount
-from sub.shared.log import get_logger
+from shared import secrets
+from shared.cfg import CFG
+from shared.exceptions import SubHubError
+from shared.db import SubHubAccount, SubHubDeletedAccount
+
+json_handler = logging.StreamHandler(sys.stdout)
+json_handler.setFormatter(jsonlogger.JsonFormatter())
+stripe.log = CFG.LOG_LEVEL
 
 logger = get_logger()
 
@@ -75,6 +83,39 @@ def server_stripe_card_error(e):
 
 
 def create_app(config=None) -> connexion.FlaskApp:
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "json": {
+                    "format": "%(message)s %(lineno)d %(pathname)s",
+                    "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                }
+            },
+            "handlers": {
+                "json": {"class": "logging.StreamHandler", "formatter": "json"}
+            },
+            "loggers": {"": {"handlers": ["json"], "level": CFG.LOG_LEVEL}},
+        }
+    )
+
+    configure(
+        context_class=threadlocal.wrap_dict(dict),
+        logger_factory=stdlib.LoggerFactory(),
+        wrapper_class=stdlib.BoundLogger,
+        processors=[
+            stdlib.filter_by_level,
+            stdlib.add_logger_name,
+            stdlib.add_log_level,
+            stdlib.PositionalArgumentsFormatter(),
+            processors.TimeStamper(fmt="iso"),
+            processors.StackInfoRenderer(),
+            processors.format_exc_info,
+            processors.UnicodeDecoder(),
+            stdlib.render_to_log_kwargs,
+        ],
+    )
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"

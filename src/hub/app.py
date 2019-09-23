@@ -5,18 +5,23 @@
 import os
 import sys
 
+import logging
 import connexion
 import stripe
+import structlog
+import logging.config
+
+from structlog import configure, processors, stdlib, threadlocal, get_logger
 
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
+from pythonjsonlogger import jsonlogger
 
 from shared import secrets
 from shared.cfg import CFG
 from shared.exceptions import SubHubError
 from shared.db import HubEvent
-from shared.log import get_logger
 
 logger = get_logger()
 
@@ -65,6 +70,39 @@ def is_container() -> bool:
 
 
 def create_app(config=None):
+    logging.config.dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "json": {
+                    "format": "%(message)s %(lineno)d %(pathname)s",
+                    "class": "pythonjsonlogger.jsonlogger.JsonFormatter",
+                }
+            },
+            "handlers": {
+                "json": {"class": "logging.StreamHandler", "formatter": "json"}
+            },
+            "loggers": {"": {"handlers": ["json"], "level": CFG.LOG_LEVEL}},
+        }
+    )
+
+    configure(
+        context_class=threadlocal.wrap_dict(dict),
+        logger_factory=stdlib.LoggerFactory(),
+        wrapper_class=stdlib.BoundLogger,
+        processors=[
+            stdlib.filter_by_level,
+            stdlib.add_logger_name,
+            stdlib.add_log_level,
+            stdlib.PositionalArgumentsFormatter(),
+            processors.TimeStamper(fmt="iso"),
+            processors.StackInfoRenderer(),
+            processors.format_exc_info,
+            processors.UnicodeDecoder(),
+            stdlib.render_to_log_kwargs,
+        ],
+    )
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"

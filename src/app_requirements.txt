@@ -38,3 +38,4 @@ pyinstrument==3.0.3
 aws-xray-sdk==2.4.2
 cachetools==3.1.1
 serverless-wsgi==1.7.3
+python-json-logger==0.1.11

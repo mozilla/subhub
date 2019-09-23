@@ -9,7 +9,7 @@ from typing import Dict
 
 from hub.routes.abstract import AbstractRoute
 from shared.cfg import CFG
-from shared.log import get_logger
+from structlog import get_logger
 
 logger = get_logger()
 

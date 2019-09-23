@@ -6,7 +6,7 @@ from abc import ABC
 
 import flask
 
-from hub.shared.log import get_logger
+from structlog import get_logger
 
 logger = get_logger()
 

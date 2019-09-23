@@ -14,7 +14,7 @@ from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.shared.universal import format_plan_nickname
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
 from sub.shared.db import SubHubDeletedAccount
-from sub.shared.log import get_logger
+from structlog import get_logger
 
 logger = get_logger()
 

@@ -10,7 +10,7 @@ from sub.shared import vendor, universal
 from sub.shared.exceptions import IntermittentError, ServerError
 from sub.shared.db import SubHubAccount
 from sub.shared.cfg import CFG
-from sub.shared.log import get_logger
+from structlog import get_logger
 
 logger = get_logger()
 
