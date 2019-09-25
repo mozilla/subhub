@@ -219,7 +219,9 @@ def test_subscribe_success(
     assert response.status_code == 201
 
 
-def test_subscribe_customer_existing(app, monkeypatch):
+@mock.patch("sub.payments.has_existing_plan")
+@mock.patch("sub.payments.existing_or_new_customer")
+def test_subscribe_customer_existing(mock_new_customer, mock_has_plan, app):
     """
     GIVEN a route that attempts to make a subscribe a customer
     WHEN the customer already exists
@@ -227,10 +229,12 @@ def test_subscribe_customer_existing(app, monkeypatch):
     """
 
     client = app.app.test_client()
+    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    cust_test1 = json.loads(fh.read())
+    fh.close()
 
-    mock_true = Mock(return_value=True)
-
-    monkeypatch.setattr("sub.payments.has_existing_plan", mock_true)
+    mock_new_customer.return_value = convert_to_stripe_object(cust_test1)
+    mock_has_plan.return_value = True
 
     path = "v1/sub/customer/subtest/subscriptions"
     data = {

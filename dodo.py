@@ -593,7 +593,6 @@ def task_test():
     return {
         'task_dep': [
             'check',
-            'stripe',
             'yarn',
             'venv',
             'dynalite:stop',

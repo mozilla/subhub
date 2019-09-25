@@ -57,7 +57,7 @@ def get_file(filename, path=THIS_PATH, **overrides):
 def pytest_configure():
     """Called before testing begins"""
     global ddb_process
-    for name in ("boto3", "botocore", "stripe"):
+    for name in ("boto3", "botocore"):
         logging.getLogger(name).setLevel(logging.CRITICAL)
     if os.getenv("AWS_LOCAL_DYNAMODB") is None:
         os.environ["AWS_LOCAL_DYNAMODB"] = f"http://127.0.0.1:{CFG.DYNALITE_PORT}"
@@ -69,9 +69,6 @@ def pytest_configure():
     os.environ["DELETED_USER_TABLE"] = "deleted-users-testing"
     os.environ["ALLOWED_ORIGIN_SYSTEMS"] = "Test_system,Test_System,Test_System1"
     sys._called_from_test = True
-
-    # Set stripe api key
-    stripe.api_key = CFG.STRIPE_API_KEY
 
     # Locate absolute path of dynalite
     dynalite = f"{CFG.REPO_ROOT}/node_modules/.bin/dynalite"
