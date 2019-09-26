@@ -366,30 +366,6 @@ def task_creds():
         ],
     }
 
-@skip('test')
-def task_stripe():
-    '''
-    check to see if STRIPE_API_KEY is set
-    '''
-    def stripe_check():
-        try:
-            CFG.STRIPE_API_KEY
-        except:
-            return False
-        return True
-    return {
-        'task_dep': [
-            'check',
-        ],
-        'actions': [
-            'echo "missing STRIPE_API_KEY env var or .env entry"',
-            'false',
-        ],
-        'uptodate': [
-            stripe_check,
-        ]
-    }
-
 def task_black():
     '''
     run black on src/
@@ -538,7 +514,6 @@ def task_perf_local():
         'basename': 'perf-local',
         'task_dep':[
             'check',
-            'stripe',
             'venv',
             'dynalite:start'
         ],
@@ -558,7 +533,6 @@ def task_perf_remote():
         'basename': 'perf-remote',
         'task_dep':[
             'check',
-            'stripe',
             'venv',
         ],
         'actions':[
@@ -612,7 +586,6 @@ def task_pytest():
             'name': filename,
             'task_dep': [
                 'check',
-                'stripe',
                 'yarn',
                 'venv',
                 'dynalite:stop',
@@ -688,7 +661,6 @@ def task_deploy():
         'task_dep': [
             'check',
             'creds',
-            'stripe',
             'yarn',
             'test',
         ],
