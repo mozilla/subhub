@@ -780,11 +780,3 @@ def task_tidy():
             'find . | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf',
         ],
     }
-
-def task_draw():
-    """generate image from a dot file"""
-    return {
-        'file_dep': ['tasks.dot'],
-        'targets': ['tasks.png'],
-        'actions': ['dot -Tpng %(dependencies)s -o %(targets)s'],
-    }
