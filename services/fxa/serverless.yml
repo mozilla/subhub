@@ -128,9 +128,7 @@ provider:
     # Logging documentation:
     #   https://serverless.com/framework/docs/providers/aws/events/apigateway/
     restApi: true
-  tracing:
-    lambda: true
-    apiGateway: true
+  tracing: true
   memorySize: ${file(config/config.${self:custom.stage}.json):LAMBDA_MEMORY_SIZE}
   reservedConcurrency: ${file(config/config.${self:custom.stage}.json):LAMBDA_RESERVED_CONCURRENCY}
   timeout: ${file(config/config.${self:custom.stage}.json):LAMBDA_TIMEOUT}
