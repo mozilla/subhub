@@ -1,9 +1,11 @@
 language: python
 dist: xenial
+cache:
+  directories:
+    - /home/travis/.nvm
+    - /home/travis/.cache/pip
 python:
   - "3.7"
-services:
-  - docker
 env:
   global:
     - BOTO_CONFIG: "/dev/null"
