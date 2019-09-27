@@ -295,6 +295,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("STRIPE_LOCAL", False, cast=bool)
 
     @property
+    def STRIPE_API_KEY(self):
+        """
+        Stripe API KEY
+        :return:
+        """
+        return self("STRIPE_API_KEY", "sk_test_123")
+
+    @property
     def LOCAL_FLASK_PORT(self):
         """
         local flask port
