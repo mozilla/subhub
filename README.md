@@ -9,7 +9,6 @@ Payment subscription REST api for customers:
 - python3.7: requires python3.7 interpreter for creating virtual environments for testing and running subhub
 - yarn (https://yarnpkg.com): package manager for node modules for setting up serverless for running and deploying subhub
 - cloc
-- [GraphViz](https://graphviz.org/)
 - Docker
 - Docker Compose
 
@@ -250,7 +249,7 @@ curl --silent http://127.0.0.1:5001/v1/hub/deployed
 ```
 
 ## run tests and coverage
-This runs the `pytests` via `tox` and `setup.py` specifications.  Currently, `STRIPE_API_KEY` must be set for tests to run successfully.
+This runs the `pytests` via `tox` and `setup.py` specifications.
 ```
 doit test
 ```
@@ -283,18 +282,6 @@ doit deploy SERVICE FUNCTION
 Where,
     SERVICE is the service that you are deploying from the set of fxa.
     FUNCTION is the function that you are deploying from the set of sub, hub, mia.
-
-## dependency graph
-This command will generate a GraphViz `dot` file that can be used to generate a media file.
-```
-doit graph
-```
-
-## dependency graph image
-This command will generate a PNG of the dependency graph.
-```
-doit draw
-```
 
 ### Docker
 * build: `docker build -t mozilla/subhub .`
