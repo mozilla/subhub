@@ -1,0 +1,32 @@
+# Available pre-commit hooks
+#   https://pre-commit.com/hooks.html
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v2.1.0
+    hooks:
+    -   id: check-added-large-files
+    -   id: detect-private-key
+    -   id: double-quote-string-fixer
+    -   id: end-of-file-fixer
+    -   id: name-tests-test
+    -   id: pretty-format-json
+        args: [
+          '--autofix',
+          '--indent', '4',
+          '--no-sort-keys',
+        ]
+    -   id: trailing-whitespace
+-   repo: https://github.com/asottile/reorder_python_imports
+    rev: v1.4.0
+    hooks:
+    -   id: reorder-python-imports
+        args: [--py3-plus]
+-   repo: meta
+    hooks:
+    -   id: check-hooks-apply
+    -   id: check-useless-excludes
+# TODO: Enable in the future as we have issues to address.
+# -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
+#     sha: v1.0.3
+#     hooks:
+#     -   id: python-bandit-vulnerability-check

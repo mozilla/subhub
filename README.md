@@ -13,6 +13,11 @@ Payment subscription REST api for customers:
 - Docker
 - Docker Compose
 
+## Pre-Commit Hook Installation
+
+This project leverages [git commit hooks](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks) for the management of actions prior to code commit.
+This is done by the [pre-commit](https://pre-commit.com/) framework.  Installation is done from your command line with the command, `pre-commit install`, from the source code directory after installation the requirements in `automation_requirements.txt`.
+
 ## Important Environment Variables
 The CFG object is for accessing values either from the `subhub/.env` file and|or superseded by env vars.
 A value that is known to be set or have a default can be accessed:
@@ -163,7 +168,7 @@ doit local
 ```
 
 If you choose to run locally but communicate with the actual Stripe API then doit local should be pre-pended with STRIPE_LOCAL=True.
-Doing this requires the use a a valid Stripe API Test key. 
+Doing this requires the use a a valid Stripe API Test key.
 ```
 STRIPE_LOCAL=True doit local
 ```
