@@ -9,8 +9,8 @@ from stripe import Product
 
 from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
-from hub.shared.universal import format_plan_nickname
-from hub.shared.log import get_logger
+from hub.shared.utils import format_plan_nickname
+from shared.log import get_logger
 
 logger = get_logger()
 

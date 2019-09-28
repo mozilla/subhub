@@ -8,7 +8,7 @@ from flask import Response
 from mockito import unstub
 
 from hub.shared.tests.unit.utils import run_event_process
-from hub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

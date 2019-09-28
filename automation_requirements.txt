@@ -8,3 +8,4 @@ black==19.3b0
 ruamel.yaml==0.15.97
 locustio==0.11.0
 pyparsing==2.4.0
+structlog==19.1.0

@@ -16,7 +16,7 @@ from mockito import when, mock
 from sub import payments
 from sub.customer import create_customer, subscribe_customer, existing_or_new_customer
 from sub.shared.tests.unit.utils import MockSubhubUser
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))

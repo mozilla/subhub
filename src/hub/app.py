@@ -5,6 +5,7 @@
 import os
 import sys
 
+import logging
 import connexion
 import stripe
 
@@ -13,9 +14,10 @@ from flask_cors import CORS
 from flask import request
 
 from shared import secrets
-from shared.cfg import CFG
 from shared.exceptions import SubHubError
 from shared.db import HubEvent
+from shared.headers import dump_safe_headers
+from shared.cfg import CFG
 from shared.log import get_logger
 
 logger = get_logger()
@@ -65,6 +67,7 @@ def is_container() -> bool:
 
 
 def create_app(config=None):
+    # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"
@@ -116,6 +119,9 @@ def create_app(config=None):
 
     @app.app.before_request
     def before_request():
+        headers = dump_safe_headers(request.headers)
+        logger.debug("Request headers", headers=headers)
+        logger.debug("Request body", body=request.get_data())
         g.hub_table = current_app.hub_table
         g.app_system_id = None
         if CFG.PROFILING_ENABLED:

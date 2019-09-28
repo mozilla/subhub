@@ -21,7 +21,6 @@ from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.core.context import Context
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
-
 from sub.app import create_app
 from shared.log import get_logger
 
@@ -35,6 +34,10 @@ XRayMiddleware(sub_app.app, xray_recorder)
 
 # TODO!
 # @newrelic.agent.lambda_handler()
+# NOTE: The context object has the following available to it.
+#   https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html#python-context-object-props
+# NOTE: Available environment passed to the Flask from serverless-wsgi
+#   https://github.com/logandk/serverless-wsgi/blob/2911d69a87ae8057110a1dcf0c21288477e07ce1/serverless_wsgi.py#L126
 def handle(event, context):
     try:
         logger.info("handling sub event", subhub_event=event, context=context)

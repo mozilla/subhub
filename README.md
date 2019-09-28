@@ -163,7 +163,7 @@ doit local
 ```
 
 If you choose to run locally but communicate with the actual Stripe API then doit local should be pre-pended with STRIPE_LOCAL=True.
-Doing this requires the use a a valid Stripe API Test key. 
+Doing this requires the use a a valid Stripe API Test key.
 ```
 STRIPE_LOCAL=True doit local
 ```

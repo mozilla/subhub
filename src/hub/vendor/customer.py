@@ -13,8 +13,8 @@ from typing import Optional, Dict, Any
 from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
-from hub.shared.universal import format_plan_nickname
-from hub.shared.log import get_logger
+from hub.shared.utils import format_plan_nickname
+from shared.log import get_logger
 
 logger = get_logger()
 
