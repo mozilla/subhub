@@ -17,7 +17,7 @@ from datetime import datetime, timedelta
 from hub.shared.tests.unit.utils import run_view, run_event_process
 from hub.verifications.events_check import EventCheck, process_events
 from hub.shared.cfg import CFG
-from hub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

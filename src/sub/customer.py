@@ -6,11 +6,11 @@ from stripe import Customer, Subscription
 from stripe.error import InvalidRequestError
 from typing import Union, Optional
 
-from sub.shared import vendor, universal
+from sub.shared import vendor, utils
 from sub.shared.exceptions import IntermittentError, ServerError
 from sub.shared.db import SubHubAccount
 from sub.shared.cfg import CFG
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
@@ -42,7 +42,7 @@ def create_customer(
                 vendor.modify_customer(
                     customer_id=customer.id,
                     source_token=source_token,
-                    idempotency_key=universal.get_indempotency_key(),
+                    idempotency_key=utils.get_indempotency_key(),
                 )
             break
 
@@ -53,7 +53,7 @@ def create_customer(
             email=email,
             userid=user_id,
             name=display_name,
-            idempotency_key=universal.get_indempotency_key(),
+            idempotency_key=utils.get_indempotency_key(),
         )
     # Link the Stripe customer to the origin system id
     db_account = subhub_account.new_user(
@@ -103,7 +103,7 @@ def existing_payment_source(existing_customer: Customer, source_token: str) -> C
             existing_customer = vendor.modify_customer(
                 customer_id=existing_customer["id"],
                 source_token=source_token,
-                idempotency_key=universal.get_indempotency_key(),
+                idempotency_key=utils.get_indempotency_key(),
             )
             logger.info("add source", existing_customer=existing_customer)
         else:
@@ -119,7 +119,7 @@ def subscribe_customer(customer: Customer, plan_id: str) -> Subscription:
     :return: Subscription Object
     """
     sub = vendor.build_stripe_subscription(
-        customer.id, plan_id=plan_id, idempotency_key=universal.get_indempotency_key()
+        customer.id, plan_id=plan_id, idempotency_key=utils.get_indempotency_key()
     )
     return sub
 

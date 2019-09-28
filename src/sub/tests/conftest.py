@@ -23,7 +23,7 @@ from sub.app import create_app
 from sub.shared.cfg import CFG
 from sub.customer import create_customer
 
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

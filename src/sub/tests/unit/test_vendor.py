@@ -5,10 +5,9 @@
 import pytest
 import stripe
 
-from stripe.error import APIError, InvalidRequestError
-from pytest_socket import disable_socket, enable_socket
+from stripe.error import APIError
 
-from sub.shared import vendor, universal
+from sub.shared import vendor, utils
 
 
 def disable_base():
@@ -30,7 +29,7 @@ def test_modify_customer_error():
     disable_base()
     with pytest.raises(APIError):
         vendor.modify_customer(
-            "no_customer", "tok_nothing", universal.get_indempotency_key()
+            "no_customer", "tok_nothing", utils.get_indempotency_key()
         )
     enable_base()
 
@@ -43,7 +42,7 @@ def test_create_stripe_customer_error():
             "noone@nowhere.com",
             "abc123",
             "Anonymous",
-            universal.get_indempotency_key(),
+            utils.get_indempotency_key(),
         )
     enable_base()
 
@@ -66,7 +65,7 @@ def test_build_stripe_subscription_error():
     disable_base()
     with pytest.raises(APIError):
         vendor.build_stripe_subscription(
-            "no_one", "no_plan", universal.get_indempotency_key()
+            "no_one", "no_plan", utils.get_indempotency_key()
         )
     enable_base()
 
@@ -75,7 +74,7 @@ def test_cancel_stripe_subscription_period_end_error():
     disable_base()
     with pytest.raises(APIError):
         vendor.cancel_stripe_subscription_period_end(
-            "no_sub", universal.get_indempotency_key()
+            "no_sub", utils.get_indempotency_key()
         )
     enable_base()
 

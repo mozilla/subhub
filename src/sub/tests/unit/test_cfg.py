@@ -10,7 +10,7 @@ import tempfile
 import contextlib
 
 from sub.shared.cfg import CFG, call, git, NotGitRepoError, GitCommandNotFoundError
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger
 

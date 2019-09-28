@@ -4,23 +4,32 @@
 
 import os
 import sys
+import inspect
 
 from typing import Optional, Union
 
+import logging
 import connexion
 import stripe
 import stripe.error
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
+from pythonjsonlogger import jsonlogger
 
-from sub.shared import secrets
-from sub.shared.cfg import CFG
-from sub.shared.exceptions import SubHubError
-from sub.shared.db import SubHubAccount, SubHubDeletedAccount
-from sub.shared.log import get_logger
+from shared import secrets
+from shared.exceptions import SubHubError
+from shared.db import SubHubAccount, SubHubDeletedAccount
+from shared.headers import dump_safe_headers
+from shared.cfg import CFG
+from shared.log import get_logger
+
+json_handler = logging.StreamHandler(sys.stdout)
+json_handler.setFormatter(jsonlogger.JsonFormatter())
 
 logger = get_logger()
+
+stripe.log = CFG.LOG_LEVEL
 
 
 def is_docker() -> bool:
@@ -75,6 +84,7 @@ def server_stripe_card_error(e):
 
 
 def create_app(config=None) -> connexion.FlaskApp:
+    # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"
@@ -142,6 +152,9 @@ def create_app(config=None) -> connexion.FlaskApp:
 
     @app.app.before_request
     def before_request():
+        headers = dump_safe_headers(request.headers)
+        logger.debug("Request headers", headers=headers)
+        logger.debug("Request body", body=request.get_data())
         g.subhub_account = current_app.subhub_account
         g.subhub_deleted_users = current_app.subhub_deleted_users
         g.app_system_id = None
