@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/mozilla/subhub.svg?branch=master)](https://travis-ci.org/mozilla/subhub)
 
+
+[![codecov](https://codecov.io/gh/mozilla/subhub/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/subhub)
+
+
 Payment subscription REST api for customers:
 - FxA (Firefox Accounts)
 
@@ -163,7 +167,7 @@ doit local
 ```
 
 If you choose to run locally but communicate with the actual Stripe API then doit local should be pre-pended with STRIPE_LOCAL=True.
-Doing this requires the use a a valid Stripe API Test key. 
+Doing this requires the use a a valid Stripe API Test key.
 ```
 STRIPE_LOCAL=True doit local
 ```
