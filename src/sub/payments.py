@@ -226,7 +226,7 @@ def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
-                vendor.cancel_stripe_subscription_period_end(
+                vendor.reactivate_stripe_subscription(
                     sub_id, utils.get_indempotency_key()
                 )
                 return dict(message="Subscription reactivation was successful."), 200
