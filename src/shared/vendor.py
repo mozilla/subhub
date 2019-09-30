@@ -243,6 +243,39 @@ def cancel_stripe_subscription_period_end(
     stop=stop_after_attempt(4),
     reraise=True,
 )
+def reactivate_stripe_subscription(
+    subscription_id: str, idempotency_key: str
+) -> Subscription:
+    """
+    Set Stripe subscription to cancel at period end
+    :param subscription_id:
+    :param idempotency_key:
+    :return: Subscription
+    """
+    try:
+        sub = Subscription.modify(
+            sid=subscription_id,
+            cancel_at_period_end=False,
+            idempotency_key=idempotency_key,
+        )
+        return sub
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+    ) as e:
+        logger.error("cancel sub error", error=str(e))
+        raise e
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
 def list_customer_subscriptions(cust_id: str) -> List[Subscription]:
     """
     List customer subscriptions
