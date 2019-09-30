@@ -387,7 +387,7 @@ def task_venv():
             'check',
         ],
         'actions': [
-            f'virtualenv --python=$(which python3.7) {VENV}',
+            f'$(which python3.7) -m venv {VENV}',
             f'{PIP3} install --upgrade pip',
             f'[ -f "{app_requirements}" ] && {PIP3} install -r "{app_requirements}"',
             f'[ -f "{test_requirements}" ] && {PIP3} install -r "{test_requirements}"',
