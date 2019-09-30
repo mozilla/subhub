@@ -25,6 +25,8 @@ Payment subscription REST api for customers:
 
 ### [NewRelic Lambda Setup](./bin/nr-lambda-onboarding-master/README.md)
 
+### [Vagrant support to replicate TravisCI](./docs/vagrant.md)
+
 ### [Code of Conduct](./CODE_OF_CONDUCT.md)
 
 ### [License](./LICENSE.md)
