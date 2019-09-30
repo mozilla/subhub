@@ -2,6 +2,10 @@
 
 [![Build Status](https://travis-ci.org/mozilla/subhub.svg?branch=master)](https://travis-ci.org/mozilla/subhub)
 
+
+[![codecov](https://codecov.io/gh/mozilla/subhub/branch/master/graph/badge.svg)](https://codecov.io/gh/mozilla/subhub)
+
+
 Payment subscription REST api for customers:
 - [FxA](https://github.com/mozilla/fxa), Firefox Accounts
 
