@@ -48,6 +48,7 @@ custom:
     endpointType: regional
   access:
     prod: restricted
+    prod-test: restricted
     stage: restricted
     qa: restricted
     dev: unfettered
