@@ -6,9 +6,12 @@ sudo apt-get uninstall -y python
 # Install Python 3.7 and pip
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y python3.7 python3.7-dev python3-pip
+sudo apt-get install -y python3.7 python3.7-dev python3-pip python3.7-venv
 
 # Install Yarn
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+sudo apt-get install -y nodejs
+
 curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
 echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
 sudo apt-get update
@@ -31,5 +34,14 @@ source ~/.bashrc
 
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
 
+sudo chown -R vagrant:vagrant /opt/subhub
+sudo chown -R vagrant:vagrant /opt/subhub/node_modules
+
+
 cd /opt/subhub
+mkdir venv
+sudo chown -R vagrant:vagrant /opt/subhub/venv
+
 pip3 install -r automation_requirements.txt
+python3 dodo.py
+pip3 install --upgrade pip

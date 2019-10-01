@@ -9,12 +9,12 @@ from typing import List, Dict, Any, Optional
 from stripe import Customer, Product
 from flask import g
 
-from sub.shared import vendor, universal
+from sub.shared import vendor, utils
 from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
-from sub.shared.universal import format_plan_nickname
+from sub.shared.utils import format_plan_nickname
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
 from sub.shared.db import SubHubDeletedAccount
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
@@ -40,7 +40,7 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
 
     if not customer.get("deleted"):
         vendor.build_stripe_subscription(
-            customer.id, data["plan_id"], universal.get_indempotency_key()
+            customer.id, data["plan_id"], utils.get_indempotency_key()
         )
         updated_customer = fetch_customer(g.subhub_account, user_id=uid)
         newest_subscription = find_newest_subscription(
@@ -145,7 +145,7 @@ def cancel_subscription(uid: str, sub_id: str) -> FlaskResponse:
             "incomplete",
         ]:
             vendor.cancel_stripe_subscription_period_end(
-                sub_id, universal.get_indempotency_key()
+                sub_id, utils.get_indempotency_key()
             )
             updated_customer = fetch_customer(g.subhub_account, uid)
             logger.info("updated customer", updated_customer=updated_customer)
@@ -226,8 +226,8 @@ def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
             if subscription["cancel_at_period_end"]:
-                vendor.cancel_stripe_subscription_period_end(
-                    sub_id, universal.get_indempotency_key()
+                vendor.reactivate_stripe_subscription(
+                    sub_id, utils.get_indempotency_key()
                 )
                 return dict(message="Subscription reactivation was successful."), 200
             return dict(message="Subscription is already active."), 200
@@ -340,7 +340,7 @@ def update_payment_method(uid, data) -> FlaskResponse:
             vendor.modify_customer(
                 customer_id=customer.id,
                 source_token=data["pmt_token"],
-                idempotency_key=universal.get_indempotency_key(),
+                idempotency_key=utils.get_indempotency_key(),
             )
             return {"message": "Payment method updated successfully."}, 201
 

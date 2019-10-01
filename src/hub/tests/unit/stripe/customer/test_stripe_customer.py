@@ -15,7 +15,7 @@ from mockito import when, mock, unstub
 
 from hub.shared.tests.unit.utils import run_test, MockSqsClient, MockSnsClient
 from hub.shared.cfg import CFG
-from hub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

@@ -171,28 +171,6 @@ def skip(func, taskname):
     wrapper.__doc__ = func.__doc__
     return wrapper
 
-# TODO: This needs to check for the existence of the dependency prior to execution or update project requirements.
-def task_count():
-    '''
-    use the cloc utility to count lines of code
-    '''
-    excludes = [
-        'dist',
-        'venv',
-        '__pycache__',
-        '*.egg-info',
-    ]
-    excludes = '--exclude-dir=' + ','.join(excludes)
-    scandir = os.path.dirname(__file__)
-    return {
-        'actions': [
-            f'cloc {excludes} {scandir}',
-        ],
-        'uptodate': [
-            lambda: not check_hash('cloc'),
-        ],
-    }
-
 def task_envs():
     '''
     show which environment variabls will be used in package, deploy, etc
@@ -409,7 +387,7 @@ def task_venv():
             'check',
         ],
         'actions': [
-            f'virtualenv --python=$(which python3.7) {VENV}',
+            f'$(which python3.7) -m venv {VENV}',
             f'{PIP3} install --upgrade pip',
             f'[ -f "{app_requirements}" ] && {PIP3} install -r "{app_requirements}"',
             f'[ -f "{test_requirements}" ] && {PIP3} install -r "{test_requirements}"',

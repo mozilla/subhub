@@ -18,7 +18,7 @@ from stripe.error import (
 from tenacity import retry, wait_exponential, stop_after_attempt
 
 from sub.shared.cfg import CFG
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
@@ -223,6 +223,39 @@ def cancel_stripe_subscription_period_end(
         sub = Subscription.modify(
             sid=subscription_id,
             cancel_at_period_end=True,
+            idempotency_key=idempotency_key,
+        )
+        return sub
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+    ) as e:
+        logger.error("cancel sub error", error=str(e))
+        raise e
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+def reactivate_stripe_subscription(
+    subscription_id: str, idempotency_key: str
+) -> Subscription:
+    """
+    Set Stripe subscription to cancel at period end
+    :param subscription_id:
+    :param idempotency_key:
+    :return: Subscription
+    """
+    try:
+        sub = Subscription.modify(
+            sid=subscription_id,
+            cancel_at_period_end=False,
             idempotency_key=idempotency_key,
         )
         return sub

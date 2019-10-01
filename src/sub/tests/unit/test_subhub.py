@@ -13,7 +13,7 @@ from stripe.util import convert_to_stripe_object
 from sub.app import create_app
 from sub.shared.tests.unit.utils import MockSubhubUser
 
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

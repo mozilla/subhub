@@ -1,14 +1,20 @@
 language: python
 dist: xenial
+sudo: required
+python:
+ - "3.7"
+addons:
+  apt:
+    sources: ['ubuntu-toolchain-r-test']
+    packages: ['bash', 'coreutils', 'awscli']
 cache:
   directories:
     - /home/travis/.nvm
     - /home/travis/.cache/pip
-python:
-  - "3.7"
 env:
   global:
     - BOTO_CONFIG: "/dev/null"
+    - LOG_LEVEL: ERROR
     - AWS_XRAY_SDK_ENABLED: false
     - DEPLOYED_ENV: travis
 
@@ -24,4 +30,17 @@ jobs:
   include:
     - stage: Unit Tests
       script:
+        # The below 2 TravisCI statements are a workaround for an issue in TravisCI which
+        # is best described as "Large writes to stdout sometimes fail with "Resource temporarily unavailable".
+        # More information about this can be found at:
+        #   https://github.com/travis-ci/travis-ci/issues/4704#issuecomment-348435959
+        #
+        # Turn off O_NONBLOCK:
+        - python3.7 -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL);
+            fcntl.fcntl(sys.stdout, fcntl.F_SETFL, flags&~os.O_NONBLOCK);'
+        # Check whether O_NONBLOCK is set (should print "0"):
+        - python3.7 -c 'import os,sys,fcntl; flags = fcntl.fcntl(sys.stdout, fcntl.F_GETFL);
+            print(flags&os.O_NONBLOCK);'
         - doit test
+        - cd /home/travis/build/mozilla/subhub/src/sub && bash <(curl -s https://codecov.io/bash) -cF python
+        - cd /home/travis/build/mozilla/subhub/src/hub && bash <(curl -s https://codecov.io/bash) -cF python

@@ -10,7 +10,7 @@ from unittest.mock import Mock, MagicMock, PropertyMock
 
 from sub.payments import subscribe_to_plan, customer_update, create_update_data
 from sub.shared.tests.unit.utils import MockSubhubAccount
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 

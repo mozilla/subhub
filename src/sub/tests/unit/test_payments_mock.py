@@ -8,7 +8,7 @@ import pytest
 from mockito import when, mock, unstub, ANY
 
 from sub import payments
-from sub.shared.log import get_logger
+from shared.log import get_logger
 
 logger = get_logger()
 
