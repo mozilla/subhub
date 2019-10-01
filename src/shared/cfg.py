@@ -235,24 +235,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         }
 
     @property
-    def GSM_STATUS(self):
-        """
-        gsm status
-        """
-        result = git("submodule status", strip=False)
-        pattern = r"([ +-])([a-f0-9]{40}) ([A-Za-z0-9\/\-_.]+)( .*)?"
-        matches = re.findall(pattern, result)
-        states = {
-            " ": True,  # submodule is checked out the correct revision
-            "+": False,  # submodule is checked out to a different revision
-            "-": None,  # submodule is not checked out
-        }
-        return {
-            repopath: [revision, states[state]]
-            for state, revision, repopath, _ in matches
-        }
-
-    @property
     def USER_TABLE(self):
         """
         default value for USER_TABLE
