@@ -17,7 +17,7 @@ from stripe.error import (
 )
 from tenacity import retry, wait_exponential, stop_after_attempt
 
-from sub.shared.cfg import CFG
+from shared.cfg import CFG
 from shared.log import get_logger
 
 logger = get_logger()

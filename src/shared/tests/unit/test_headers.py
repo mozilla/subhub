@@ -6,7 +6,7 @@ import json
 import requests
 import responses
 
-from sub.shared.headers import dump_safe_headers
+from shared.headers import dump_safe_headers
 
 
 def test_no_headers_provided():
