@@ -154,19 +154,6 @@ def test_LS_REMOTE():
             assert isinstance(ex, NotGitRepoError)
 
 
-def test_GSM_STATUS():
-    """
-    gsm status
-    """
-    assert CFG.GSM_STATUS != None
-    with cd(NON_GIT_REPO_PATH):
-        try:
-            CFG.GSM_STATUS
-            assert False
-        except Exception as ex:
-            assert isinstance(ex, NotGitRepoError)
-
-
 def test_USER_TABLE():
     """
     user table
