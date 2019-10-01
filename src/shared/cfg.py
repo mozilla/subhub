@@ -203,7 +203,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         repo_name
         """
-        pattern = r"((ssh|https)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?"
+        pattern = r"^((https|ssh)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?$"
         match = re.search(pattern, self.REMOTE_ORIGIN_URL)
         return match.group("repo_name")
 
