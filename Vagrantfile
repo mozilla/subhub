@@ -25,7 +25,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.synced_folder ".", "/vagrant", disabled: true
     config.vm.synced_folder "./", "/opt/subhub", type: "rsync",
                             rsync__auto: true,
-                            rsync__exclude: ['./node_modules*', 'venv', '.doit.db']
+                            rsync__exclude: ['node_modules*', 'venv', '.doit.db']
 
     config.vm.provider "virtualbox" do |vb|
       vb.name = "TravisCI"
