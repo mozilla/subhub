@@ -1887,10 +1887,17 @@ flat@^4.1.0:
   dependencies:
     is-buffer "~2.0.3"
 
-for-in@^1.0.2:
+for-in@^1.0.1, for-in@^1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/for-in/-/for-in-1.0.2.tgz#81068d295a8142ec0ac726c6e2200c30fb6d5e80"
   integrity sha1-gQaNKVqBQuwKxybG4iAMMPttXoA=
+
+for-own@^0.1.1:
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/for-own/-/for-own-0.1.5.tgz#5265c681a4f294dabbf17c9509b6763aa84510ce"
+  integrity sha1-UmXGgaTylNq78XyVCbZ2OqhFEM4=
+  dependencies:
+    for-in "^1.0.1"
 
 form-data@^2.3.1:
   version "2.5.0"
@@ -3032,7 +3039,7 @@ lodash.values@^4.3.0:
   resolved "https://registry.yarnpkg.com/lodash.values/-/lodash.values-4.3.0.tgz#a3a6c2b0ebecc5c2cba1c17e6e620fe81b53d347"
   integrity sha1-o6bCsOvsxcLLocF+bmIP6BtT00c=
 
-lodash@4.17.x, lodash@^4.17.12, lodash@^4.17.14, lodash@^4.17.15:
+lodash@4.17.x, lodash@^4.17.10, lodash@^4.17.12, lodash@^4.17.14, lodash@^4.17.15:
   version "4.17.15"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.15.tgz#b447f6670a0455bbfeedd11392eff330ea097548"
   integrity sha512-8xOcRHvCjnocdS5cpwXQXVzmmh5e5+saE2QGoeQmbKmRS6J3VQppPOIt0MnmE+4xlZoumy0GPG0D0MVIQbNA1A==
@@ -3445,6 +3452,15 @@ object.pick@^1.3.0:
   dependencies:
     isobject "^3.0.1"
 
+omit-empty@^0.4.1:
+  version "0.4.1"
+  resolved "https://registry.yarnpkg.com/omit-empty/-/omit-empty-0.4.1.tgz#294a3782f2cb20c7497c4122b6237c9dcc0c63ab"
+  integrity sha1-KUo3gvLLIMdJfEEitiN8ncwMY6s=
+  dependencies:
+    has-values "^0.1.4"
+    kind-of "^3.0.3"
+    reduce-object "^0.1.3"
+
 on-finished@~2.3.0:
   version "2.3.0"
   resolved "https://registry.yarnpkg.com/on-finished/-/on-finished-2.3.0.tgz#20f1336481b083cd75337992a16971aa2d906947"
@@ -3770,6 +3786,13 @@ readdirp@^3.1.1:
   dependencies:
     picomatch "^2.0.4"
 
+reduce-object@^0.1.3:
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/reduce-object/-/reduce-object-0.1.3.tgz#d549d40a6c2936fa4e3e9b78ca89c93314594218"
+  integrity sha1-1UnUCmwpNvpOPpt4yonJMxRZQhg=
+  dependencies:
+    for-own "^0.1.1"
+
 regenerator-runtime@^0.13.1:
   version "0.13.2"
   resolved "https://registry.yarnpkg.com/regenerator-runtime/-/regenerator-runtime-0.13.2.tgz#32e59c9a6fb9b1a4aff09b4930ca2d4477343447"
@@ -4029,6 +4052,22 @@ serverless-package-external@1.1.1:
   dependencies:
     rimraf "^2.6.2"
     yesno "0.0.1"
+
+serverless-plugin-aws-alerts@1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/serverless-plugin-aws-alerts/-/serverless-plugin-aws-alerts-1.4.0.tgz#648b7a733c9d5e97e56fa46540091d81feba738e"
+  integrity sha512-4ChkFVVi3X4NeqgdxAhaVha8LnXrH8kadMm5iV1TMyOr/zNdjo9NoRCLnHkspODO4f2uqwlEiMuh9yUrT6s7PA==
+  dependencies:
+    lodash "^4.17.10"
+
+serverless-plugin-canary-deployments@0.4.8:
+  version "0.4.8"
+  resolved "https://registry.yarnpkg.com/serverless-plugin-canary-deployments/-/serverless-plugin-canary-deployments-0.4.8.tgz#cff49ee683cbae9e2e9182e762a1da29fe07f4fe"
+  integrity sha512-FvXls9wPPvIgHLmE9q6d5drlLd9ePUCdHY2cKGozkGxVmOuumsDqeSZSdv+atbHyKwKb7PdMc1ZviwHJmwQEMw==
+  dependencies:
+    flat "^4.1.0"
+    lodash "^4.17.15"
+    omit-empty "^0.4.1"
 
 serverless-plugin-tracing@2.0.0:
   version "2.0.0"
