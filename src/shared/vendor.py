@@ -267,7 +267,7 @@ def reactivate_stripe_subscription(
         IdempotencyError,
         StripeErrorWithParamCode,
     ) as e:
-        logger.error("cancel sub error", error=str(e))
+        logger.error("reactivate sub error", error=str(e))
         raise e
 
 

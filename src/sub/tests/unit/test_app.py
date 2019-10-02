@@ -26,7 +26,10 @@ def test_intermittent_stripe_error():
 
 
 def test_server_stripe_error():
-    expected = jsonify({"message": "something", "code": "500", "params": None}), 500
+    expected = (
+        jsonify({"message": "Internal Server Error", "code": "500", "params": None}),
+        500,
+    )
     error = AuthenticationError("something", code="500")
     actual = server_stripe_error(error)
     assert actual[0].json == expected[0].json

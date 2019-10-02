@@ -31,7 +31,9 @@ def intermittent_stripe_error(e):
 def server_stripe_error(e):
     logger.error("server stripe error", error=e)
     return (
-        jsonify({"message": f"{e.user_message}", "params": None, "code": f"{e.code}"}),
+        jsonify(
+            {"message": "Internal Server Error", "params": None, "code": f"{e.code}"}
+        ),
         500,
     )
 
