@@ -9,7 +9,7 @@
 Payment subscription REST api for customers:
 - [FxA](https://github.com/mozilla/fxa), Firefox Accounts
 
-### [Prerequisites](./doc/prerequisites.md)
+### [Prerequisites](./docs/prerequisites.md)
 
 ### [Environment](./docs/environment.md)
 
@@ -17,7 +17,7 @@ Payment subscription REST api for customers:
 
 ### [RESTful Service Interactions](./docs/rest.md)
 
-### [Performance Testing](./{sub,hub}/tests/performance/README.md)
+### [Performance Testing](./src/sub/tests/performance/README.md)
 
 ### [Site Reliability Information (SRE)](./docs/sre_info.md)
 
