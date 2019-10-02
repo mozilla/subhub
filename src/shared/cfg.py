@@ -203,7 +203,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         """
         repo_name
         """
-        pattern = r"((ssh|https)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?"
+        pattern = r"^((https|ssh)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?$"
         match = re.search(pattern, self.REMOTE_ORIGIN_URL)
         return match.group("repo_name")
 
@@ -232,24 +232,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return {
             refname: revision
             for revision, refname in [line.split() for line in result.split("\n")]
-        }
-
-    @property
-    def GSM_STATUS(self):
-        """
-        gsm status
-        """
-        result = git("submodule status", strip=False)
-        pattern = r"([ +-])([a-f0-9]{40}) ([A-Za-z0-9\/\-_.]+)( .*)?"
-        matches = re.findall(pattern, result)
-        states = {
-            " ": True,  # submodule is checked out the correct revision
-            "+": False,  # submodule is checked out to a different revision
-            "-": None,  # submodule is not checked out
-        }
-        return {
-            repopath: [revision, states[state]]
-            for state, revision, repopath, _ in matches
         }
 
     @property

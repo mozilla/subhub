@@ -33,7 +33,7 @@ Payment subscription REST api for customers:
 
 ## Authors
 
-* Jackie Monroe
+* Jackie Munroe
 * Scott Idler
 * Stewart Henderson
 * Marty Ballard
