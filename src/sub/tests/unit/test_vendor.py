@@ -5,7 +5,7 @@
 import pytest
 import stripe
 
-from stripe.error import APIError
+from stripe.error import APIError, APIConnectionError
 
 from sub.shared import vendor, utils
 
