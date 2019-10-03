@@ -464,7 +464,14 @@ def task_local():
 
 def task_yarn():
     '''
-    run yarn install on package.json
+    Install packages from package.json into the node_modules directory.  Yarn will attempt 
+    on non-OSX operating systems to check/attempt to install fsevents. 
+    This is evidenced in the log files by the messages:
+        info fsevents@2.0.7: The platform "linux" is incompatible with this module.
+        info "fsevents@2.0.7" is an optional dependency and failed compatibility check. Excluding it from installation.
+    Reference:
+        1. [Filter out fsevents warning/info on non supported OS messages](https://github.com/yarnpkg/yarn/issues/2564)
+        2. [Don't warn about incompatible optional dependencies](https://github.com/yarnpkg/yarn/issues/3738)
     '''
     return {
         'task_dep': [
