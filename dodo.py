@@ -3,7 +3,6 @@ import re
 import pwd
 import sys
 import glob
-import json
 import difflib
 import itertools
 import contextlib
@@ -306,7 +305,7 @@ def check_header(f):
 
 def task_check():
     '''
-    checks: noroot, python3.7, yarn, awscli, json, yaml, black, reqs
+    checks: noroot, python3.7, yarn, awscli, yaml, black, reqs
     '''
     yield check_noroot()
     yield gen_prog_check('python3.7')
@@ -314,7 +313,6 @@ def task_check():
     yield gen_prog_check('docker-compose')
     if not CFG('TRAVIS', None):
         yield gen_prog_check('awscli', 'aws')
-    yield gen_file_check('json', json.load, 'services/**/*.json')
     yield gen_file_check('yaml', yaml.safe_load, 'services/**/*.yaml', 'services/**/*.yml')
     header_message = "consider running 'doit header:<filename>'"
     yield gen_file_check('header', check_header, 'src/**/*.py', message=header_message)
