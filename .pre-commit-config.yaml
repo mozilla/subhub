@@ -5,6 +5,7 @@ repos:
     rev: v2.1.0
     hooks:
     -   id: check-added-large-files
+    -   id: check-json
     -   id: detect-private-key
     -   id: double-quote-string-fixer
     -   id: end-of-file-fixer
@@ -16,20 +17,10 @@ repos:
           '--no-sort-keys',
         ]
     -   id: trailing-whitespace
--   repo: https://github.com/asottile/reorder_python_imports
-    rev: v1.4.0
-    hooks:
-    -   id: reorder-python-imports
-        args: [--py3-plus]
 -   repo: meta
     hooks:
     -   id: check-hooks-apply
     -   id: check-useless-excludes
--   repo: git@github.com:Yelp/detect-secrets
-    rev: v0.12.4
-    hooks:
-    -   id: detect-secrets
-        args: ['--baseline', '.secrets.baseline']
 # TODO: Enable in the future as we have issues to address.
 # -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
 #     sha: v1.0.3
