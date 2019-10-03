@@ -5,6 +5,7 @@
 from hub.routes.firefox import FirefoxRoute
 from hub.routes.salesforce import SalesforceRoute
 from hub.routes.static import StaticRoutes
+from hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError
 
 
 class RoutesPipeline:
@@ -19,4 +20,18 @@ class RoutesPipeline:
             elif r == StaticRoutes.FIREFOX_ROUTE:
                 FirefoxRoute(self.data).route()
             else:
-                raise Exception("We do no support " + str(r))
+                raise UnsupportedStaticRouteError(r, StaticRoutes)
+
+
+class AllRoutes:
+    def __init__(self, messages_to_routes) -> None:
+        self.messages_to_routes = messages_to_routes
+
+    def run(self) -> None:
+        for m in self.messages_to_routes:
+            if m["type"] == "firefox_route":
+                FirefoxRoute(m["data"]).route()
+            elif m["type"] == "salesforce_route":
+                SalesforceRoute(m["data"]).route()
+            else:
+                raise UnsupportedDataError(m, m["type"], StaticRoutes)

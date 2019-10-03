@@ -7,6 +7,7 @@ import uuid
 import json
 
 from unittest.mock import Mock, MagicMock, PropertyMock
+from stripe import Customer
 
 from sub.payments import subscribe_to_plan, customer_update, create_update_data
 from sub.shared.tests.unit.utils import MockSubhubAccount
@@ -187,7 +188,8 @@ def customer_update_subscription_incomplete(monkeypatch, charge):
                     get_file("subscription_incomplete.json", cancel_at_period_end=True)
                 ]
             },
-        }
+        },
+        wraps=Customer,
     )
 
     charge_retrieve = Mock(

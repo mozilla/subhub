@@ -285,7 +285,9 @@ def test_delete_user_from_db(app, create_subscription_for_processing):
     WHEN provided with a valid user id
     THEN add to deleted users table
     """
-    deleted_user = payments.delete_user("process_test", "sub_id", "origin")
+    deleted_user = payments.delete_user(
+        "process_test", "sub_id", "origin", [{"id": "sub_123"}]
+    )
     logger.info("deleted user from db", deleted_user=deleted_user)
     assert isinstance(deleted_user, MagicMock)
 
@@ -303,7 +305,7 @@ def test_delete_user_from_db2(app, create_subscription_for_processing, monkeypat
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
     monkeypatch.setattr("sub.shared.db.SubHubAccount.remove_from_db", delete_error)
 
-    du = payments.delete_user("process_test_2", "sub_id", "origin")
+    du = payments.delete_user("process_test_2", "sub_id", "origin", [{"id": "sub_123"}])
     assert du is False
 
 
@@ -323,10 +325,12 @@ def test_add_user_to_deleted_users_record(monkeypatch):
     monkeypatch.setattr("flask.g.subhub_account.get_user", customer)
     to_delete = g.subhub_account.get_user("process_customer")
     logger.info("delete", deleted_user=to_delete)
+    subscription_info = [{"id": "sub123"}]
     deleted_user = payments.add_user_to_deleted_users_record(
         user_id=to_delete["user_id"],
         cust_id=to_delete["cust_id"],
         origin_system=to_delete["origin_system"],
+        subscription_info=subscription_info,
     )
     assert deleted_user.user_id == "process_customer"
     assert deleted_user.origin_system == "Test_system"

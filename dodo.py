@@ -77,6 +77,11 @@ def envs(sep=' ', **kwargs):
         SUPPORT_API_KEY=CFG.SUPPORT_API_KEY,
         PROJECT_NAME=CFG.PROJECT_NAME,
         VERSION=CFG.VERSION,
+        DYNALITE_PORT=CFG.DYNALITE_PORT,
+        LOCAL_FLASK_PORT=CFG.LOCAL_FLASK_PORT,
+        LOCAL_HUB_FLASK_PORT=CFG.LOCAL_HUB_FLASK_PORT,
+        STRIPE_LOCAL=CFG.STRIPE_LOCAL,
+
     )
     return sep.join([
         f'{key}={value}' for key, value in sorted(dict(envs, **kwargs).items())
@@ -464,8 +469,8 @@ def task_local():
 
 def task_yarn():
     '''
-    Install packages from package.json into the node_modules directory.  Yarn will attempt 
-    on non-OSX operating systems to check/attempt to install fsevents. 
+    Install packages from package.json into the node_modules directory.  Yarn will attempt
+    on non-OSX operating systems to check/attempt to install fsevents.
     This is evidenced in the log files by the messages:
         info fsevents@2.0.7: The platform "linux" is incompatible with this module.
         info "fsevents@2.0.7" is an optional dependency and failed compatibility check. Excluding it from installation.
@@ -763,5 +768,16 @@ def task_tidy():
         'actions': [
             'rm -rf ' + ' '.join(TIDY_FILES),
             'find . | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf',
+        ],
+    }
+
+def task_dynamo():
+    return {
+        'task_dep': [
+            'check',
+            'tar'
+        ],
+        'actions': [
+            f'env {envs()} docker-compose up dynamodb'
         ],
     }

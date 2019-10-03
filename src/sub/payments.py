@@ -3,6 +3,8 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import cachetools
+import time
+import json
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional
@@ -14,6 +16,7 @@ from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.shared.utils import format_plan_nickname
 from sub.customer import existing_or_new_customer, has_existing_plan, fetch_customer
 from sub.shared.db import SubHubDeletedAccount
+from sub.messages import Message
 from shared.log import get_logger
 
 logger = get_logger()
@@ -165,25 +168,80 @@ def delete_customer(uid: str) -> FlaskResponse:
     :param uid:
     :return: Success of failure message for the deletion
     """
+    logger.info("delete customer", uid=uid)
     subscription_user = g.subhub_account.get_user(uid)
-    if not subscription_user:
-        return dict(message="Customer does not exist."), 404
-
-    deleted_payment_customer = vendor.delete_stripe_customer(subscription_user.cust_id)
-    if deleted_payment_customer:
-        deleted_customer = delete_user(
-            user_id=subscription_user.user_id,
-            cust_id=subscription_user.cust_id,
-            origin_system=subscription_user.origin_system,
+    logger.info("delete customer", subscription_user=subscription_user)
+    if subscription_user is not None:
+        origin = subscription_user.origin_system
+        logger.info("delete origin", origin=origin)
+        if not subscription_user:
+            return dict(message="Customer does not exist."), 404
+        subscribed_customer = vendor.retrieve_stripe_customer(subscription_user.cust_id)
+        subscribed_customer = subscribed_customer.to_dict()
+        subscription_info: List = []
+        logger.info(
+            "subscribed customer",
+            subscribed_customer=subscribed_customer,
+            data_type=type(subscribed_customer),
         )
-        user = g.subhub_account.get_user(uid)
-        if deleted_customer and user is None:
-            return dict(message="Customer deleted successfully"), 200
 
+        products = {}  # type: Dict
+        for subs in subscribed_customer["subscriptions"]["data"]:
+            try:
+                product = products[subs.plan.product]
+            except KeyError:
+                product = Product.retrieve(subs.plan.product)
+                products[subs.plan.product] = product
+
+            plan_nickname = format_plan_nickname(
+                product_name=product["name"], plan_interval=subs.plan.interval
+            )
+
+            sub = dict(
+                plan_amount=subs.plan.amount,
+                nickname=format_plan_nickname(subs.plan.nickname, subs.plan.interval),
+                current_period_end=subs.current_period_end,
+                current_period_start=subs.current_period_start,
+                subscription_id=subs.id,
+            )
+            subscription_info.append(sub)
+            vendor.cancel_stripe_subscription_immediately(
+                subs.id, utils.get_indempotency_key()
+            )
+            data = dict(
+                uid=subscribed_customer["metadata"]["userid"],
+                active=False,
+                subscriptionId=subs.id,
+                productName=product["name"],
+                eventId=utils.get_indempotency_key(),
+                eventCreatedAt=int(time.time()),
+                messageCreatedAt=int(time.time()),
+            )
+            sns_message = Message(json.dumps(data)).route()
+            logger.info("delete message", sns_message=sns_message)
+        else:
+            deleted_payment_customer = vendor.delete_stripe_customer(
+                subscription_user.cust_id
+            )
+            if deleted_payment_customer:
+                deleted_customer = delete_user(
+                    user_id=subscribed_customer["metadata"]["userid"],
+                    cust_id=subscribed_customer["id"],
+                    origin_system=origin,
+                    subscription_info=subscription_info,
+                )
+                user = g.subhub_account.get_user(uid)
+                if deleted_customer and user is None:
+                    return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
 
 
-def delete_user(user_id: str, cust_id: str, origin_system: str) -> bool:
+def delete_user(
+    user_id: str,
+    cust_id: str,
+    origin_system: str,
+    subscription_info: List[Dict[str, Any]],
+) -> bool:
     """
     Provided with customer data to be deleted
     - created deleted entry in the deleted table
@@ -191,21 +249,39 @@ def delete_user(user_id: str, cust_id: str, origin_system: str) -> bool:
     :param user_id:
     :param cust_id:
     :param origin_system:
+    :param subscription_info:
     :return:
     """
-    deleted_user = add_user_to_deleted_users_record(
-        user_id=user_id, cust_id=cust_id, origin_system=origin_system
+    logger.info(
+        "delete user",
+        user_id=user_id,
+        cust_id=cust_id,
+        origin_system=origin_system,
+        subscription_info=subscription_info,
     )
-    if not deleted_user:
+    deleted_user = add_user_to_deleted_users_record(
+        user_id=user_id,
+        cust_id=cust_id,
+        origin_system=origin_system,
+        subscription_info=subscription_info,
+    )
+    new_deleted_user = g.subhub_deleted_users.save_user(deleted_user)
+    if not new_deleted_user:
         return False
     return g.subhub_account.remove_from_db(user_id)
 
 
 def add_user_to_deleted_users_record(
-    user_id: str, cust_id: Optional[str], origin_system: str
+    user_id: str,
+    cust_id: Optional[str],
+    origin_system: str,
+    subscription_info: List[Dict[str, Any]],
 ) -> Optional[Any]:
     return g.subhub_deleted_users.new_user(
-        uid=user_id, cust_id=cust_id, origin_system=origin_system
+        uid=user_id,
+        cust_id=cust_id,
+        origin_system=origin_system,
+        subscription_info=subscription_info,
     )
 
 
@@ -406,6 +482,7 @@ def create_update_data(customer) -> Dict[str, Any]:
             invoice = vendor.retrieve_stripe_invoice(subscription["latest_invoice"])
             if invoice["charge"]:
                 intents = vendor.retrieve_stripe_customer(invoice["charge"])
+                intents = intents.to_dict()
                 return_data["subscriptions"].append(
                     {
                         "current_period_end": subscription["current_period_end"],

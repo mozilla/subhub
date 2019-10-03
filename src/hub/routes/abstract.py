@@ -17,16 +17,27 @@ class AbstractRoute(ABC):
 
     def report_route(self, payload: dict, sent_system: str) -> None:
         logger.info("report route", payload=payload, sent_system=sent_system)
-        existing = flask.g.hub_table.get_event(payload["event_id"])
+        if payload.get("event_id"):
+            event_id = payload["event_id"]
+        else:
+            event_id = payload["eventId"]
+        existing = flask.g.hub_table.get_event(event_id)
         if not existing:
-            created = flask.g.hub_table.new_event(
-                event_id=payload["event_id"], sent_system=sent_system
+            created_event = flask.g.hub_table.new_event(
+                event_id=event_id, sent_system=sent_system
             )
-            saved = flask.g.hub_table.save_event(created)
-            logger.info("new event", created=created, saved=saved)
+            saved = flask.g.hub_table.save_event(created_event)
+            try:
+                logger.info("new event created", created_event=created_event)
+            except Exception as e:
+                logger.error("Error logging created", error=e)
+            try:
+                logger.info("new event saved", saved=saved)
+            except Exception as e:
+                logger.error("Error logging saved", error=e)
         else:
             updated = flask.g.hub_table.append_event(
-                event_id=payload["event_id"], sent_system=sent_system
+                event_id=event_id, sent_system=sent_system
             )
             logger.info("updated event", existing=existing, updated=updated)
 

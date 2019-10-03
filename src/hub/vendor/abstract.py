@@ -2,12 +2,13 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 import requests
+import json
 
 from abc import ABC, abstractmethod
 from typing import Dict
 from attrdict import AttrDict
 
-from hub.routes.pipeline import RoutesPipeline
+from hub.routes.pipeline import RoutesPipeline, AllRoutes
 from shared.cfg import CFG
 from shared.log import get_logger
 
@@ -32,6 +33,11 @@ class AbstractStripeHubEvent(ABC):
         RoutesPipeline(report_routes, message_to_route).run()
 
     @staticmethod
+    def send_to_all_routes(messages_to_routes):
+        logger.info("send to all routes", messages_to_routes=messages_to_routes)
+        AllRoutes(messages_to_routes).run()
+
+    @staticmethod
     def send_to_salesforce(self, payload) -> None:
         logger.info("sending to salesforce", payload=payload)
         uri = CFG.SALESFORCE_BASKET_URI
@@ -47,3 +53,19 @@ class AbstractStripeHubEvent(ABC):
 
     def create_data(self, **kwargs) -> Dict[str, str]:
         return dict(event_id=self.payload.id, event_type=self.payload.type, **kwargs)
+
+    def customer_event_to_all_routes(self, data_projection, data):
+        subsets = []
+        for route in data_projection:
+            try:
+                logger.debug("sending to", key=route)
+                subset = dict((k, data[k]) for k in data_projection[route] if k in data)
+                payload = {"type": route, "data": json.dumps(subset)}
+                subsets.append(payload)
+                logger.info("subset", subset=subset)
+                logger.debug("sent to", key=route)
+            except Exception as e:
+                # log something and maybe change the exception type.
+                logger.error("projection exception", error=e)
+        else:
+            self.send_to_all_routes(subsets)

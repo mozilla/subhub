@@ -5,7 +5,6 @@
 import os
 import sys
 
-import logging
 import connexion
 import stripe
 
@@ -15,7 +14,7 @@ from flask import request
 
 from shared import secrets
 from shared.exceptions import SubHubError
-from shared.db import HubEvent
+from shared.db import HubEvent, SubHubDeletedAccount
 from shared.headers import dump_safe_headers
 from shared.cfg import CFG
 from shared.log import get_logger
@@ -57,15 +56,23 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
-def is_container() -> bool:
-    import requests
+def is_docker() -> bool:
+    path = "/proc/self/cgroup"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.path.isfile(path)
+        and any("docker" in line for line in open(path))
+    )
 
-    try:
-        requests.get(f"http://dynalite:{CFG.DYNALITE_PORT}")
-        return True
-    except Exception as e:
-        pass
-    return False
+
+if is_docker():
+    stripe.log = "DEBUG"
+    if CFG.STRIPE_LOCAL is not True:
+        stripe.verify_ssl_certs = False
+        stripe.api_base = (
+            stripe.upload_api_base
+        ) = f"https://{CFG.STRIPE_MOCK_HOST}:{CFG.STRIPE_MOCK_PORT}"
+    logger.info("Stripe API URL", url=stripe.api_base, local=CFG.STRIPE_LOCAL)
 
 
 def create_app(config=None):
@@ -73,8 +80,8 @@ def create_app(config=None):
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"
-    if is_container():
-        host = f"http://dynalite:{CFG.DYNALITE_PORT}"
+    if is_docker():
+        host = f"http://dynamodb:{CFG.DYNALITE_PORT}"
     stripe.api_key = CFG.STRIPE_API_KEY
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
@@ -85,9 +92,17 @@ def create_app(config=None):
     app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
+    app.app.subhub_deleted_users = SubHubDeletedAccount(
+        table_name=CFG.DELETED_USER_TABLE, region=region, host=host
+    )
 
     if not app.app.hub_table.model.exists():
         app.app.hub_table.model.create_table(
+            read_capacity_units=1, write_capacity_units=1, wait=True
+        )
+
+    if not app.app.subhub_deleted_users.model.exists():
+        app.app.subhub_deleted_users.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
 
@@ -125,6 +140,7 @@ def create_app(config=None):
         logger.debug("Request headers", headers=headers)
         logger.debug("Request body", body=request.get_data())
         g.hub_table = current_app.hub_table
+        g.subhub_deleted_users = current_app.subhub_deleted_users
         g.app_system_id = None
         if CFG.PROFILING_ENABLED:
             if "profile" in request.args and not hasattr(sys, "_called_from_test"):
@@ -151,4 +167,4 @@ if __name__ == "__main__":
     app = create_app()
     app.debug = True
     app.use_reloader = True
-    app.run(host="0.0.0.0", port=CFG.LOCAL_FLASK_PORT)
+    app.run(host="0.0.0.0", port=CFG.LOCAL_HUB_FLASK_PORT)

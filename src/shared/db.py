@@ -2,10 +2,11 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-from typing import Optional, Any, List, cast, Type, TYPE_CHECKING, Union
+from typing import Optional, Any, List, Dict
 
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.connection import Connection
+from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 from pynamodb.models import Model, DoesNotExist
 from pynamodb.exceptions import PutError, DeleteError
 
@@ -68,6 +69,7 @@ class SubHubAccount:
     def save_user(user: SubHubAccountModel) -> bool:
         try:
             user.save()
+            logger.info("user saved", user=user)
             return True
         except PutError:
             logger.error("save user", user=user)
@@ -176,12 +178,22 @@ class HubEvent:
 # created in DbAccount
 class SubHubDeletedAccountModel(Model):
     user_id = UnicodeAttribute(hash_key=True)
-    cust_id = UnicodeAttribute(null=True)
+    cust_id = UnicodeAttribute(range_key=True)
     origin_system = UnicodeAttribute()
     customer_status = UnicodeAttribute()
+    subscription_info = ListAttribute()
 
 
 def _create_deleted_account_model(table_name_, region_, host_) -> Any:
+    class CustomerIndex(GlobalSecondaryIndex):
+        class Meta:
+            index_name = "cust-index"
+            read_capacity_units = 1
+            write_capacity_units = 1
+            projection = AllProjection()
+
+        cust_id = UnicodeAttribute(hash_key=True)
+
     class SubHubDeletedAccountModel(Model):
         class Meta:
             table_name = table_name_
@@ -190,9 +202,11 @@ def _create_deleted_account_model(table_name_, region_, host_) -> Any:
                 host = host_
 
         user_id = UnicodeAttribute(hash_key=True)
-        cust_id = UnicodeAttribute(null=True)
+        cust_id = UnicodeAttribute(range_key=True)
         origin_system = UnicodeAttribute()
         customer_status = UnicodeAttribute()
+        subscription_info = ListAttribute(default=list)
+        cust_index = CustomerIndex()
 
     return SubHubDeletedAccountModel
 
@@ -202,22 +216,34 @@ class SubHubDeletedAccount:
         self.model = _create_deleted_account_model(table_name, region, host)
 
     def new_user(
-        self, uid: str, origin_system: str, cust_id: Optional[str] = None
+        self,
+        uid: str,
+        origin_system: str,
+        subscription_info: Optional[List[Dict[str, Any]]],
+        cust_id: Optional[str] = None,
     ) -> SubHubDeletedAccountModel:
         return self.model(
             user_id=uid,
             cust_id=cust_id,
+            subscription_info=subscription_info,
             origin_system=origin_system,
             customer_status="deleted",
         )
 
-    def get_user(self, uid: str) -> Optional[SubHubDeletedAccountModel]:
+    def get_user(self, uid: str, cust_id: str) -> Optional[SubHubDeletedAccountModel]:
         try:
-            subscription_user: Optional[Any] = self.model.get(uid, consistent_read=True)
+            subscription_user: Optional[Any] = self.model.get(
+                uid, cust_id, consistent_read=True
+            )
             return subscription_user
         except DoesNotExist:
             logger.error("get user", uid=uid)
             return None
+
+    def find_by_cust(self, customer_id: str) -> Optional[SubHubDeletedAccountModel]:
+        for item in self.model.cust_index.query(customer_id):
+            return item
+        return None
 
     @staticmethod
     def save_user(user: SubHubDeletedAccountModel) -> bool:
