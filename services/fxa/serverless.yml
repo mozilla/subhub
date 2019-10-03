@@ -194,33 +194,6 @@ functions:
     name: '${self:custom.prefix}-sub'
     description: "Function for handling subscription services interactions\n"
     handler: subhandler.handle
-    alarms:
-      - name: subalarm
-        namespace: 'AWS/Lambda'
-        metric: Errors
-        threshold: 1
-        statistic: Minimum
-        period: 60
-        evaluationPeriods: 1
-        comparisonOperator: GreaterThanOrEqualToThreshold
-    deploymentSettings:
-      # Available AWS CodeDeploy Preference Types
-      #  Canary10Percent30Minutes
-      #  Canary10Percent5Minutes
-      #  Canary10Percent10Minutes
-      #  Canary10Percent15Minutes
-      #  Linear10PercentEvery10Minutes
-      #  Linear10PercentEvery1Minute
-      #  Linear10PercentEvery2Minutes
-      #  Linear10PercentEvery3Minutes
-      #  AllAtOnce
-      #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-      type: Linear10PercentEvery1Minute
-      alias: Live
-      preTrafficHook: hook.pre
-      postTrafficHook: hook.post
-      alarms:
-        - SubAlarm
     events:
       - http: {
           path: "/sub/{proxy+}",
@@ -228,20 +201,6 @@ functions:
           cors: false,
           private: false
         }
-  hub:
-    name: ${self:custom.prefix}-hub
-    description: >
-      Function for handling subscription services interactions
-    handler: hubhandler.handle
-    alarms:
-      - name: hubalarm
-        namespace: 'AWS/Lambda'
-        metric: Errors
-        threshold: 1
-        statistic: Minimum
-        period: 60
-        evaluationPeriods: 1
-        comparisonOperator: GreaterThanOrEqualToThreshold
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
       #  Canary10Percent30Minutes
@@ -256,10 +215,20 @@ functions:
       #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
       type: Linear10PercentEvery1Minute
       alias: Live
-      preTrafficHook: hook.pre
-      postTrafficHook: hook.post
       alarms:
-        - HubAlarm
+        - name: SubAlarm
+          namespace: 'AWS/Lambda'
+          metric: Errors
+          threshold: 1
+          statistic: Minimum
+          period: 60
+          evaluationPeriods: 1
+          comparisonOperator: GreaterThanOrEqualToThreshold
+  hub:
+    name: ${self:custom.prefix}-hub
+    description: >
+      Function for handling subscription services interactions
+    handler: hubhandler.handle
     events:
       - http: {
           path: /hub,
@@ -273,20 +242,6 @@ functions:
           cors: false,
           private: false
         }
-  mia:
-    name: ${self:custom.prefix}-mia
-    description: >
-      Function for reconcilation of missing hub events
-    handler: miahandler.handle
-    alarms:
-      - name: miaalarm
-        namespace: 'AWS/Lambda'
-        metric: Errors
-        threshold: 1
-        statistic: Minimum
-        period: 60
-        evaluationPeriods: 1
-        comparisonOperator: GreaterThanOrEqualToThreshold
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
       #  Canary10Percent30Minutes
@@ -301,10 +256,20 @@ functions:
       #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
       type: Linear10PercentEvery1Minute
       alias: Live
-      preTrafficHook: hook.pre
-      postTrafficHook: hook.post
       alarms:
-        - MiaAlarm
+        - name: HubAlarm
+          namespace: 'AWS/Lambda'
+          metric: Errors
+          threshold: 1
+          statistic: Minimum
+          period: 60
+          evaluationPeriods: 1
+          comparisonOperator: GreaterThanOrEqualToThreshold
+  mia:
+    name: ${self:custom.prefix}-mia
+    description: >
+      Function for reconcilation of missing hub events
+    handler: miahandler.handle
     events:
       # Invoke Lambda function on a schedule (either cron or rate limited). This fires an
       #
