@@ -205,6 +205,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("LOCAL_FLASK_PORT", 5000, cast=int)
 
     @property
+    def LOCAL_HUB_FLASK_PORT(self):
+        return self("LOCAL_HUB_FLASK_PORT", 5001, cast=int)
+
+    @property
     def DYNALITE_PORT(self):
         return self("DYNALITE_PORT", 8000, cast=int)
 

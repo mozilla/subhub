@@ -9,13 +9,17 @@ import boto3
 import flask
 import stripe
 import requests
+import connexion
 
+from flask import g
 from mock import patch
 from mockito import when, mock, unstub
 
+from hub.app import create_app
 from hub.shared.tests.unit.utils import run_test, MockSqsClient, MockSnsClient
 from hub.shared.cfg import CFG
 from shared.log import get_logger
+
 
 logger = get_logger()
 
@@ -28,6 +32,15 @@ def run_customer(mocker, data, filename):
     flask.g.return_value = ""
 
     run_test(filename, cwd=CWD)
+
+
+def test_subhub():
+    """
+    Create an instance of the hub app and validate it is a FlaskApp
+    """
+    app = create_app()
+    logger.debug("g", g=dir(g))
+    assert isinstance(app, connexion.FlaskApp)
 
 
 def test_stripe_hub_customer_created(mocker):
@@ -44,28 +57,6 @@ def test_stripe_hub_customer_created(mocker):
     when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(MockSqsClient)
     when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "customer-created.json"
-    run_customer(mocker, data, filename)
-
-
-def test_stripe_hub_customer_deleted(mocker):
-    data = {
-        "event_id": "evt_00000000000000",
-        "event_type": "customer.deleted",
-        "email": "jon@tester.com",
-        "customer_id": "cus_00000000000000",
-        "name": "Jon Tester",
-        "user_id": "user123",
-    }
-    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
-    response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
-    when(boto3).client(
-        "sqs",
-        region_name=CFG.AWS_REGION,
-        aws_access_key_id=CFG.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=CFG.AWS_SECRET_ACCESS_KEY,
-    ).thenReturn(MockSnsClient)
-    when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer-deleted.json"
     run_customer(mocker, data, filename)
 
 
@@ -290,8 +281,12 @@ def test_stripe_hub_customer_subscription_updated_no_cancel(mocker):
     unstub()
 
 
+@patch("flask.g.subhub_deleted_users.find_by_cust")
+@patch("stripe.Customer.retrieve", autospec=True)
 @patch("stripe.Product.retrieve")
-def test_stripe_hub_customer_subscription_deleted(mock_product, mocker):
+def test_stripe_hub_customer_subscription_deleted(
+    mock_product, mock_cust, mock_deleted_user, mocker
+):
     fh = open("tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
@@ -305,20 +300,14 @@ def test_stripe_hub_customer_subscription_deleted(mock_product, mocker):
         "eventCreatedAt": 1326853478,
         "messageCreatedAt": int(time.time()),
     }
-    customer_response = mock(
-        {
-            "id": "cus_00000000000000",
-            "object": "customer",
-            "account_balance": 0,
-            "created": 1563287210,
-            "currency": "usd",
-            "metadata": {"userid": "user123"},
-        },
-        spec=stripe.Customer,
-    )
-    when(stripe.Customer).retrieve(id="cus_00000000000000").thenReturn(
-        customer_response
-    )
+    mock_cust.return_value = {
+        "id": "cus_00000000000000",
+        "object": "customer",
+        "account_balance": 0,
+        "created": 1563287210,
+        "currency": "usd",
+    }
+    mock_deleted_user.return_value = {"user_id": "user123"}
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
     filename = "customer-subscription-deleted.json"
     run_customer(mocker, data, filename)

@@ -81,8 +81,8 @@ def test_cancel_stripe_subscription_period_end_error():
 
 def test_list_customer_subscriptions_error():
     disable_base()
-    with pytest.raises(APIError):
-        vendor.list_customer_subscriptions("no_cust")
+    with pytest.raises((APIError, APIConnectionError)):
+        vendor.list_customer_subscriptions("no_customer")
     enable_base()
 
 

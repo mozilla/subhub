@@ -11,6 +11,7 @@ import logging
 import psutil
 import pytest
 import stripe
+
 from flask import g
 
 from hub.app import create_app
@@ -66,4 +67,5 @@ def app():
     app = create_app()
     with app.app.app_context():
         g.hub_table = app.app.hub_table
+        g.subhub_deleted_users = app.app.subhub_deleted_users
         yield app

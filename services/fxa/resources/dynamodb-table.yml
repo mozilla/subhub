@@ -1,7 +1,7 @@
 Resources:
   UsersTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
     Properties:
       TableName: ${self:custom.usersTable}
       AttributeDefinitions:
@@ -13,25 +13,33 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       # Set the capacity to auto-scale
-      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'
   DeletedUsersTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
     Properties:
       TableName: ${self:custom.deletedUsersTable}
       AttributeDefinitions:
         - AttributeName: user_id
           AttributeType: S
+        - AttributeName: cust_id
+          AttributeType: S
       KeySchema:
         - AttributeName: user_id
           KeyType: HASH
+        - AttributeName: cust_id
+          KeyType: RANGE
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       # Set the capacity to auto-scale
-      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'
   EventsTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Retain
+    DeletionPolicy: Delete
     Properties:
       TableName: ${self:custom.eventsTable}
       AttributeDefinitions:
@@ -43,4 +51,6 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
       # Set the capacity to auto-scale
-      BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: '5'
+        WriteCapacityUnits: '5'

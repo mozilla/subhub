@@ -64,3 +64,15 @@ class SecretStringMissingError(Exception):
     def __init__(self, secret) -> None:
         message = f"SecretString missing from secret={secret}"
         super().__init__(message)
+
+
+class UnsupportedStaticRouteError(Exception):
+    def __init__(self, route, routes):
+        message = f"{route} is unsupported; should be one of {routes}"
+        super().__init__(message)
+
+
+class UnsupportedDataError(Exception):
+    def __init__(self, data, route, routes):
+        message = f"{route} is unsupported for {data}; should be one of {routes}"
+        super().__init__(message)

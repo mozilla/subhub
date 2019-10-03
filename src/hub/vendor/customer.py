@@ -9,12 +9,15 @@ import stripe
 from stripe.error import InvalidRequestError
 from datetime import datetime
 from typing import Optional, Dict, Any
+from flask import g
 
 from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
 from hub.shared.utils import format_plan_nickname
 from shared.log import get_logger
+from hub.shared.db import SubHubDeletedAccount
+from hub.shared import vendor
 
 logger = get_logger()
 
@@ -34,6 +37,65 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
         logger.info("customer created", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))
+
+
+class StripeCustomerDeleted(AbstractStripeHubEvent):
+    def run(self) -> None:
+        logger.info("customer deleted", payload=self.payload)
+        customer_id = self.payload.data.object.id
+        uid = self.payload.data.object.metadata.userid
+        deleted_user = g.subhub_deleted_users.get_user(uid, customer_id)
+        result = {}
+        for d in deleted_user.subscription_info:
+            for k in d.keys():
+                result[k] = result.get(k, 0) + d[k]
+        plan_amount = result.get("plan_amount", 0)
+
+        formatted_nicknames = list()
+        products = {}  # type: Dict
+        for user_plan in deleted_user.subscription_info:
+            try:
+                product = products[user_plan["product"]]
+            except KeyError:
+                product = stripe.Product.retrieve(user_plan["product"])
+                products[user_plan["product"]] = product
+
+            plan_nickname = format_plan_nickname(
+                product_name=product["name"], plan_interval=user_plan["interval"]
+            )
+            formatted_nicknames.append(plan_nickname)
+
+        nicknames = " ".join(formatted_nicknames)
+        subs = ",".join(
+            [(x.get("subscription_id")) for x in deleted_user.subscription_info]
+        )
+        data = self.create_data(
+            created=self.payload.data.object.created,
+            customer_id=self.payload.data.object.id,
+            plan_amount=plan_amount,
+            productName=nicknames,
+            subscription_id=subs,
+            subscriptionId=subs,  # required by FxA
+            current_period_end=deleted_user.subscription_info[0],
+            current_period_start=deleted_user.subscription_info[0],
+            uid=self.payload.data.object.metadata.userid,  # required by FxA
+            eventCreatedAt=self.payload.created,  # required by FxA
+            messageCreatedAt=int(time.time()),  # required by FxA
+            eventId=self.payload.id,  # required by FxA
+        )
+        logger.info("customer delete", data=data)
+        data_projection_by_route = {
+            StaticRoutes.FIREFOX_ROUTE: [
+                "uid",
+                "eventId",
+                "eventCreatedAt",
+                "messageCreatedAt",
+                "subscriptionId",
+                "productName",
+            ],
+            StaticRoutes.SALESFORCE_ROUTE: data.keys(),
+        }
+        self.customer_event_to_all_routes(data_projection_by_route, data)
 
 
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
@@ -143,48 +205,26 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 last4=last4,
                 charge=charge,
             )
+            # NOTE:
+            # Firefox's route has a particular casing requirement
+            # Salesforce's route doesn't care.
+            data_projection_by_route = {
+                StaticRoutes.FIREFOX_ROUTE: [
+                    "uid",
+                    "active",
+                    "subscriptionId",
+                    "productName",
+                    "eventId",
+                    "eventCreatedAt",
+                    "messageCreatedAt",
+                ],
+                StaticRoutes.SALESFORCE_ROUTE: data.keys(),
+            }
+            self.customer_event_to_all_routes(data_projection_by_route, data)
             logger.info("customer subscription created", data=data)
-            routes = [StaticRoutes.FIREFOX_ROUTE, StaticRoutes.SALESFORCE_ROUTE]
-            self.send_to_routes(routes, json.dumps(data))
         else:
             logger.error(
                 "customer subscription created no userid",
-                error=self.payload.object.customer,
-                user_id=user_id,
-            )
-            raise ClientError(
-                f"userid is None for customer {self.payload.object.customer}"
-            )
-
-
-class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
-    def run(self) -> None:
-        logger.info("customer subscription deleted", payload=self.payload)
-        try:
-            customer_id = self.payload.data.object.customer
-            updated_customer = stripe.Customer.retrieve(id=customer_id)
-            user_id = updated_customer.metadata.get("userid")
-        except InvalidRequestError as e:
-            logger.error("Unable to find customer", error=e)
-            raise e
-        if user_id:
-            product = stripe.Product.retrieve(self.payload.data.object.plan.product)
-
-            data = dict(
-                active=self.is_active_or_trialing,
-                subscriptionId=self.payload.data.object.id,
-                productName=product["name"],
-                eventId=self.payload.id,  # required by FxA
-                event_id=self.payload.id,
-                eventCreatedAt=self.payload.created,
-                messageCreatedAt=int(time.time()),
-            )
-            logger.info("customer subscription deleted", data=data)
-            routes = [StaticRoutes.FIREFOX_ROUTE]
-            self.send_to_routes(routes, json.dumps(data))
-        else:
-            logger.error(
-                "customer subscription deleted no userid",
                 error=self.payload.object.customer,
                 user_id=user_id,
             )
