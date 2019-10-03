@@ -140,5 +140,8 @@ node_modules/
 # OSX
 .DS_Store
 
+# Vagrant
+.vagrant
+
 # ignore specific symlink
 services/fxa/sls
