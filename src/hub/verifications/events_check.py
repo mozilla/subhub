@@ -1,7 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
+import sys
 import time
 from abc import ABC
 from datetime import datetime, timedelta
@@ -20,14 +20,17 @@ from shared.log import get_logger
 
 logger = get_logger()
 
-xray_recorder.configure(service="subhub-missing-events")
+if not hasattr(sys, "_called_from_test"):
+    xray_recorder.configure(service="subhub-missing-events")
 
-try:
+    try:
+        app = create_app()
+        XRayMiddleware(app.app, xray_recorder)
+    except Exception:  # pylint: disable=broad-except
+        logger.exception("Exception occurred while loading app")
+        raise
+else:
     app = create_app()
-    XRayMiddleware(app.app, xray_recorder)
-except Exception:  # pylint: disable=broad-except
-    logger.exception("Exception occurred while loading app")
-    raise
 
 
 class EventCheck(ABC):

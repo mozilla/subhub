@@ -72,7 +72,7 @@ def create_app(config=None):
     # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
-    host = f"http://localhost:{CFG.DYNALITE_PORT}"
+    host = CFG.DYNALITE_URL
     if is_container():
         host = f"http://dynalite:{CFG.DYNALITE_PORT}"
     stripe.api_key = CFG.STRIPE_API_KEY

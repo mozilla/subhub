@@ -187,12 +187,9 @@ def test_DYNALITE_PORT():
         assert False
 
 
-def test_DYNALITE_FILE():
-    """
-    dynalite file
-    """
+def test_DYNALITE_URL():
     try:
-        CFG.DYNALITE_FILE
+        CFG.DYNALITE_URL
         assert True
     except:
         assert False
