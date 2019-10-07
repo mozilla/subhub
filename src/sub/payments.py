@@ -165,10 +165,14 @@ def delete_customer(uid: str) -> FlaskResponse:
     :param uid:
     :return: Success of failure message for the deletion
     """
+    message, response_code = (None, None)
+    logger.debug(
+        f"Enter {delete_customer.__name__} ({uid})"
+    )
     subscription_user = g.subhub_account.get_user(uid)
     if not subscription_user:
-        return dict(message="Customer does not exist."), 404
-
+        message = "Customer does not exist."
+        response_code = 404
     deleted_payment_customer = vendor.delete_stripe_customer(subscription_user.cust_id)
     if deleted_payment_customer:
         deleted_customer = delete_user(
@@ -178,9 +182,15 @@ def delete_customer(uid: str) -> FlaskResponse:
         )
         user = g.subhub_account.get_user(uid)
         if deleted_customer and user is None:
-            return dict(message="Customer deleted successfully"), 200
-
-    return dict(message="Customer not available"), 400
+            message = "Customer deleted successfully"
+            response_code = 200
+    else:
+        message = "Customer not available"
+        response_code = 400
+    logger.debug(
+        f"Exit {delete_customer.__name__} ({uid})"
+    )
+    return dict(message=message), response_code
 
 
 def delete_user(user_id: str, cust_id: str, origin_system: str) -> bool:
@@ -193,20 +203,37 @@ def delete_user(user_id: str, cust_id: str, origin_system: str) -> bool:
     :param origin_system:
     :return:
     """
+    logger.debug(f"Enter {delete_user.__name__} ({user_id, cust_id, origin_system})")
     deleted_user = add_user_to_deleted_users_record(
         user_id=user_id, cust_id=cust_id, origin_system=origin_system
     )
     if not deleted_user:
+        logger.debug(
+            f"Exit {delete_user.__name__} ({user_id, cust_id, origin_system}) Not deleted user",
+            deleted_user=deleted_user,
+        )
         return False
-    return g.subhub_account.remove_from_db(user_id)
+    deleted = g.subhub_account.remove_from_db(user_id)
+    logger.debug(
+        f"Exit {delete_user.__name__} ({user_id, cust_id, origin_system})",
+        deleted=deleted,
+    )
+    return deleted
 
 
 def add_user_to_deleted_users_record(
     user_id: str, cust_id: Optional[str], origin_system: str
 ) -> Optional[Any]:
-    return g.subhub_deleted_users.new_user(
+    logger.debug(
+        f"Enter {add_user_to_deleted_users_record.__name__} ({user_id, cust_id, origin_system})"
+    )
+    new_user = g.subhub_deleted_users.new_user(
         uid=user_id, cust_id=cust_id, origin_system=origin_system
     )
+    logger.debug(
+        f"Exit {add_user_to_deleted_users_record.__name__} ({user_id, cust_id, origin_system})", new_user=new_user
+    )
+    return new_user
 
 
 def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
