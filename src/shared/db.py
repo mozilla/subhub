@@ -4,6 +4,7 @@
 
 from typing import Optional, Any, List, cast, Type, TYPE_CHECKING, Union
 
+from deprecated import deprecated
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.connection import Connection
 from pynamodb.models import Model, DoesNotExist
@@ -55,54 +56,95 @@ class SubHubAccount:
         )
 
     def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
+        logger.debug(
+            f"Enter {SubHubAccount.__class__.__name__}::{SubHubAccount.get_user.__name__}"
+        )
+        subscription_user: SubHubAccountModel = None
         try:
-            subscription_user: SubHubAccountModel = self.model.get(
-                uid, consistent_read=True
-            )
-            return subscription_user
-        except DoesNotExist:
-            logger.error("get user", uid=uid)
-            return None
+            subscription_user = self.model.get(uid, consistent_read=True)
+        except DoesNotExist as error:
+            logger.error("User find error", uid=uid, error=error)
+        logger.debug(
+            f"Exit {SubHubAccount.__class__.__name__}::{SubHubAccount.get_user.__name__}"
+        )
+        return subscription_user
 
     @staticmethod
     def save_user(user: SubHubAccountModel) -> bool:
+        logger.debug(
+            f"Enter {SubHubAccount.__class__.__name__}::{SubHubAccount.save_user.__name__}"
+        )
+        saved = False
         try:
             user.save()
-            return True
-        except PutError:
-            logger.error("save user", user=user)
-            return False
+            saved = True
+        except PutError as error:
+            logger.error("Failed to save User", user=user)
+            logger.error("Save error", error=error)
+            saved = False
+        logger.debug(
+            f"Exit {SubHubAccount.__class__.__name__}::{SubHubAccount.save_user.__name__}"
+        )
+        return saved
 
+    @deprecated("Prefer new customer creation and deletion")
     def append_custid(self, uid: str, cust_id: str) -> bool:
+        logger.debug(
+            f"Enter {SubHubAccount.__class__.__name__}::{SubHubAccount.append_custid.__name__} ({uid}, {cust_id})"
+        )
+        saved = False
         try:
             update_user = self.model.get(uid, consistent_read=True)
             update_user.cust_id = cust_id
             update_user.save()
-            return True
+            saved = True
         except DoesNotExist:
             logger.error("append custid", uid=uid, cust_id=cust_id)
-            return False
+            saved = False
+        logger.debug(
+            f"Exit {SubHubAccount.__class__.__name__}::{SubHubAccount.append_custid.__name__} ({uid}, {cust_id})"
+        )
+        return saved
 
     def remove_from_db(self, uid: str) -> bool:
+        logger.debug(
+            f"Enter {SubHubAccount.__class__.__name__}::{SubHubAccount.remove_from_db.__name__} ({uid})"
+        )
+        removed = False
         try:
             conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
             conn.delete_item(
                 self.model.Meta.table_name, hash_key=uid, range_key=None
             )  # Note that range key is optional
-            return True
+            removed = True
         except DeleteError as e:
             logger.error("failed to remove user from db", uid=uid)
-            return False
+            removed = False
+        logger.debug(
+            f"Exit {SubHubAccount.__class__.__name__}::{SubHubAccount.remove_from_db.__name__} ({uid})"
+        )
+        return removed
 
+    @deprecated(
+        "mark_deleted is no longer used and can therefore be removed from both SubHubDeletedAccountModel and SubHubAccountModel"
+    )
     def mark_deleted(self, uid: str) -> bool:
+        logger.debug(
+            f"Enter {SubHubAccount.__class__.__name__}::{SubHubAccount.mark_deleted.__name__} ({uid})"
+        )
+        deleted = False
         try:
             delete_user = self.model.get(uid, consistent_read=True)
             delete_user.customer_status = "deleted"
             delete_user.save()
-            return True
+            deleted = True
         except DoesNotExist:
             logger.error("mark deleted", uid=uid)
-            return False
+            deleted = False
+        logger.debug(
+            f"Exit {SubHubAccount.__class__.__name__}::{SubHubAccount.mark_deleted.__name__} ({uid})"
+        )
+        return deleted
 
 
 def _create_hub_model(table_name_, region_, host_) -> Any:
@@ -204,29 +246,51 @@ class SubHubDeletedAccount:
     def new_user(
         self, uid: str, origin_system: str, cust_id: Optional[str] = None
     ) -> SubHubDeletedAccountModel:
-        return self.model(
+        logger.debug(
+            f"Enter {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.new_user.__name__} ({uid}, {origin_system}, {cust_id})"
+        )
+        user = self.model(
             user_id=uid,
             cust_id=cust_id,
             origin_system=origin_system,
             customer_status="deleted",
         )
+        logger.debug(
+            f"Exit {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.new_user.__name__} ({uid}, {origin_system}, {cust_id})",
+            user=user,
+        )
+        return user
 
     def get_user(self, uid: str) -> Optional[SubHubDeletedAccountModel]:
+        logger.debug(
+            f"Enter {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.get_user.__name__} ({uid})"
+        )
+        subscription_user: Optional[Any] = None
         try:
-            subscription_user: Optional[Any] = self.model.get(uid, consistent_read=True)
-            return subscription_user
+            subscription_user = self.model.get(uid, consistent_read=True)
         except DoesNotExist:
             logger.error("get user", uid=uid)
-            return None
+        logger.debug(
+            f"Enter {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.get_user.__name__} ({uid})"
+        )
+        return subscription_user
 
     @staticmethod
     def save_user(user: SubHubDeletedAccountModel) -> bool:
+        logger.debug(
+            f"Enter {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.save_user.__name__} ({user})"
+        )
+        saved = False
         try:
             user.save()
-            return True
+            saved = True
         except PutError:
             logger.error("save user", user=user)
-            return False
+            saved = False
+        logger.debug(
+            f"Enter {SubHubDeletedAccount.__class__.__name__}::{SubHubAccount.save_user.__name__} ({user})"
+        )
+        return saved
 
     def append_custid(self, uid: str, cust_id: str) -> bool:
         try:
