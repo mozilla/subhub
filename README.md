@@ -15,6 +15,8 @@ Payment subscription REST api for customers:
 
 ### [Build System](./docs/doit.md)
 
+### [Debugging](./docs/debugging.md)
+
 ### [RESTful Service Interactions](./docs/rest.md)
 
 ### [Performance Testing](./src/sub/tests/performance/README.md)
