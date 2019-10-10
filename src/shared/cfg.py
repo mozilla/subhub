@@ -3,9 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 # -*- coding: utf-8 -*-
-"""
-config
-"""
+
 import os
 import re
 import ast
@@ -25,27 +23,13 @@ logger = get_logger()
 
 
 class NotGitRepoError(Exception):
-    """
-    NotGitRepoError
-    """
-
     def __init__(self, cwd=os.getcwd()):
-        """
-        init
-        """
         msg = f"not a git repository error cwd={cwd}"
         super().__init__(msg)
 
 
 class GitCommandNotFoundError(Exception):
-    """
-    GitCommandNotFoundError
-    """
-
     def __init__(self):
-        """
-        init
-        """
         msg = "git: command not found"
         super().__init__(msg)
 
@@ -78,9 +62,6 @@ def call(
 
 
 def git(args, strip=True, **kwargs):
-    """
-    git
-    """
     try:
         _, stdout, stderr = call("git rev-parse --is-inside-work-tree")
     except CalledProcessError as ex:
@@ -101,22 +82,12 @@ def git(args, strip=True, **kwargs):
 
 
 class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
-    """
-    thin wrapper around AutoConfig adding some extra features
-    """
-
     @property
     def REPO_ROOT(self):
-        """
-        repo_root
-        """
         return git("rev-parse --show-toplevel")
 
     @property
     def LOG_LEVEL(self):
-        """
-        log level
-        """
         default_level = {
             "prod": "WARNING",
             "stage": "INFO",
@@ -128,9 +99,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def VERSION(self):
-        """
-        version
-        """
         try:
             return git("describe --abbrev=7 --always")
         except (NotGitRepoError, GitCommandNotFoundError):
@@ -138,9 +106,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def BRANCH(self):
-        """
-        branch
-        """
         try:
             return git("rev-parse --abbrev-ref HEAD")
         except (NotGitRepoError, GitCommandNotFoundError):
@@ -148,9 +113,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def DEPLOYED_ENV(self):
-        """
-        deployment environment
-        """
         deployed_env = self("DEPLOYED_ENV", None)
         if deployed_env:
             return deployed_env
@@ -165,24 +127,15 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def DEPLOYED_BY(self):
-        """
-        DEPLOYED_BY
-        """
         return self("DEPLOYED_BY", f"{self.USER}@{self.HOSTNAME}")
 
     @property  # type: ignore
     @lru_cache()
     def DEPLOYED_WHEN(self):
-        """
-        DEPLOYED_WHEN
-        """
         return self("DEPLOYED_WHEN", datetime.utcnow().isoformat())
 
     @property
     def REVISION(self):
-        """
-        revision
-        """
         try:
             return git("rev-parse HEAD")
         except (NotGitRepoError, GitCommandNotFoundError):
@@ -190,9 +143,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def REMOTE_ORIGIN_URL(self):
-        """
-        remote origin url
-        """
         try:
             return git("config --get remote.origin.url")
         except (NotGitRepoError, GitCommandNotFoundError):
@@ -200,32 +150,20 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def REPO_NAME(self):
-        """
-        repo_name
-        """
         pattern = r"^((https|ssh)://)?(git@)?github.com[:/](?P<repo_name>[A-Za-z0-9\/\-_]+)(.git)?$"
         match = re.search(pattern, self.REMOTE_ORIGIN_URL)
         return match.group("repo_name")
 
     @property
     def PROJECT_NAME(self):
-        """
-        project_name
-        """
         return os.path.basename(self.REPO_NAME)
 
     @property
     def PROJECT_PATH(self):
-        """
-        project_path
-        """
         return os.path.join(self.REPO_ROOT, self.PROJECT_NAME)
 
     @property
     def LS_REMOTE(self):
-        """
-        ls-remote
-        """
         repo_name = self.REPO_NAME
         logger.info(f"repo_name={repo_name}")
         result = git(f"ls-remote https://github.com/{repo_name}")
@@ -236,231 +174,130 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def USER_TABLE(self):
-        """
-        default value for USER_TABLE
-        """
         return self("USER_TABLE", "users-testing")
 
     @property
     def DELETED_USER_TABLE(self):
-        """
-        DELETED_USER_TABLE
-        """
         return self("DELETED_USER_TABLE", "deleted-users-testing")
 
     @property
     def EVENT_TABLE(self):
-        """
-        default value for EVENT_TABLE
-        """
         return self("EVENT_TABLE", "events-testing")
 
     @property
     def STRIPE_MOCK_HOST(self):
-        """
-        Stripe API Host
-        """
         return self("STRIPE_MOCK_HOST", "stripe")
 
     @property
     def STRIPE_MOCK_PORT(self):
-        """
-        Stripe API port
-        """
         return self("STRIPE_MOCK_PORT", 12112, cast=int)
 
     @property
     def STRIPE_LOCAL(self):
-        """
-        Use Stripe local?
-        """
         return self("STRIPE_LOCAL", False, cast=bool)
 
     @property
     def STRIPE_API_KEY(self):
-        """
-        Stripe API KEY
-        :return:
-        """
         return self("STRIPE_API_KEY", "sk_test_123")
 
     @property
     def LOCAL_FLASK_PORT(self):
-        """
-        local flask port
-        """
         return self("LOCAL_FLASK_PORT", 5000, cast=int)
 
     @property
     def DYNALITE_PORT(self):
-        """
-        dynalite port
-        """
         return self("DYNALITE_PORT", 8000, cast=int)
 
     @property
     def DYNALITE_FILE(self):
-        """
-        dynalite output file
-        """
         return self("DYNALITE_FILE", "dynalite.out")
 
     @property
     def SALESFORCE_BASKET_URI(self):
-        """
-        basket uri
-        """
         return self("SALESFORCE_BASKET_URI", "https://google.com?api-key=")
 
     @property
     def BASKET_API_KEY(self):
-        """
-        basket api key
-        :return:
-        """
         return self("BASKET_API_KEY", "fake_basket_api_key")
 
     @property
     def FXA_SQS_URI(self):
-        """
-        fxa sqs uri
-        """
         return self("FXA_SQS_URI", "https://google.com")
 
     @property
     def AWS_REGION(self):
-        """
-        aws region
-        """
         return self("AWS_REGION", "us-west-2")
 
     @property
     def PAYMENT_API_KEY(self):
-        """
-        payment api key
-        """
         return self("PAYMENT_API_KEY", "fake_payment_api_key")
 
     @property
     def TOPIC_ARN_KEY(self):
-        """
-        topic arn for sns
-        :return:
-        """
         return self("TOPIC_ARN_KEY", "fake_topic_arn_key")
 
     @property
     def SUPPORT_API_KEY(self):
-        """
-        support api key
-        """
         return self("SUPPORT_API_KEY", "fake_support_api_key")
 
     @property
     def AWS_ACCESS_KEY_ID(self):
-        """
-        aws access key id
-        :return:
-        """
         return self("AWS_ACCESS_KEY_ID", "fake_aws_access_key_id")
 
     @property
     def AWS_SECRET_ACCESS_KEY(self):
-        """
-        aws secret access key
-        :return:
-        """
         return self("AWS_SECRET_ACCESS_KEY", "fake_aws_secret_access_key")
 
     @property
     def HUB_API_KEY(self):
-        """
-        hub api key
-        """
         return self("HUB_API_KEY", "fake_hub_api_key")
 
     @property
     def AWS_EXECUTION_ENV(self):
-        """
-        default value for aws execution env
-        """
         return self("AWS_EXECUTION_ENV", None)
 
     @property
     def SWAGGER_UI(self):
-        """
-        boolean property to determine if we should swagger or not
-        """
         return self.DEPLOYED_ENV in ("stage", "qa", "dev")
 
     @property
     def NEW_RELIC_ACCOUNT_ID(self):
-        """
-        NEW_RELIC_ACCOUNT_ID
-        """
         return self("NEW_RELIC_ACCOUNT_ID", 2_423_519)
 
     @property
     def NEW_RELIC_TRUSTED_ACCOUNT_ID(self):
-        """
-        NEW_RELIC_TRUSTED_ACCOUNT_ID
-        """
         return self("NEW_RELIC_TRUSTED_ACCOUNT_ID", 2_423_519)
 
     @property
     def NEW_RELIC_SERVERLESS_MODE_ENABLED(self):
-        """
-        NEW_RELIC_SERVERLESS_MODE_ENABLED
-        """
         return self("NEW_RELIC_SERVERLESS_MODE_ENABLED", True)
 
     @property
     def NEW_RELIC_DISTRIBUTED_TRACING_ENABLED(self):
-        """
-        NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
-        """
         return self("NEW_RELIC_DISTRIBUTED_TRACING_ENABLED", True)
 
     @property
     def ALLOWED_ORIGIN_SYSTEMS(self):
-        """
-        ALLOWED_ORIGIN_SYSTEMS
-        """
         return self("ALLOWED_ORIGIN_SYSTEMS", "fake_origin1, fake_origin2").split(",")
 
     @property
     def PAYMENT_EVENT_LIST(self):
-        """"
-        PAYMENT_EVENT_LIST
-        """
         return self("PAYMENT_EVENT_LIST", "test.system, test.event").split(",")
 
     @property
     def PROFILING_ENABLED(self):
-        """
-        PROFILING_ENABLED
-        """
         return ast.literal_eval(self("PROFILING_ENABLED", "False"))
 
     @property
     def DEPLOY_DOMAIN(self):
-        """
-        DEPLOY_DOMAIN
-        """
         return self("DEPLOY_DOMAIN", "localhost")
 
     @property
     def SRCTAR(self):
-        """
-        SRCTAR
-        """
         return self("SRCTAR", ".src.tar.gz")
 
     @property
     def USER(self):
-        """
-        user
-        """
         try:
             return pwd.getpwuid(os.getuid()).pw_name
         except:
@@ -468,18 +305,12 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def HOSTNAME(self):
-        """
-        hostname
-        """
         try:
             return platform.node()
         except:
             return "unknown"
 
     def __getattr__(self, attr):
-        """
-        getattr
-        """
         if attr == "create_doit_tasks":  # note: to keep pydoit's hands off
             return lambda: None
         result = self(attr)
