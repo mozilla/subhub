@@ -25,7 +25,7 @@ Payment subscription REST api for customers:
 
 ### [AWS DynamoDB Backups](./docs/backups.md)
 
-### [NewRelic Lambda Setup](./bin/nr-lambda-onboarding-master/README.md)
+### [NewRelic - AWS Lambda Integration](./bin/new-relic/README.md)
 
 ### [Vagrant support to replicate TravisCI](./docs/vagrant.md)
 
