@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 
-set -ex
+if [ -n "$DEBUG" ]; then
+    PS4=':${LINENO}+'
+    set -x
+fi
 
 source "env.sh"
 source "install.sh"
@@ -11,8 +14,7 @@ function enable_streaming(){
         echo "usage: $1, One of more function names to enable log streaming."
     fi
     if [ -d "$NR_LAMBDA_DIRECTORY" ]; then
-        cd nr-lambda
-        sh newrelic-cloud stream-lambda-logs $1
+        (cd "$NR_LAMBDA_DIRECTORY" && ./newrelic-cloud stream-lambda-logs --regions "$AWS_REGION" --functions "$@")
     else
         echo "Please run install.sh first."
     fi
