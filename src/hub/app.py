@@ -57,24 +57,20 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
-def is_container() -> bool:
-    import requests
-
-    try:
-        requests.get(f"http://dynalite:{CFG.DYNALITE_PORT}")
-        return True
-    except Exception as e:
-        pass
-    return False
+def is_docker() -> bool:
+    path = "/proc/self/cgroup"
+    return (
+        os.path.exists("/.dockerenv")
+        or os.path.isfile(path)
+        and any("docker" in line for line in open(path))
+    )
 
 
 def create_app(config=None):
     # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
-    host = f"http://localhost:{CFG.DYNALITE_PORT}"
-    if is_container():
-        host = f"http://dynalite:{CFG.DYNALITE_PORT}"
+    host = f"http://dynalite:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
     stripe.api_key = CFG.STRIPE_API_KEY
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"

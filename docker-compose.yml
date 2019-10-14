@@ -76,7 +76,7 @@ services:
       - dynalite
 
   dynalite:
-    build: https://github.com/vitarn/docker-dynalite.git
+    image: vitarn/dynalite:latest
     ports:
       - 4567
 

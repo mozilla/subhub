@@ -292,18 +292,18 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("LOCAL_FLASK_PORT", 5000, cast=int)
 
     @property
+    def DYNALITE_URL(self):
+        """
+        dynalite url
+        """
+        return self("DYNALITE_URL", "http://127.0.0.1:8000")
+
+    @property
     def DYNALITE_PORT(self):
         """
         dynalite port
         """
         return self("DYNALITE_PORT", 8000, cast=int)
-
-    @property
-    def DYNALITE_FILE(self):
-        """
-        dynalite output file
-        """
-        return self("DYNALITE_FILE", "dynalite.out")
 
     @property
     def SALESFORCE_BASKET_URI(self):

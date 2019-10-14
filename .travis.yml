@@ -1,16 +1,23 @@
 language: python
 dist: xenial
 sudo: required
+services:
+  - docker
 python:
  - "3.7"
 addons:
   apt:
     sources: ['ubuntu-toolchain-r-test']
     packages: ['bash', 'coreutils', 'awscli']
+notifications:
+  email:
+    on_failure: change
+    on_success: never
 cache:
   directories:
     - /home/travis/.nvm
     - /home/travis/.cache/pip
+    - docker
 env:
   global:
     - BOTO_CONFIG: "/dev/null"
@@ -25,10 +32,13 @@ before_install:
   - npm install -g kinesalite
   - sudo apt-get install -y awscli
   - ./bin/aws-credentials.sh
+  - docker pull vitarn/dynalite
 
 jobs:
   include:
     - stage: Unit Tests
+#      before_script:
+#        - gzip -dc docker/dynalite.tar.gz | docker load
       script:
         # The below 2 TravisCI statements are a workaround for an issue in TravisCI which
         # is best described as "Large writes to stdout sometimes fail with "Resource temporarily unavailable".
