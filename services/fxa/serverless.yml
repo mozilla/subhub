@@ -12,9 +12,9 @@ package:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-  usersTable: "users-${opt:stage, self:provider.stage}-${self:provider.environment.BUILD_NUMBER}"
-  deletedUsersTable: "deletedUsers-${opt:stage, self:provider.stage}-${self:provider.environment.BUILD_NUMBER}"
-  eventsTable: "events-${opt:stage, self:provider.stage}-${self:provider.environment.BUILD_NUMBER}"
+  usersTable: "users-${opt:stage, self:provider.stage}"
+  deletedUsersTable: "deletedUsers-${opt:stage, self:provider.stage}"
+  eventsTable: "events-${opt:stage, self:provider.stage}"
   prefix: ${self:provider.stage}-${self:service.name}
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
