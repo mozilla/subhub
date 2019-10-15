@@ -165,7 +165,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 subscriptionId=self.payload.data.object.id,
                 subscription_id=self.payload.data.object.id,
                 productName=product_name,
-                productID=product_id,
+                productId=product_id,
                 eventId=self.payload.id,  # required by FxA
                 eventCreatedAt=self.payload.created,  # required by FxA
                 messageCreatedAt=int(time.time()),  # required by FxA
