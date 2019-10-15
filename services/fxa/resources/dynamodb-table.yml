@@ -1,7 +1,7 @@
 Resources:
   UsersTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.usersTable}
       AttributeDefinitions:
@@ -18,7 +18,7 @@ Resources:
         WriteCapacityUnits: '5'
   DeletedUsersTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.deletedUsersTable}
       AttributeDefinitions:
@@ -39,7 +39,7 @@ Resources:
         WriteCapacityUnits: '5'
   EventsTable:
     Type: 'AWS::DynamoDB::Table'
-    DeletionPolicy: Delete
+    DeletionPolicy: Retain
     Properties:
       TableName: ${self:custom.eventsTable}
       AttributeDefinitions:

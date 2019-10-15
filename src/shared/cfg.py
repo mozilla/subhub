@@ -174,15 +174,15 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def USER_TABLE(self):
-        return self("USER_TABLE", "users-testing")
+        return self("USER_TABLE", f"users-{CFG.DEPLOYED_ENV}")
 
     @property
     def DELETED_USER_TABLE(self):
-        return self("DELETED_USER_TABLE", "deleted-users-testing")
+        return self("DELETED_USER_TABLE", f"deleted-users-{CFG.DEPLOYED_ENV}")
 
     @property
     def EVENT_TABLE(self):
-        return self("EVENT_TABLE", "events-testing")
+        return self("EVENT_TABLE", f"events-{CFG.DEPLOYED_ENV}")
 
     @property
     def STRIPE_MOCK_HOST(self):
