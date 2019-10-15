@@ -605,6 +605,19 @@ def task_package():
             ],
         }
 
+def task_print():
+    '''
+    run serverless print to render the serverless.yml
+    '''
+    return {
+        'task_dep': [
+            'yarn',
+        ],
+        'actions': [
+            f'cd services/fxa && env {envs()} {SLS} print --stage {CFG.DEPLOYED_ENV}',
+        ],
+    }
+
 def task_tar():
     '''
     tar up source files, dereferncing symlinks
