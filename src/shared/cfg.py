@@ -262,7 +262,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def SWAGGER_UI(self):
-        return self.DEPLOYED_ENV in ("stage", "qa", "dev")
+        return self.DEPLOYED_ENV in ("stage", "qa", "dev", "fab")
 
     @property
     def NEW_RELIC_ACCOUNT_ID(self):

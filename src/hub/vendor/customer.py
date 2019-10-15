@@ -45,27 +45,15 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         customer_id = self.payload.data.object.id
         uid = self.payload.data.object.metadata.userid
         deleted_user = g.subhub_deleted_users.get_user(uid, customer_id)
-        result = {}
-        for d in deleted_user.subscription_info:
-            for k in d.keys():
-                result[k] = result.get(k, 0) + d[k]
-        plan_amount = result.get("plan_amount", 0)
-
-        formatted_nicknames = list()
-        products = {}  # type: Dict
+        plan_amount = 0
+        current_period_end = None
+        current_period_start = None
+        nicknames = list()
         for user_plan in deleted_user.subscription_info:
-            try:
-                product = products[user_plan["product"]]
-            except KeyError:
-                product = stripe.Product.retrieve(user_plan["product"])
-                products[user_plan["product"]] = product
-
-            plan_nickname = format_plan_nickname(
-                product_name=product["name"], plan_interval=user_plan["interval"]
-            )
-            formatted_nicknames.append(plan_nickname)
-
-        nicknames = " ".join(formatted_nicknames)
+            plan_amount = plan_amount + user_plan["plan_amount"]
+            nicknames.append(user_plan["nickname"])
+            current_period_start = user_plan["current_period_start"]
+            current_period_end = user_plan["current_period_end"]
         subs = ",".join(
             [(x.get("subscription_id")) for x in deleted_user.subscription_info]
         )
@@ -73,29 +61,19 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
             created=self.payload.data.object.created,
             customer_id=self.payload.data.object.id,
             plan_amount=plan_amount,
-            productName=nicknames,
+            nickname=nicknames,
             subscription_id=subs,
             subscriptionId=subs,  # required by FxA
-            current_period_end=deleted_user.subscription_info[0],
-            current_period_start=deleted_user.subscription_info[0],
+            current_period_end=current_period_end,
+            current_period_start=current_period_start,
             uid=self.payload.data.object.metadata.userid,  # required by FxA
             eventCreatedAt=self.payload.created,  # required by FxA
             messageCreatedAt=int(time.time()),  # required by FxA
             eventId=self.payload.id,  # required by FxA
         )
         logger.info("customer delete", data=data)
-        data_projection_by_route = {
-            StaticRoutes.FIREFOX_ROUTE: [
-                "uid",
-                "eventId",
-                "eventCreatedAt",
-                "messageCreatedAt",
-                "subscriptionId",
-                "productName",
-            ],
-            StaticRoutes.SALESFORCE_ROUTE: data.keys(),
-        }
-        self.customer_event_to_all_routes(data_projection_by_route, data)
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
+        self.send_to_routes(routes, json.dumps(data))
 
 
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
@@ -174,6 +152,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         if user_id:
             product = stripe.Product.retrieve(self.payload.data.object.plan.product)
             product_name = product["name"]
+            product_id = product["id"]
 
             plan_nickname = format_plan_nickname(
                 product_name=product_name,
@@ -186,6 +165,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 subscriptionId=self.payload.data.object.id,
                 subscription_id=self.payload.data.object.id,
                 productName=product_name,
+                productID=product_id,
                 eventId=self.payload.id,  # required by FxA
                 eventCreatedAt=self.payload.created,  # required by FxA
                 messageCreatedAt=int(time.time()),  # required by FxA
@@ -213,7 +193,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                     "uid",
                     "active",
                     "subscriptionId",
-                    "productName",
+                    "productId",
                     "eventId",
                     "eventCreatedAt",
                     "messageCreatedAt",
