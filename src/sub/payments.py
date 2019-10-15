@@ -192,14 +192,12 @@ def delete_customer(uid: str) -> FlaskResponse:
             except KeyError:
                 product = Product.retrieve(subs.plan.product)
                 products[subs.plan.product] = product
-
-            plan_nickname = format_plan_nickname(
-                product_name=product["name"], plan_interval=subs.plan.interval
-            )
+            plan_id = subs.plan.product
 
             sub = dict(
                 plan_amount=subs.plan.amount,
                 nickname=format_plan_nickname(subs.plan.nickname, subs.plan.interval),
+                productId=plan_id,
                 current_period_end=subs.current_period_end,
                 current_period_start=subs.current_period_start,
                 subscription_id=subs.id,
@@ -212,7 +210,7 @@ def delete_customer(uid: str) -> FlaskResponse:
                 uid=subscribed_customer["metadata"]["userid"],
                 active=False,
                 subscriptionId=subs.id,
-                productName=product["name"],
+                productId=plan_id,
                 eventId=utils.get_indempotency_key(),
                 eventCreatedAt=int(time.time()),
                 messageCreatedAt=int(time.time()),
