@@ -120,8 +120,12 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         logger.info("customer subscription created", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
-            updated_customer = stripe.Customer.retrieve(id=customer_id)
-            user_id = updated_customer.metadata.get("userid")
+            updated_customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
+            if not isinstance(updated_customer, dict):
+                updated_customer = updated_customer.to_dict()
+            metadata = updated_customer.get("metadata")
+            if metadata:
+                user_id = metadata.get("userid")
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
@@ -205,6 +209,45 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         else:
             logger.error(
                 "customer subscription created no userid",
+                error=self.payload.object.customer,
+                user_id=user_id,
+            )
+            raise ClientError(
+                f"userid is None for customer {self.payload.object.customer}"
+            )
+
+
+class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
+    def run(self) -> None:
+        logger.info("customer subscription deleted", payload=self.payload)
+        try:
+            customer_id = self.payload.data.object.customer
+            updated_customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
+            if not isinstance(updated_customer, dict):
+                updated_customer = updated_customer.to_dict()
+            metadata = updated_customer.get("metadata")
+            if metadata:
+                user_id = metadata.get("userid")
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise e
+        if user_id:
+            product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+            product_id = product["id"]
+            data = dict(
+                uid=user_id,
+                active=self.is_active_or_trialing,
+                subscriptionId=self.payload.data.object.id,
+                productId=product_id,
+                eventId=self.payload.id,
+                eventCreatedAt=self.payload.created,
+                messageCreatedAt=int(time.time()),
+            )
+            routes = [StaticRoutes.FIREFOX_ROUTE]
+            self.send_to_routes(routes, json.dumps(data))
+        else:
+            logger.error(
+                "customer subscription deleted no userid",
                 error=self.payload.object.customer,
                 user_id=user_id,
             )

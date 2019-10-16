@@ -292,11 +292,11 @@ def test_stripe_hub_customer_subscription_deleted(
     fh.close()
     mock_product.return_value = prod_test1
     data = {
+        "uid": "tester123",
         "active": False,
         "subscriptionId": "sub_00000000000000",
-        "productName": "jollybilling",
+        "productId": "jollybilling-plan-api_00000000000000",
         "eventId": "evt_00000000000000",
-        "event_id": "evt_00000000000000",
         "eventCreatedAt": 1326853478,
         "messageCreatedAt": int(time.time()),
     }
@@ -306,6 +306,7 @@ def test_stripe_hub_customer_subscription_deleted(
         "account_balance": 0,
         "created": 1563287210,
         "currency": "usd",
+        "metadata": dict(userid="tester123"),
     }
     mock_deleted_user.return_value = {"user_id": "user123"}
     when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
