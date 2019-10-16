@@ -14,6 +14,7 @@ from hub.vendor.customer import (
     StripeCustomerSourceExpiring,
     StripeCustomerSubscriptionCreated,
     StripeCustomerDeleted,
+    StripeCustomerSubscriptionDeleted,
 )
 from hub.vendor.invoices import StripeInvoicePaymentFailed
 from shared.log import get_logger
@@ -32,6 +33,8 @@ class StripeHubEventPipeline:
             StripeCustomerSubscriptionCreated(self.payload).run()
         elif event_type == "customer.subscription.updated":
             StripeCustomerSubscriptionUpdated(self.payload).run()
+        elif event_type == "customer.subscription.deleted":
+            StripeCustomerSubscriptionDeleted(self.payload).run()
         elif event_type == "customer.created":
             StripeCustomerCreated(self.payload).run()
         elif event_type == "customer.deleted":
