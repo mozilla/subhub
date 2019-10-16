@@ -4052,6 +4052,11 @@ serverless-python-requirements@5.0.0:
     sha256-file "1.0.0"
     shell-quote "^1.6.1"
 
+serverless-stack-termination-protection@1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/serverless-stack-termination-protection/-/serverless-stack-termination-protection-1.0.0.tgz#88ba52747ff2b8e17736a8f4b34d2d51ad270229"
+  integrity sha512-0IZVACQmYeEwmKVpDMtYVHeaXujbOhs0hLuR8G/J/b4k8mFIFAMjXjm3Ye1De0kfR8b+UDtL+JHFI2siP7zA9g==
+
 serverless-wsgi@1.7.3:
   version "1.7.3"
   resolved "https://registry.yarnpkg.com/serverless-wsgi/-/serverless-wsgi-1.7.3.tgz#34c7989718a3cb52a9148bdba8d7d6c2da0f0328"
