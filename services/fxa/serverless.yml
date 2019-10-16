@@ -12,9 +12,12 @@ package:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
+
+  # AWS DynamoDB Table definitions used by resources/dynamodb-table.yml
   usersTable: ${env:USER_TABLE}
   deletedUsersTable: ${env:DELETED_USER_TABLE}
   eventsTable: ${env:EVENT_TABLE}
+
   prefix: ${self:provider.stage}-${self:service.name}
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
@@ -40,6 +43,9 @@ custom:
       migrate: true
       seed: true
       convertEmptyValues: true
+  serverlessTerminationProtection:
+    stages:
+      - prod
   customDomain:
     domainName: ${self:custom.subdomain}.mozilla-subhub.app
     certificateName: ${self:custom.subdomain}.mozilla-subhub.app
@@ -116,7 +122,10 @@ plugins:
   - serverless-dynamodb-local
   - serverless-package-external
   - serverless-plugin-canary-deployments
+  - serverless-stack-termination-protection
+  # NOTE: serverless-offline needs to be the last plugin loaded.
   - serverless-offline
+
 provider:
   name: aws
   runtime: python3.7
