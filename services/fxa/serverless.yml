@@ -213,7 +213,7 @@ functions:
       #  Linear10PercentEvery3Minutes
       #  AllAtOnce
       #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-      type: Linear10PercentEvery1Minute
+      type: ${file(config/config.${self:custom.stage}.json):DEPLOYMENT_TYPE}
       alias: Live
       alarms:
         - name: SubAlarm
@@ -254,7 +254,7 @@ functions:
       #  Linear10PercentEvery3Minutes
       #  AllAtOnce
       #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-      type: Linear10PercentEvery1Minute
+      type: ${file(config/config.${self:custom.stage}.json):DEPLOYMENT_TYPE}
       alias: Live
       alarms:
         - name: HubAlarm
