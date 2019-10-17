@@ -47,11 +47,49 @@ services:
       - stripe
       - dynamodb
 
+  hub:
+    container_name: hub
+    image: mozilla/hub
+    command: python3 hub/app.py
+    build:
+      context: src/hub
+      dockerfile: Dockerfile
+      args:
+        LOCAL_FLASK_PORT: 5001
+        DYNALITE_PORT: 8000
+    environment:
+        AWS_ACCESS_KEY_ID: "fake-id"
+        AWS_SECRET_ACCESS_KEY: "fake-key"
+        STRIPE_API_KEY: $STRIPE_API_KEY
+        STRIPE_MOCK_PORT: $STRIPE_MOCK_PORT
+        HUB_API_KEY: $HUB_API_KEY
+        DEPLOYED_BY: $DEPLOYED_BY
+        DEPLOYED_ENV: $DEPLOYED_ENV
+        DEPLOYED_WHEN: $DEPLOYED_WHEN
+        PROJECT_NAME: $PROJECT_NAME
+        BRANCH: $BRANCH
+        VERSION: $VERSION
+        REVISION: $REVISION
+        LOG_LEVEL: $LOG_LEVEL
+        REMOTE_ORIGIN_URL: $REMOTE_ORIGIN_URL
+        PROFILING_ENABLED: $PROFILING_ENABLED
+        PROCESS_EVENTS_HOURS: 6
+        USER_TABLE: $USER_TABLE
+        DELETED_USER_TABLE: $DELETED_USER_TABLE
+        EVENT_TABLE: $EVENT_TABLE
+        LOCAL_HUB_FLASK_PORT: $LOCAL_HUB_FLASK_PORT
+    ports:
+      - "5001:5001"
+    depends_on:
+      - base
+      - stripe
+      - dynamodb
+
   dynamodb:
     image: amazon/dynamodb-local:latest
     container_name: dynamodb-local
     ports:
-      - "8000:8000"
+      - 8000:8000
 
   stripe:
     image: stripemock/stripe-mock:latest
