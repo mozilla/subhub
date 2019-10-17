@@ -93,15 +93,28 @@ existence of 3 environment variables:
 * PAYMENT_API_KEY
 
 Where the value of the `STRIPE_API_KEY` is not a real Stripe API key used in the system but a fake one for testing.  The
-testing used `sk_test_123` as the value for validation here.
+test environment uses `sk_test_123` as the value for validation here.
+
+Running the environment locally is split between the front end APIs (sub) and the back end APIs (hub).  To run the front
+end APIs use the following command:
 ```
-doit local
+doit local sub
+```
+To run the backend APIs use the following command:
+```
+doit local hub
+
 ```
 
 If you choose to run locally but communicate with the actual Stripe API then doit local should be pre-pended with STRIPE_LOCAL=True.
 Doing this requires the use a a valid Stripe API Test key.
 ```
-STRIPE_LOCAL=True doit local
+STRIPE_LOCAL=True doit local <container_name>
+```
+
+To remove running containers after exit, run the following command:
+```
+doit local-stop
 ```
 
 ## Run tests and coverage

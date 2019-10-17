@@ -9,6 +9,7 @@ import itertools
 import contextlib
 import threading
 
+from subprocess import PIPE, STDOUT
 from ruamel import yaml
 from functools import lru_cache
 from doit.tools import LongRunning
@@ -62,7 +63,12 @@ def envs(sep=' ', **kwargs):
         DEPLOYED_BY=CFG.DEPLOYED_BY,
         DEPLOYED_ENV=CFG.DEPLOYED_ENV,
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
+        DELETED_USER_TABLE=CFG.DELETED_USER_TABLE,
+        DYNALITE_PORT=CFG.DYNALITE_PORT,
+        EVENT_TABLE=CFG.EVENT_TABLE,
         HUB_API_KEY=CFG.HUB_API_KEY,
+        LOCAL_FLASK_PORT=CFG.LOCAL_FLASK_PORT,
+        LOCAL_HUB_FLASK_PORT=CFG.LOCAL_HUB_FLASK_PORT,
         LOG_LEVEL=CFG.LOG_LEVEL,
         NEW_RELIC_ACCOUNT_ID=CFG.NEW_RELIC_ACCOUNT_ID,
         NEW_RELIC_TRUSTED_ACCOUNT_ID=CFG.NEW_RELIC_TRUSTED_ACCOUNT_ID,
@@ -72,19 +78,14 @@ def envs(sep=' ', **kwargs):
         PROFILING_ENABLED=CFG.PROFILING_ENABLED,
         REMOTE_ORIGIN_URL=CFG.REMOTE_ORIGIN_URL,
         REVISION=CFG.REVISION,
+        STRIPE_API_KEY=CFG.STRIPE_API_KEY,
+        STRIPE_LOCAL=CFG.STRIPE_LOCAL,
         STRIPE_MOCK_HOST=CFG.STRIPE_MOCK_HOST,
         STRIPE_MOCK_PORT=CFG.STRIPE_MOCK_PORT,
         SUPPORT_API_KEY=CFG.SUPPORT_API_KEY,
         PROJECT_NAME=CFG.PROJECT_NAME,
-        VERSION=CFG.VERSION,
-        DYNALITE_PORT=CFG.DYNALITE_PORT,
-        LOCAL_FLASK_PORT=CFG.LOCAL_FLASK_PORT,
-        LOCAL_HUB_FLASK_PORT=CFG.LOCAL_HUB_FLASK_PORT,
-        STRIPE_LOCAL=CFG.STRIPE_LOCAL,
         USER_TABLE=CFG.USER_TABLE,
-        DELETED_USER_TABLE=CFG.DELETED_USER_TABLE,
-        EVENT_TABLE=CFG.EVENT_TABLE,
-
+        VERSION=CFG.VERSION,
     )
     return sep.join([
         f'{key}={value}' for key, value in sorted(dict(envs, **kwargs).items())
@@ -143,6 +144,14 @@ def defaults(*args, **kwargs):
         else:
             results[i] = v
     return results
+
+def get_svc_func(args):
+    svc, func = defaults(*args, svc='fxa', func=None)
+    assert svc in SVCS, f'{svc} is not a valid service in {SVCS}'
+    if func:
+        funcs = get_svcs_to_funcs()[svc]
+        assert func in funcs, f'{func} is not a valid function in {funcs}'
+    return svc, func
 
 def parameterized(dec):
     def layer(*args, **kwargs):
@@ -456,34 +465,6 @@ def task_dynalite():
         ],
     }
 
-def task_local():
-    '''
-    run local deployment
-    '''
-    return {
-        'task_dep': [
-            'check',
-            'tar'
-        ],
-        'actions': [
-            f'env {envs()} docker-compose --file docker-sub-compose.yml up'
-        ],
-    }
-
-def task_localhub():
-    '''
-    run local deployment
-    '''
-    return {
-        'task_dep': [
-            'check',
-            'tar'
-        ],
-        'actions': [
-            f'env {envs()} docker-compose --file docker-hub-compose.yml up  --build'
-        ],
-    }
-
 def task_yarn():
     '''
     Install packages from package.json into the node_modules directory.  Yarn will attempt
@@ -661,17 +642,44 @@ def task_tar():
             ],
         }
 
+def task_local():
+    '''
+    local <svc> [<func>]
+    '''
+    def local(args):
+        svc, func = get_svc_func(args)
+        local_cmd = f'env {envs()} docker-compose up --build'
+        if func:
+            local_cmd += f' {func}'
+        call(local_cmd, stdout=None, stderr=None)
+    return {
+        'task_dep': [
+            'check',
+            'tar',
+        ],
+        'pos_arg': 'args',
+        'actions': [(local,)],
+    }
+
+
+def task_local_stop():
+    """
+    run "docker-compose stop" on any vestigial containers left running from "local" task
+    """
+    return {
+        'basename': 'local-stop',
+        'actions': [
+            f'env {envs()} docker-compose stop'
+        ]
+    }
+
 @guard('prod')
 def task_deploy():
     '''
     deploy <svc> [<func>]
     '''
     def deploy(args):
-        svc, func = defaults(*args, svc='fxa', func=None)
-        assert svc in SVCS, f'{svc} is not a valid service in {SVCS}'
-        if func:
-            funcs = get_svcs_to_funcs()[svc]
-            assert func in funcs, f'{func} is not a valid function in {funcs}'
+        svc, func = get_svc_func(args)
         if func:
             deploy_cmd = f'cd services/{svc} && env {envs()} {SLS} deploy function --stage {CFG.DEPLOYED_ENV} --aws-s3-accelerate -v --function {func}'
         else:

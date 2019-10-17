@@ -21,6 +21,7 @@ from shared.log import get_logger
 
 logger = get_logger()
 
+
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):
     logger.error("intermittent stripe error", error=e)
@@ -168,3 +169,4 @@ if __name__ == "__main__":
     app.debug = True
     app.use_reloader = True
     app.run(host="0.0.0.0", port=CFG.LOCAL_HUB_FLASK_PORT)
+    logger.info("hub running", app=app)
