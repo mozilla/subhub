@@ -91,7 +91,7 @@ def create_app(config=None) -> connexion.FlaskApp:
     region = "localhost"
     host = f"http://localhost:{CFG.DYNALITE_PORT}"
     if is_docker():
-        host = f"http://dynamodb:{CFG.DYNALITE_PORT}"
+        host = f"http://dynamodb-local:{CFG.DYNALITE_PORT}"
     stripe.api_key = CFG.STRIPE_API_KEY
     logger.info("aws", aws=CFG.AWS_EXECUTION_ENV)
     if CFG.AWS_EXECUTION_ENV:
@@ -186,3 +186,4 @@ if __name__ == "__main__":
     app.debug = True
     app.use_reloader = True
     app.run(host="0.0.0.0", port=CFG.LOCAL_FLASK_PORT)
+    logger.info("sub running", app=app)

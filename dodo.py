@@ -466,7 +466,21 @@ def task_local():
             'tar'
         ],
         'actions': [
-            f'env {envs()} docker-compose up --build'
+            f'env {envs()} docker-compose --file docker-sub-compose.yml up'
+        ],
+    }
+
+def task_localhub():
+    '''
+    run local deployment
+    '''
+    return {
+        'task_dep': [
+            'check',
+            'tar'
+        ],
+        'actions': [
+            f'env {envs()} docker-compose --file docker-hub-compose.yml up  --build'
         ],
     }
 
