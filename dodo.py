@@ -465,6 +465,24 @@ def task_dynalite():
         ],
     }
 
+def task_docker_compose():
+    '''
+    full passthru to docker-compose commands
+    '''
+    def docker_compose(args):
+        docker_compose_args = ' '.join(args)
+        docker_compose_cmd = f'env {envs()} docker-compose {docker_compose_args}'
+        call(docker_compose_cmd, stdout=None, stderr=None)
+    return {
+        'basename': 'docker-compose',
+        'task_dep': [
+            'check',
+            'tar',
+        ],
+        'pos_arg': 'args',
+        'actions': [(docker_compose,)],
+    }
+
 def task_yarn():
     '''
     Install packages from package.json into the node_modules directory.  Yarn will attempt
