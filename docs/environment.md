@@ -1,65 +1,427 @@
 # Environment
 
-## Important Environment Variables
+## Environment Configuration
+
 The CFG object is for accessing values either from the `subhub/.env` file and|or superseded by env vars.
+
 A value that is known to be set or have a default can be accessed:
+
 ```
 CFG.SOME_VALUE
 ```
+
 Otherwise the value can be accessed and given a default if it doesn't exist:
+
 ```
 CFG("OTHER_VALUE", "SOME_DEFAULT")
 ```
+
 These values can be enabled as an env var or listed in a `.env` in the subhub/ directory.
 
-### STRIPE_API_KEY
-This value is used for production deployments as well as testing (testing key).
+## Environment Variables
 
-### USER_TABLE
-This is the name of the table to be created in `dynamodb`.  Defaults to `testing` if not specified.
+The environment variables as read from the application, in alphabetical order are as follows:
 
-### LOCAL_FLASK_PORT
-This value is used only when running the `subhub` flask app locally.  Defaults to `5000`.
+### ALLOWED_ORIGIN_SYSTEMS
+<details>
+  <summary>Learn more.</summary>
 
-### DYNALITE_PORT
-This value is used only when running `dynalite` locally.  Defaults to `8000`.
+  #### Allowed Origin Systems
+  
+  This list of values provides SubHub with a way of identifying the originating sending system, 
+  this was developed as a way of pre-planning for future SubHub customers.
 
-### DYNALITE_FILE
-This is the value of the file that will be written to by the `dynalite process`.  Defaults to `dynalite.out`.
+</details>
 
-### PAYMENT_API_KEY
-This is the payment api key.  Defaults to `fake_payment_api_key`
+### AWS_ACCESS_KEY_ID
+<details>
+  <summary>Learn more.</summary>
 
-### SUPPORT_API_KEY
-This is the support api key.  Defaults to `fake_support_api_key`
+  #### AWS Access Key Identifier (ID)
 
-## Other Important CFG Properties
-These values are calculated and not to be set by a user.  They are mentioned here for clarity.
+  From reference 1,
 
-### DEPLOYED_ENV
-The deployment environment is determined by the branch name:
-- master: `prod`
-- stage/*: `stage`
-- qa/*: `qa`
-- *: `dev`
+  ```
+  Access keys consist of two parts: an access key ID (for example, AKIAIOSFODNN7EXAMPLE) and a secret access key (for example, wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY). You use access keys to sign programmatic requests that you make to AWS if you use AWS CLI commands (using the SDKs) or using AWS API operations
+  ```
 
-### REPO_ROOT
-This is the path to the root of the checked out `mozilla/subhub` git repo.  This value only makes sense in the git repo, not in the AWS Lambda environment.
+  ##### References
+  1. [Access Keys (Access Key ID and Secret Access Key) ](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys)
 
-### PROJECT_NAME
-This is the project's name, `subhub`, as determined by the second part of the reposlug `mozilla/subhub`.
+</details>
 
-### PROJECT_PATH
-This is the path to the project code in the git repo.  It is `REPO_PATH + PROJECT_NAME`.  It is only valid in the git repo, not in the AWS Lambda environment.
+### AWS_EXECUTION_ENV
+<details>
+  <summary>Learn more.</summary>
+
+  #### Amazon Web Services Execution Environment
+
+</details>
+
+### AWS_REGION
+<details>
+  <summary>Learn more.</summary>
+
+  #### Amazon Web Services (AWS) Region
+
+  From reference 1,
+
+  ```
+  Amazon EC2 is hosted in multiple locations world-wide. These locations are composed of Regions and Availability Zones. Each Region is a separate geographic area. Each Region has multiple, isolated locations known as Availability Zones.
+  ```
+
+  ##### References
+  1. [Regions and Availability Zones](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
+  1. [Available Regions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
+
+</details>
+
+### AWS_SECRET_ACCESS_KEY
+<details>
+  <summary>Learn more.</summary>
+
+  #### Amazon Web Services Secret Access Key
+
+  From reference 1,
+
+  ```
+  Access keys consist of two parts: an access key ID (for example, AKIAIOSFODNN7EXAMPLE) and a secret access key (for example, wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY). You use access keys to sign programmatic requests that you make to AWS if you use AWS CLI commands (using the SDKs) or using AWS API operations
+  ```
+
+  ##### References
+  1. [Access Keys (Access Key ID and Secret Access Key) ](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys)
+
+</details>
+
+### BASKET_API_KEY
+<details>
+  <summary>Learn more.</summary>
+
+  #### Basket Application Programming Interface (API) Key
+  
+  Valid API Key issued to SubHub to authenticate in API calls to the Mozilla Basket service.
+
+</details>
 
 ### BRANCH
-This is the branch name of the deployed code.  Should be available locally as well as when deployed to AWS Lambda.
+<details>
+  <summary>Learn more.</summary>
 
-### REVISION
-This is the 40 digit sha1 commit hash for the code.  This is available in the git repo as well as when deployed to AWS Lambda.
+  #### Version Control System (VCS) branch
 
-### VERSION
-This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the git repo as well as when deployed to AWS Lambda.
+  This is the branch name of the deployed code.  Should be available locally as well as when deployed to AWS Lambda.
+
+</details>
+
+### LOG_LEVEL
+<details>
+  <summary>Learn more.</summary>
+
+  #### Log level of the application
+
+  From reference 2,
+
+  ```
+  When you set a logging level in Python using the standard module, you’re telling the library you want to handle all events from that level on up. If you set the log level to INFO, it will include NOTSET, DEBUG, and INFO messages.
+  ```
+
+  ##### References
+  1. [Python Logging Levels](https://docs.python.org/3/library/logging.html#logging-levels)
+  2. [Ultimate Guide to Logging](https://www.loggly.com/ultimate-guide/python-logging-basics/)
+
+</details>
+
+### DELETED_USER_TABLE
+<details>
+  <summary>Learn more.</summary>
+
+  #### Amazon Web Services, DynamoDB Users Table
+
+  This environment variable is used for the sub and hub applications for the curation of users that have
+  been deleted from the applications.  It is defaulted if not specified.  This is the common use case for
+  local testing with `doit local`.
+
+</details>
+
+### DEPLOYED_BY
+<details>
+  <summary>Learn more.</summary>
+
+  #### The name of the entity to deploy the environment.
+
+  Ideally this would not be a human and done by a system such as a continuous deployment
+  service such as TravisCI, CircleCI, or Jenkins.
+
+</details>
+
+### DEPLOY_DOMAIN
+<details>
+  <summary>Learn more.</summary>
+
+  #### The domain entry of the deployed environment.
+
+</details>
+
+### DEPLOYED_ENV
+<details>
+  <summary>Learn more.</summary>
+
+  #### DEPLOYED_ENV
+
+  The deployment environment is determined by the branch name:
+  - master: `prod`
+  - stage/*: `stage`
+  - qa/*: `qa`
+  - *: `dev`
+
+  There is a dev and fab environment available as well.  The determination of how this works in those
+  cases is left open for future refinement.
+
+</details>
+
+### DEPLOYED_WHEN
+<details>
+  <summary>Learn more.</summary>
+
+  #### DEPLOYED_WHEN
+
+  This value provides the timestamp for when the application was deployed.
+
+</details>
+
+### DYNALITE_FILE
+<details>
+  <summary>Learn more.</summary>
+
+  #### DYNALITE_FILE
+
+  This is the value of the file that will be written to by the `dynalite process`.  Defaults to `dynalite.out`.
+
+</details>
+
+### DYNALITE_PORT
+<details>
+  <summary>Learn more.</summary>
+
+   #### DYNALITE_PORT
+
+   This value is used only when running `dynalite` locally.  Defaults to `8000`.
+
+</details>
+
+### EVENT_TABLE
+<details>
+  <summary>Learn more.</summary>
+
+  #### EVENT_TABLE
+
+  This environment variable sets the name of the Amazon DynamoDB events table that is used by the hub
+  application.  It is defaulted if not specified.  This is the common use case for
+  local testing with `doit local`.
+
+</details>
+
+### FXA_SQS_URI
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### HUB_API_KEY
+<details>
+  <summary>Learn more.</summary>
+
+  #### HUB_API_KEY
+  
+  API Key issued from Stripe to identify and validate calls originated from Stripe.
+
+</details>
+
+### LOCAL_FLASK_PORT
+<details>
+  <summary>Learn more.</summary>
+
+  #### Flask server, local port
+
+  This value is used only when running the `subhub` flask app locally.  It is defaulted to port, `5000`.
+
+</details>
+
+### NEW_RELIC_ACCOUNT_ID
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### NEW_RELIC_TRUSTED_ACCOUNT_ID
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### NEW_RELIC_SERVERLESS_MODE_ENABLED
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### NEW_RELIC_DISTRIBUTED_TRACING_ENABLED
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### PAYMENT_API_KEY
+<details>
+  <summary>Learn more.</summary>
+  
+  #### PAYMENT_API_KEY
+  
+  API Key issued to SubHub customers to authenticate transactions incoming to SubHub.
+
+
+</details>
+
+### PAYMENT_EVENT_LIST
+<details>
+  <summary>Learn more.</summary>
+
+  #### PAYMENT_API_KEY
+
+  List of Stripe webhook events that will be monitored by SubHub.  To be monitored 
+  by SubHub, the event must be in this list otherwise it will not be listened for by hub.
+
+</details>
 
 ### PROFILING_ENABLED
-This is a Boolean flag to indicate if profiling is enabled in the application.
+<details>
+  <summary>Learn more.</summary>
+
+  #### PROFILING_ENABLED
+
+  This is a Boolean flag to indicate if profiling is enabled in the application.
+
+</details>
+
+### PROJECT_NAME
+<details>
+  <summary>Learn more.</summary>
+
+  #### PROJECT_NAME
+
+  This is the project's name, `subhub`, as determined by the second part of the reposlug `mozilla/subhub`.
+
+</details>
+
+### REMOTE_ORIGIN_URL
+<details>
+  <summary>Learn more.</summary>
+
+  #### REMOTE_ORIGIN_URL
+
+  This is the git remote origin URL of the repository that you are presently in.
+
+</details>
+
+### REVISION
+<details>
+  <summary>Learn more.</summary>
+
+  #### REVISION
+
+  This is the 40 digit sha1 commit hash for the deployed code.  This is available in the git repo as well as
+  when deployed to AWS Lambda.
+
+</details>
+
+### SALESFORCE_BASKET_URI
+<details>
+  <summary>Learn more.</summary>
+  
+  #### SALESFORCE_BASKET_URI
+
+  A URL to send customer data to Mozilla Basket service.
+
+</details>
+
+### SRCTAR
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### STRIPE_LOCAL
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### STRIPE_MOCK_HOST
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### STRIPE_MOCK_PORT
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### STRIPE_API_KEY
+<details>
+  <summary>Learn more.</summary>
+
+  #### Stripe API Key
+
+  This value is used for production deployments as well as testing (testing key).
+
+</details>
+
+### SUPPORT_API_KEY
+<details>
+  <summary>Learn more.</summary>
+
+  #### SUPPORT_API_KEY
+
+  This is the support api key.  Defaults to `fake_support_api_key`
+
+</details>
+
+### TOPIC_ARN_KEY
+<details>
+  <summary>Learn more.</summary>
+
+
+</details>
+
+### USER_TABLE
+<details>
+  <summary>Learn more.</summary>
+
+  #### Amazon Web Services (AWS) DynamoDB, Users Table
+
+  This is the name of the table to be created in `dynamodb`.  It is defaulted if not specified.  This is
+  the common use case for local testing with `doit local`.
+
+</details>
+
+### VERSION
+<details>
+  <summary>Learn more.</summary>
+
+  #### Application Version
+
+  This is the `git describe --abbrev=7` value, useful for describing the code version.  This is available in the
+  git repo as well as when deployed to AWS Lambda.
+
+</details>
