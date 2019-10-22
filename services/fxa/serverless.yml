@@ -142,9 +142,8 @@ provider:
     #   https://serverless.com/framework/docs/providers/aws/events/apigateway/
     restApi: true
   tracing: true
-  memorySize: ${file(config/config.${self:custom.stage}.json):LAMBDA_MEMORY_SIZE}
-  reservedConcurrency: ${file(config/config.${self:custom.stage}.json):LAMBDA_RESERVED_CONCURRENCY}
-  timeout: ${file(config/config.${self:custom.stage}.json):LAMBDA_TIMEOUT}
+  memorySize: ${file(functions.yml):${self:provider.stage}.LAMBDA_MEMORY_SIZE}
+  timeout: ${file(functions.yml):${self:provider.stage}.LAMBDA_TIMEOUT}
   snsaccount: ${file(accounts.yml):fxa.${self:provider.stage}}
   environment: ${file(env.yml):${self:custom.stage}, file(env.yml):default}
   tags: ${file(resources/tags.yml):${self:custom.stage}, file(resources/tags.yml):default}
@@ -210,6 +209,7 @@ functions:
           cors: false,
           private: false
         }
+    reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
       #  Canary10Percent30Minutes
@@ -251,6 +251,7 @@ functions:
           cors: false,
           private: false
         }
+    reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
       #  Canary10Percent30Minutes
@@ -302,7 +303,8 @@ functions:
       #             Month   |   1-12    |       ,-*/
       #             DOW     |   1-7     |   ,-*?/L#
       #             Year    |   192199  |       ,-*/
-      - schedule: rate(${file(config/config.${self:custom.stage}.json):MIA_RATE_SCHEDULE})
+      - schedule: rate(${file(functions.yml):${self:provider.stage}.MIA_RATE_SCHEDULE})
+    reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
 resources:
   - ${file(resources/dynamodb-table.yml)}
   - ${file(resources/sns-topic.yml)}
