@@ -68,6 +68,7 @@ def create_customer(
     except IntermittentError("error saving db record") as e:  # type: ignore
         logger.error("unable to save user or link it", error=e)
         raise e
+    logger.debug("create customer", customer=customer)
     return customer
 
 
@@ -94,6 +95,7 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
     db_account = subhub_account.get_user(user_id)
     if db_account:
         customer = vendor.retrieve_stripe_customer(customer_id=db_account.cust_id)
+    logger.debug("fetch customer", customer=customer)
     return customer
 
 
@@ -108,6 +110,7 @@ def existing_payment_source(existing_customer: Customer, source_token: str) -> C
             logger.info("add source", existing_customer=existing_customer)
         else:
             logger.info("existing source deleted")
+    logger.debug("existing payment source", existing_customer=existing_customer)
     return existing_customer
 
 
