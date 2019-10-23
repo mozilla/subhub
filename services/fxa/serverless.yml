@@ -209,6 +209,7 @@ functions:
           cors: false,
           private: false
         }
+    type: ${file(functions.yml):${self:provider.stage}.DEPLOYMENT_TYPE}
     reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
@@ -251,6 +252,7 @@ functions:
           cors: false,
           private: false
         }
+    type: ${file(functions.yml):${self:provider.stage}.DEPLOYMENT_TYPE}
     reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
     deploymentSettings:
       # Available AWS CodeDeploy Preference Types
