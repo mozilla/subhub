@@ -3,7 +3,6 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from typing import Optional, Any, List, Dict
-
 from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.connection import Connection
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection

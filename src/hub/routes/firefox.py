@@ -6,7 +6,6 @@ import boto3
 import json
 
 from typing import Dict
-
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 

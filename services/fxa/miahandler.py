@@ -2,12 +2,12 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-
 import newrelic.agent
 import serverless_wsgi
 import structlog
 
 from os.path import join, dirname, realpath
+
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))

@@ -8,11 +8,8 @@ import boto3
 from abc import ABC
 from botocore.exceptions import ClientError
 
-from botocore.exceptions import ClientError
-
 from sub.shared.cfg import CFG
 from shared.log import get_logger
-
 
 logger = get_logger()
 

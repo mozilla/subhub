@@ -7,8 +7,8 @@ import mockito
 import requests
 import boto3
 import flask
-from hub.shared.cfg import CFG
 
+from hub.shared.cfg import CFG
 from hub.shared.tests.unit.utils import run_test, MockSqsClient
 
 CWD = os.path.realpath(os.path.dirname(__file__))

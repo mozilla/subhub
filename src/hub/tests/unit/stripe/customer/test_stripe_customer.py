@@ -20,7 +20,6 @@ from hub.shared.tests.unit.utils import run_test, MockSqsClient, MockSnsClient
 from hub.shared.cfg import CFG
 from shared.log import get_logger
 
-
 logger = get_logger()
 
 CWD = os.path.realpath(os.path.dirname(__file__))
