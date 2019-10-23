@@ -30,6 +30,7 @@ logger = get_logger()
 def get_customer_list(email: str) -> Optional[List[Customer]]:
     try:
         customer_list = Customer.list(email=email)
+        logger.debug("get customer list", customer_list=customer_list)
         return customer_list
     except (
         APIConnectionError,
@@ -60,6 +61,7 @@ def modify_customer(
         customer = Customer.modify(
             customer_id, source=source_token, idempotency_key=idempotency_key
         )
+        logger.debug("modify customer", customer=customer)
         return customer
     except (
         InvalidRequestError,
@@ -100,6 +102,7 @@ def create_stripe_customer(
             metadata={"userid": userid},
             idempotency_key=idempotency_key,
         )
+        logger.debug("create stripe customer", customer=customer)
         return customer
     except (
         InvalidRequestError,
@@ -127,6 +130,7 @@ def delete_stripe_customer(customer_id: str) -> Dict[str, Any]:
     """
     try:
         deleted_customer = Customer.delete(sid=customer_id)
+        logger.debug("delete stripe customer", deleted_customer=deleted_customer)
         return deleted_customer
     except (
         InvalidRequestError,
@@ -152,6 +156,7 @@ def retrieve_stripe_customer(customer_id: str) -> Optional[Customer]:
     """
     try:
         customer = Customer.retrieve(id=customer_id)
+        logger.debug("retrieve stripe customer", customer=customer)
         return customer
     except (
         InvalidRequestError,
@@ -189,6 +194,7 @@ def build_stripe_subscription(
             items=[{"plan": plan_id}],
             idempotency_key=idempotency_key,
         )
+        logger.debug("build stripe subscription", sub=sub)
         return sub
     except (
         InvalidRequestError,
@@ -223,6 +229,7 @@ def cancel_stripe_subscription_period_end(
             cancel_at_period_end=True,
             idempotency_key=idempotency_key,
         )
+        logger.debug("cancel stripe subscription", sub=sub)
         return sub
     except (
         InvalidRequestError,
@@ -252,6 +259,7 @@ def cancel_stripe_subscription_immediately(
     """
     try:
         sub = Subscription.delete(sid=subscription_id, idempotency_key=idempotency_key)
+        logger.debug("cancel stripe subscription immediately", sub=sub)
         return sub
     except (
         InvalidRequestError,
@@ -285,6 +293,7 @@ def reactivate_stripe_subscription(
             cancel_at_period_end=False,
             idempotency_key=idempotency_key,
         )
+        logger.debug("reactivate stripe subscription", sub=sub)
         return sub
     except (
         InvalidRequestError,
@@ -311,6 +320,7 @@ def list_customer_subscriptions(cust_id: str) -> List[Subscription]:
     """
     try:
         subscriptions = Subscription.list(customer=cust_id, limit=100, status="all")
+        logger.debug("list customer subscriptions", subscriptions=subscriptions)
         return subscriptions
     except (
         InvalidRequestError,
@@ -341,6 +351,7 @@ def retrieve_stripe_charge(charge_id: str) -> Charge:
     """
     try:
         charge = Charge.retrieve(charge_id)
+        logger.debug("retrieve stripe charge", charge=charge)
         return charge
     except (
         InvalidRequestError,
@@ -371,6 +382,7 @@ def retrieve_stripe_invoice(invoice_id: str) -> Invoice:
     """
     try:
         invoice = Invoice.retrieve(invoice_id)
+        logger.debug("retrieve stripe invoice", invoice=invoice)
         return invoice
     except (
         InvalidRequestError,
@@ -430,6 +442,7 @@ def retrieve_stripe_product(product_id: str) -> Product:
     """
     try:
         product = Product.retrieve(product_id)
+        logger.debug("retrieve stripe product", product=product)
         return product
     except (
         InvalidRequestError,

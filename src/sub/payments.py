@@ -39,6 +39,7 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
     )
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
+        logger.debug("subscribe to plan", existing_plan=existing_plan)
         return dict(message="User already subscribed."), 409
 
     if not customer.get("deleted"):
@@ -76,7 +77,7 @@ def find_newest_subscription(subscriptions: Dict[str, Any]) -> Optional[Dict[str
             )
             if result_current_period_start < current_period_start:
                 result = subscription
-
+    logger.debug("find newest subscription", result=result)
     return {"data": [result]}
 
 
@@ -139,6 +140,7 @@ def cancel_subscription(uid: str, sub_id: str) -> FlaskResponse:
     """
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
+        logger.debug("cancel subscription customer does not exist")
         return dict(message="Customer does not exist."), 404
 
     for item in customer["subscriptions"]["data"]:
@@ -151,12 +153,20 @@ def cancel_subscription(uid: str, sub_id: str) -> FlaskResponse:
                 sub_id, utils.get_indempotency_key()
             )
             updated_customer = fetch_customer(g.subhub_account, uid)
-            logger.info("updated customer", updated_customer=updated_customer)
+            logger.debug("updated customer", updated_customer=updated_customer)
             subs = retrieve_stripe_subscriptions(updated_customer)
-            logger.info("subs", subs=subs, type=type(subs))
+            logger.debug("retrieved subs", subs=subs, type=type(subs))
             for sub in subs:
                 if sub["cancel_at_period_end"] and sub["id"] == sub_id:
-                    return {"message": "Subscription cancellation successful"}, 201
+                    response_message = dict(
+                        message="Subscription cancellation successful"
+                    )
+                    logger.debug(
+                        "cancel subscription response",
+                        response_message=response_message,
+                        response_code=201,
+                    )
+                    return response_message, 201
 
     return dict(message="Subscription not available."), 400
 
@@ -168,12 +178,12 @@ def delete_customer(uid: str) -> FlaskResponse:
     :param uid:
     :return: Success of failure message for the deletion
     """
-    logger.info("delete customer", uid=uid)
+    logger.debug("delete customer", uid=uid)
     subscription_user = g.subhub_account.get_user(uid)
-    logger.info("delete customer", subscription_user=subscription_user)
+    logger.debug("delete customer", subscription_user=subscription_user)
     if subscription_user is not None:
         origin = subscription_user.origin_system
-        logger.info("delete origin", origin=origin)
+        logger.debug("delete origin", origin=origin)
         if not subscription_user:
             return dict(message="Customer does not exist."), 404
         subscribed_customer = vendor.retrieve_stripe_customer(subscription_user.cust_id)
@@ -230,6 +240,10 @@ def delete_customer(uid: str) -> FlaskResponse:
                 )
                 user = g.subhub_account.get_user(uid)
                 if deleted_customer and user is None:
+                    logger.debug(
+                        "delete customer successful",
+                        deleted_customer=deleted_customer.user_id,
+                    )
                     return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
 
@@ -294,19 +308,38 @@ def reactivate_subscription(uid: str, sub_id: str) -> FlaskResponse:
 
     customer = fetch_customer(g.subhub_account, uid)
     if not customer:
-        return dict(message="Customer does not exist."), 404
+        response_message = dict(message="Customer does not exist.")
+        logger.debug("reactivate subscription", response_message=response_message)
+        return response_message, 404
 
     active_subscriptions = customer["subscriptions"]["data"]
+    response_message = dict(message="Current subscription not found.")
     for subscription in active_subscriptions:
         if subscription["id"] == sub_id:
+            response_message = dict(message="Subscription is already active.")
             if subscription["cancel_at_period_end"]:
                 vendor.reactivate_stripe_subscription(
                     sub_id, utils.get_indempotency_key()
                 )
-                return dict(message="Subscription reactivation was successful."), 200
-            return dict(message="Subscription is already active."), 200
-
-    return dict(message="Current subscription not found."), 404
+                response_message = dict(
+                    message="Subscription reactivation was successful."
+                )
+                logger.debug(
+                    "reactivate subscription",
+                    response_message=response_message,
+                    response_code=200,
+                )
+                return response_message, 200
+            logger.debug(
+                "reactivate subscription",
+                response_message=response_message,
+                response_code=200,
+            )
+            return response_message, 200
+    logger.debug(
+        "reactivate subscription", response_message=response_message, response_code=404
+    )
+    return response_message, 404
 
 
 def support_status(uid: str) -> FlaskResponse:
@@ -321,13 +354,22 @@ def subscription_status(uid: str) -> FlaskResponse:
     """
     items = g.subhub_account.get_user(uid)
     if not items or not items.cust_id:
-        return dict(message="Customer does not exist."), 404
+        response_message = dict(message="Customer does not exist.")
+        logger.debug(
+            "subscription status", response_message=response_message, response_code=404
+        )
+        return response_message, 404
 
     subscriptions = vendor.list_customer_subscriptions(items.cust_id)
     if not subscriptions:
-        return dict(message="No subscriptions for this customer."), 403
+        response_message = dict(message="No subscriptions for this customer.")
+        logger.debug(
+            "subscription status", response_message=response_message, response_code=403
+        )
+        return response_message, 403
 
     return_data = create_return_data(subscriptions)
+    logger.debug("subscription status", return_data=return_data)
     return return_data, 200
 
 
@@ -377,6 +419,7 @@ def create_return_data(subscriptions) -> JsonDict:
         return_data["subscriptions"].append(
             create_subscription_object_without_failure(subscription, plan_name)
         )
+    logger.debug("create return data", return_data=return_data)
     return return_data
 
 
@@ -403,12 +446,18 @@ def update_payment_method(uid, data) -> FlaskResponse:
     :return: Success or failure message.
     """
     customer = fetch_customer(g.subhub_account, uid)
-    logger.info("customer", customer=customer)
+    logger.debug("customer", customer=customer)
     if not customer:
-        return dict(message="Customer does not exist."), 404
+        response_message = dict(message="Customer does not exist.")
+        logger.debug(
+            "update payment method",
+            response_message=response_message,
+            response_code=404,
+        )
+        return response_message, 404
 
     metadata = customer.get("metadata")
-    logger.info("metadata", metadata=metadata, customer=type(customer))
+    logger.debug("metadata", metadata=metadata, customer=type(customer))
     if metadata:
         if metadata["userid"] == uid:
             vendor.modify_customer(
@@ -416,9 +465,18 @@ def update_payment_method(uid, data) -> FlaskResponse:
                 source_token=data["pmt_token"],
                 idempotency_key=utils.get_indempotency_key(),
             )
-            return {"message": "Payment method updated successfully."}, 201
-
-    return dict(message="Customer mismatch."), 400
+            response_message = dict(message="Payment method updated successfully.")
+            logger.debug(
+                "update payment method",
+                response_message=response_message,
+                response_code=201,
+            )
+            return response_message, 201
+    response_message = dict(message="Customer mismatch.")
+    logger.debug(
+        "update payment method", response_message=response_message, response_code=400
+    )
+    return response_message, 400
 
 
 def customer_update(uid) -> tuple:
@@ -430,13 +488,23 @@ def customer_update(uid) -> tuple:
     try:
         customer = fetch_customer(g.subhub_account, uid)
         if not customer:
-            return dict(message="Customer does not exist."), 404
+            response_message = dict(message="Customer does not exist.")
+            logger.debug(
+                "customer update", response_message=response_message, response_code=404
+            )
+            return response_message, 404
 
         if customer["metadata"]["userid"] == uid:
             return_data = create_update_data(customer)
+            logger.debug(
+                "customer update", response_message=return_data, response_code=200
+            )
             return return_data, 200
-
-        return dict(message="Customer mismatch."), 400
+        response_message = dict(message="Customer mismatch.")
+        logger.debug(
+            "customer update", response_message=response_message, response_code=400
+        )
+        return response_message, 400
     except KeyError as e:
         logger.error("Customer does not exist", error=e)
         return dict(message=f"Customer does not exist: missing {e}"), 404
@@ -501,5 +569,5 @@ def create_update_data(customer) -> Dict[str, Any]:
         return_data["subscriptions"].append(
             create_subscription_object_without_failure(subscription, plan_name)
         )
-
+    logger.debug("create update data", return_data=return_data)
     return return_data

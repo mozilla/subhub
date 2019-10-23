@@ -59,9 +59,10 @@ class SubHubAccount:
             subscription_user: SubHubAccountModel = self.model.get(
                 uid, consistent_read=True
             )
+            logger.debug("get user", subscription_user=subscription_user)
             return subscription_user
         except DoesNotExist:
-            logger.error("get user", uid=uid)
+            logger.debug("get user does not exist", uid=uid)
             return None
 
     @staticmethod
@@ -102,7 +103,7 @@ class SubHubAccount:
             delete_user.save()
             return True
         except DoesNotExist:
-            logger.error("mark deleted", uid=uid)
+            logger.error("mark deleted", uid=uid, error_message="user does not exist")
             return False
 
 
@@ -137,7 +138,7 @@ class HubEvent:
             hub_event = self.model.get(event_id, consistent_read=True)
             return hub_event
         except DoesNotExist:
-            logger.error("get event", event_id=event_id)
+            logger.debug("get event", event_id=event_id)
             return None
 
     @staticmethod
@@ -236,7 +237,7 @@ class SubHubDeletedAccount:
             )
             return subscription_user
         except DoesNotExist:
-            logger.error("get user", uid=uid)
+            logger.debug("get user", uid=uid)
             return None
 
     def find_by_cust(self, customer_id: str) -> Optional[SubHubDeletedAccountModel]:
