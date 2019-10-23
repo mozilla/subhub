@@ -3,7 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 from typing import List, Optional, Dict, Any
-
+from tenacity import retry, wait_exponential, stop_after_attempt
 from stripe import Customer, Subscription, Charge, Invoice, Plan, Product, api_key
 from stripe.error import (
     InvalidRequestError,
@@ -15,7 +15,6 @@ from stripe.error import (
     StripeErrorWithParamCode,
     AuthenticationError,
 )
-from tenacity import retry, wait_exponential, stop_after_attempt
 
 from shared.log import get_logger
 

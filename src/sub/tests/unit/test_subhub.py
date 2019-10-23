@@ -3,16 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
-from unittest.mock import Mock, MagicMock
 import mock
-
 import connexion
 import stripe.error
+
 from stripe.util import convert_to_stripe_object
+from unittest.mock import Mock, MagicMock
 
 from sub.app import create_app
 from sub.shared.tests.unit.utils import MockSubhubUser
-
 from shared.log import get_logger
 
 logger = get_logger()

@@ -9,20 +9,17 @@ import subprocess
 import uuid
 import logging
 import json
-
-from unittest.mock import Mock, MagicMock, PropertyMock
-
 import psutil
 import pytest
 import stripe
 
 from flask import g
+from unittest.mock import Mock, MagicMock, PropertyMock
 
 from sub import payments
 from sub.app import create_app
 from sub.shared.cfg import CFG
 from sub.customer import create_customer
-
 from shared.log import get_logger
 
 logger = get_logger()

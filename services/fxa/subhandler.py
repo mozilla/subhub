@@ -2,13 +2,13 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-
 import newrelic.agent
 import serverless_wsgi
 
+from os.path import join, dirname, realpath
+
 serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 
-from os.path import join, dirname, realpath
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))

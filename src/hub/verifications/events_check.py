@@ -3,12 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import time
+import stripe
+
 from abc import ABC
 from datetime import datetime, timedelta
 from typing import Dict, Any
-
-import stripe
-
 from flask import current_app
 from aws_xray_sdk.core import xray_recorder
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware

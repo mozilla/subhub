@@ -7,7 +7,6 @@ import sys
 import signal
 import subprocess
 import logging
-
 import psutil
 import pytest
 import stripe

@@ -12,7 +12,6 @@ import flask
 
 from hub.shared.cfg import CFG
 from hub.shared import secrets
-
 from hub.shared.tests.unit.utils import run_test, MockSqsClient
 
 CWD = os.path.realpath(os.path.dirname(__file__))

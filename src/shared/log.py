@@ -3,6 +3,7 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import logging.config
+
 from shared.cfg import CFG
 
 LOGGER = None

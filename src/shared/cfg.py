@@ -16,7 +16,6 @@ from datetime import datetime
 from decouple import UndefinedValueError, AutoConfig, config
 from functools import lru_cache
 from subprocess import Popen, CalledProcessError, PIPE
-
 from structlog import get_logger  # because circular dep otherwise
 
 logger = get_logger()

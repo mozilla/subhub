@@ -4,14 +4,12 @@
 
 import os
 import sys
-import inspect
-
-from typing import Optional, Union
-
 import logging
 import connexion
 import stripe
 import stripe.error
+
+from typing import Optional, Union
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
