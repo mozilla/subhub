@@ -16,7 +16,6 @@ from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
 from hub.shared.utils import format_plan_nickname
 from shared.log import get_logger
-from hub.shared.db import SubHubDeletedAccount
 from hub.shared import vendor
 
 logger = get_logger()
@@ -257,159 +256,179 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
-    def run(self) -> None:
+    def run(self) -> bool:
+        """
+        Parse the event data sent by Stripe contained within self.payload
+        Evaluate the data to determine if it should be sent to external routes
+        if data should be sent:
+            Prepare data for source
+            Send to selected routes
+            :return True:
+        else
+            :return False:
+        """
         logger.info("customer subscription updated", payload=self.payload)
+
+        customer_id = self.payload.data.object.customer
+        user_id = self.get_user_id(customer_id)
+
+        current_cancel_at_period_end = self.payload.data.object.cancel_at_period_end
+
+        previous_attributes = self.payload.data.previous_attributes
+        previous_cancel_at_period_end = previous_attributes.get(
+            "cancel_at_period_end", False
+        )
+
+        data = None
+        routes = None
+        if current_cancel_at_period_end and not previous_cancel_at_period_end:
+            data = self.create_payload("customer.subscription_cancelled", user_id)
+            logger.info("customer subscription cancel at period end", data=data)
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+        elif (
+            not current_cancel_at_period_end
+            and not previous_cancel_at_period_end
+            and self.payload.data.object.status == "active"
+        ):
+            data = self.create_payload("customer.recurring_charge", user_id)
+            logger.info("customer subscription new recurring", data=data)
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+        elif not current_cancel_at_period_end and previous_cancel_at_period_end:
+            data = self.create_payload("customer.subscription.reactivated", user_id)
+            logger.info("customer subscription reactivated", data=data)
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+
+        if data is not None and routes is not None:
+            self.send_to_routes(routes, json.dumps(data))
+            return True
+
+        logger.info("Conditions not met to send data to external routes")
+        return False
+
+    def get_user_id(self, customer_id) -> str:
+        """
+        Fetch the user_id associated with the Stripe customer_id
+        :param customer_id:
+        :return user_id:
+        :raises InvalidRequestError
+        :raises ClientError
+        """
         try:
-            customer_id = self.payload.data.object.customer
             updated_customer = stripe.Customer.retrieve(id=customer_id)
-            user_id = updated_customer.metadata.get("userid")
+            user_id = updated_customer.metadata.get("userid", None)
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
-        if user_id:
-            previous_attributes: Dict[str, Any] = dict()
-            try:
-                previous_attributes = self.payload.data.previous_attributes
-            except AttributeError:
-                logger.error("no previous attributes", data=self.payload.data)
-            logger.info("previous attributes", previous_attributes=previous_attributes)
-            logger.info(
-                "previous cancel",
-                previous_cancel=previous_attributes.get("cancel_at_period_end"),
-            )
-            if self.payload.data.object.cancel_at_period_end:
-                logger.info(
-                    "cancel at period end",
-                    end=self.payload.data.object.cancel_at_period_end,
-                )
 
-                product = stripe.Product.retrieve(self.payload.data.object.plan.product)
-                plan_nickname = format_plan_nickname(
-                    product_name=product["name"],
-                    plan_interval=self.payload.data.object.plan.interval,
-                )
+        if user_id is None:
+            logger.error("customer subscription updated - no userid", error=customer_id)
+            raise ClientError(f"userid is None for customer {customer_id}")
 
-                data = dict(
-                    event_id=self.payload.id,
-                    event_type="customer.subscription_cancelled",
-                    uid=user_id,
-                    customer_id=self.payload.data.object.customer,
-                    subscription_id=self.payload.data.object.id,
-                    plan_amount=self.payload.data.object.plan.amount,
-                    canceled_at=self.payload.data.object.canceled_at,
-                    cancel_at=self.payload.data.object.cancel_at,
-                    cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-                    nickname=plan_nickname,
-                    invoice_id=self.payload.data.object.latest_invoice,
-                    current_period_start=self.payload.data.object.current_period_start,
-                    current_period_end=self.payload.data.object.current_period_end,
-                )
-                logger.info("customer subscription cancel at period end", data=data)
-                routes = [StaticRoutes.SALESFORCE_ROUTE]
-                self.send_to_routes(routes, json.dumps(data))
-            elif (
-                not self.payload.data.object.cancel_at_period_end
-                and self.payload.data.object.status == "active"
-                # and not previous_attributes.get("cancel_at_period_end")
-            ):
-                try:
-                    customer_id = self.payload.data.object.customer
-                    updated_customer = stripe.Customer.retrieve(id=customer_id)
-                    user_id = updated_customer.metadata.get("userid")
-                    invoice_id = self.payload.data.object.latest_invoice
-                    latest_invoice = self.get_latest_invoice(invoice_id)
-                    logger.info("latest invoice", latest_invoice=latest_invoice)
-                    invoice_number = latest_invoice.number  # type: ignore
-                    charge = latest_invoice.charge  # type: ignore
-                    logger.info("charge", charge=charge)
-                    latest_charge = self.get_latest_charge(charge)
-                    logger.info("latest charge", latest_charge=latest_charge)
-                    last4 = (
-                        latest_charge.payment_method_details.card.last4  # type: ignore
-                    )
-                    brand = (
-                        latest_charge.payment_method_details.card.brand  # type: ignore
-                    )
-                except InvalidRequestError as e:
-                    logger.error("Unable to gather data", error=e)
-                    raise e
+        return user_id
 
-                product = stripe.Product.retrieve(self.payload.data.object.plan.product)
-                product_name = product["name"]
-
-                plan_nickname = format_plan_nickname(
-                    product_name=product_name,
-                    plan_interval=self.payload.data.object.plan.interval,
-                )
-                data = dict(
-                    event_id=self.payload.id,
-                    event_type="customer.recurring_charge",
-                    uid=user_id,
-                    active=self.is_active_or_trialing,
-                    subscriptionId=self.payload.data.object.id,  # required by FxA
-                    subscription_id=self.payload.data.object.id,
-                    productName=product_name,
-                    nickname=plan_nickname,
-                    eventCreatedAt=self.payload.created,  # required by FxA
-                    messageCreatedAt=int(time.time()),  # required by FxA
-                    invoice_id=self.payload.data.object.latest_invoice,
-                    customer_id=self.payload.data.object.customer,
-                    created=self.payload.data.object.created,
-                    plan_amount=self.payload.data.object.plan.amount,
-                    eventId=self.payload.id,  # required by FxA
-                    canceled_at=self.payload.data.object.canceled_at,
-                    cancel_at=self.payload.data.object.cancel_at,
-                    cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-                    currency=self.payload.data.object.plan.currency,
-                    current_period_start=self.payload.data.object.current_period_start,
-                    current_period_end=self.payload.data.object.current_period_end,
-                    invoice_number=invoice_number,
-                    brand=brand,
-                    last4=last4,
-                    charge=charge,
-                )
-                logger.info("customer subscription new recurring", data=data)
-                routes = [StaticRoutes.SALESFORCE_ROUTE]
-                self.send_to_routes(routes, json.dumps(data))
-            else:
-                logger.info(
-                    "cancel_at_period_end false",
-                    data=self.payload.data.object.cancel_at_period_end,
-                )
-        else:
-            logger.error(
-                "customer subscription updated - no userid",
-                error=self.payload.object.customer,
-            )
-            raise ClientError(
-                f"userid is None for customer {self.payload.object.customer}"
+    def create_payload(self, event_type, user_id) -> Dict[str, Any]:
+        """
+        Create payload to be sent to external sources based on event_type
+        :param event_type:
+        :param user_id:
+        :return payload:
+        :raises InvalidRequestError:
+        """
+        try:
+            product = stripe.Product.retrieve(self.payload.data.object.plan.product)
+            plan_nickname = format_plan_nickname(
+                product_name=product["name"],
+                plan_interval=self.payload.data.object.plan.interval,
             )
 
-    def get_latest_invoice(self, invoice_id) -> Optional[Dict[str, Any]]:
-        attempts = 2
-        latest_invoice = stripe.Invoice.retrieve(id=invoice_id)
-        logger.info("get latest invoice", latest_invoice=latest_invoice)
-        while attempts > 0:
-            attempts -= 1
-            if latest_invoice.charge is None or latest_invoice.number is None:
-                time.sleep(0.2)
-                self.get_latest_invoice(invoice_id)
-            else:
-                return latest_invoice
-        return None
+            payload = dict(
+                event_id=self.payload.id,
+                event_type="customer.recurring_charge",
+                uid=user_id,
+                customer_id=self.payload.data.object.customer,
+                subscription_id=self.payload.data.object.id,
+                plan_amount=self.payload.data.object.plan.amount,
+                nickname=plan_nickname,
+            )
 
-    def get_latest_charge(self, charge) -> Optional[Dict[str, Any]]:
-        attempts = 2
-        latest_charge = stripe.Charge.retrieve(id=charge)
-        logger.info("get latest charge", latest_charge=latest_charge)
-        while attempts > 0:
-            attempts -= 1
-            if (
-                latest_charge.payment_method_details.card.last4 is None
-                or latest_charge.payment_method_details.card.brand is None
-            ):
-                time.sleep(0.2)
-                self.get_latest_charge(charge)
-            else:
-                return latest_charge
-        return None
+            if event_type == "customer.subscription_cancelled":
+                payload.update(self.get_cancellation_data())
+            elif event_type == "customer.recurring_charge":
+                payload.update(self.get_recurring_data(product_name=product["name"]))
+            elif event_type == "customer.subscription.reactivated":
+                payload.update(self.get_reactivation_data())
+
+            return payload
+        except InvalidRequestError as e:
+            logger.error("Unable to gather subscription update data", error=e)
+            raise e
+
+    def get_cancellation_data(self) -> Dict[str, Any]:
+        """
+        Format data specific to subscription cancellation
+        :return dict:
+        """
+        return dict(
+            canceled_at=self.payload.data.object.canceled_at,
+            cancel_at=self.payload.data.object.cancel_at,
+            cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+            current_period_start=self.payload.data.object.current_period_start,
+            current_period_end=self.payload.data.object.current_period_end,
+            invoice_id=self.payload.data.object.latest_invoice,
+        )
+
+    def get_recurring_data(self, product_name) -> Dict[str, Any]:
+        """
+        Format data specific to recurring charge
+        :param product_name:
+        :return dict:
+        """
+        invoice_id = self.payload.data.object.latest_invoice
+        latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
+        invoice_number = latest_invoice.number  # type: ignore
+        charge_id = latest_invoice.charge  # type: ignore
+        latest_charge = vendor.retrieve_stripe_charge(charge_id)
+        last4 = latest_charge.payment_method_details.card.last4  # type: ignore
+        brand = latest_charge.payment_method_details.card.brand  # type: ignore
+
+        logger.info("latest invoice", latest_invoice=latest_invoice)
+        logger.info("latest charge", latest_charge=latest_charge)
+
+        return dict(
+            canceled_at=self.payload.data.object.canceled_at,
+            cancel_at=self.payload.data.object.cancel_at,
+            cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
+            current_period_start=self.payload.data.object.current_period_start,
+            current_period_end=self.payload.data.object.current_period_end,
+            invoice_id=self.payload.data.object.latest_invoice,
+            active=self.is_active_or_trialing,
+            subscriptionId=self.payload.data.object.id,  # required by FxA
+            productName=product_name,
+            eventCreatedAt=self.payload.created,  # required by FxA
+            messageCreatedAt=int(time.time()),  # required by FxA
+            created=self.payload.data.object.created,
+            eventId=self.payload.id,  # required by FxA
+            currency=self.payload.data.object.plan.currency,
+            invoice_number=invoice_number,
+            brand=brand,
+            last4=last4,
+            charge=charge_id,
+        )
+
+    def get_reactivation_data(self) -> Dict[str, Any]:
+        """
+        Format data specific to recurring charge
+        :return dict:
+        """
+        invoice_id = self.payload.data.object.latest_invoice
+        latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
+        latest_charge = vendor.retrieve_stripe_charge(latest_invoice.charge)
+        last4 = latest_charge.payment_method_details.card.last4  # type: ignore
+        brand = latest_charge.payment_method_details.card.brand  # type: ignore
+
+        return dict(
+            close_date=self.payload.created,
+            current_period_end=self.payload.data.object.current_period_end,
+            last4=last4,
+            brand=brand,
+        )

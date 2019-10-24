@@ -10,12 +10,17 @@ import flask
 import stripe
 import requests
 import connexion
+from unittest import TestCase
+from mock import patch
 
 from flask import g
-from mock import patch
 from mockito import when, mock, unstub
+from stripe.util import convert_to_stripe_object
+from stripe.error import InvalidRequestError
 
 from hub.app import create_app
+from hub.vendor.customer import StripeCustomerSubscriptionUpdated
+from hub.shared.exceptions import ClientError
 from hub.shared.tests.unit.utils import run_test, MockSqsClient, MockSnsClient
 from hub.shared.cfg import CFG
 from shared.log import get_logger
@@ -158,128 +163,6 @@ def test_stripe_hub_customer_subscription_created(mocker):
     unstub()
 
 
-def test_stripe_hub_customer_subscription_updated_cancel(mocker):
-
-    data = {
-        "event_id": "evt_00000000000000",
-        "eventId": "evt_00000000000000",
-        "event_type": "customer.subscription_cancelled",
-        "customer_id": "cus_00000000000000",
-        "subscription_id": "sub_00000000000000",
-        "subscriptionId": "sub_00000000000000",
-        "plan_amount": 500,
-        "canceled_at": 1519680008,
-        "cancel_at": 1521854209,
-        "cancel_at_period_end": True,
-        "nickname": "subhub",
-        "messageCreatedAt": int(time.time()),
-        "invoice_id": "in_test123",
-        "uid": "user123",
-        "latest_invoice": "in_test123",
-    }
-    customer_response = mock(
-        {
-            "id": "cus_00000000000000",
-            "object": "customer",
-            "account_balance": 0,
-            "created": 1563287210,
-            "currency": "usd",
-            "metadata": {"userid": "user123"},
-        },
-        spec=stripe.Customer,
-    )
-
-    when(stripe.Customer).retrieve(id="cus_00000000000000").thenReturn(
-        customer_response
-    )
-    invoice_response = mock(
-        {"invoice_number": "in_123", "charge": "ch_123"}, spec=stripe.Invoice
-    )
-    when(stripe.Invoice).retrieve(id="in_test123").thenReturn(invoice_response)
-    invoice_response = mock(
-        {"number": "in_123", "charge": "ch_123"}, spec=stripe.Invoice
-    )
-    when(stripe.Invoice).retrieve(id="in_test123").thenReturn(invoice_response)
-    charge_response = mock(
-        {"payment_method_details": {"card": {"last4": "9999", "brand": "visa"}}},
-        spec=stripe.Invoice,
-    )
-    when(stripe.Charge).retrieve(id="ch_123").thenReturn(charge_response)
-
-    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
-    response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
-    when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
-    when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer-subscription-updated.json"
-    run_customer(mocker, data, filename)
-    unstub()
-
-
-def test_stripe_hub_customer_subscription_updated_no_cancel(mocker):
-    customer_response = mock(
-        {
-            "id": "cus_00000000000000",
-            "object": "customer",
-            "account_balance": 0,
-            "created": 1519435009,
-            "currency": "usd",
-            "metadata": {"userid": "user123"},
-            "latest_invoice": "in_123",
-            "current_period_start": 1521854209,
-            "current_period_end": 1519435009,
-        },
-        spec=stripe.Customer,
-    )
-    when(stripe.Customer).retrieve(id="cus_00000000000000").thenReturn(
-        customer_response
-    )
-    invoice_response = mock(
-        {"number": "in_123", "charge": "ch_123"}, spec=stripe.Invoice
-    )
-    when(stripe.Invoice).retrieve(id="in_test123").thenReturn(invoice_response)
-    charge_response = mock(
-        {"payment_method_details": {"card": {"last4": "9999", "brand": "visa"}}},
-        spec=stripe.Invoice,
-    )
-    when(stripe.Charge).retrieve(id="ch_123").thenReturn(charge_response)
-    data = {
-        "eventId": "evt_00000000000000",
-        "event_type": "customer.subscription_cancelled",
-        "uid": "user123",
-        "active": True,
-        "subscriptionId": "sub_00000000000000",
-        "subscription_id": "sub_00000000000000",
-        "productName": "subhub",
-        "eventCreatedAt": 1519435009,
-        "messageCreatedAt": int(time.time()),
-        "invoice_id": "in_test123",
-        "plan_amount": 500,
-        "customer_id": "cus_00000000000000",
-        "nickname": "subhub",
-        "created": 1519363457,
-        "canceled_at": 1519680008,
-        "cancel_at": None,
-        "event_id": "evt_00000000000000",
-        "cancel_at_period_end": False,
-        "currency": "USD",
-        "customer": "cus_00000000000000",
-        "current_period_start": 1563287210,
-        "current_period_end": 1563287210,
-        "invoice_number": "in_123",
-        "brand": "visa",
-        "last4": "9999",
-        "charge": "ch_123",
-    }
-    logger.info("created payload", data=data)
-    basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
-    response = mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
-    when(boto3).client("sns", region_name=CFG.AWS_REGION).thenReturn(MockSnsClient)
-    when(requests).post(basket_url, json=data).thenReturn(response)
-    filename = "customer-subscription-updated-no-cancel.json"
-    run_customer(mocker, data, filename)
-    unstub()
-
-
 @patch("flask.g.subhub_deleted_users.find_by_cust")
 @patch("stripe.Customer.retrieve", autospec=True)
 @patch("stripe.Product.retrieve")
@@ -312,3 +195,134 @@ def test_stripe_hub_customer_subscription_deleted(
     filename = "customer-subscription-deleted.json"
     run_customer(mocker, data, filename)
     unstub()
+
+
+class StripeCustomerSubscriptionUpdatedTest(TestCase):
+    def setUp(self) -> None:
+        with open("tests/unit/fixtures/stripe_cust_test1.json") as fh:
+            cust_test1 = json.loads(fh.read())
+        self.customer = convert_to_stripe_object(cust_test1)
+
+        with open("tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
+            cust_no_metadata = json.loads(fh.read())
+        self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
+
+        with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
+            prod_test1 = json.loads(fh.read())
+        self.product = convert_to_stripe_object(prod_test1)
+
+        with open("tests/unit/fixtures/stripe_in_test1.json") as fh:
+            invoice_test1 = json.loads(fh.read())
+        self.invoice = convert_to_stripe_object(invoice_test1)
+
+        with open("tests/unit/fixtures/stripe_in_test2.json") as fh:
+            invoice_test2 = json.loads(fh.read())
+        self.incomplete_invoice = convert_to_stripe_object(invoice_test2)
+
+        with open("tests/unit/fixtures/stripe_ch_test1.json") as fh:
+            charge_test1 = json.loads(fh.read())
+        self.charge = convert_to_stripe_object(charge_test1)
+
+        with open("tests/unit/fixtures/stripe_ch_test2.json") as fh:
+            charge_test2 = json.loads(fh.read())
+        self.incomplete_charge = convert_to_stripe_object(charge_test2)
+
+        with open("tests/unit/fixtures/stripe_sub_updated_event_cancel.json") as fh:
+            self.subscription_cancelled_event = json.loads(fh.read())
+
+        with open("tests/unit/fixtures/stripe_sub_updated_event_charge.json") as fh:
+            self.subscription_charge_event = json.loads(fh.read())
+
+        with open("tests/unit/fixtures/stripe_sub_updated_event_reactivate.json") as fh:
+            self.subscription_reactivate_event = json.loads(fh.read())
+
+        with open("tests/unit/fixtures/stripe_sub_updated_event_no_trigger.json") as fh:
+            self.subscription_updated_event_no_match = json.loads(fh.read())
+
+        customer_patcher = patch("stripe.Customer.retrieve")
+        product_patcher = patch("stripe.Product.retrieve")
+        invoice_patcher = patch("stripe.Invoice.retrieve")
+        charge_patcher = patch("stripe.Charge.retrieve")
+        run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
+
+        self.addCleanup(customer_patcher.stop)
+        self.addCleanup(product_patcher.stop)
+        self.addCleanup(invoice_patcher.stop)
+        self.addCleanup(charge_patcher.stop)
+        self.addCleanup(run_pipeline_patcher.stop)
+
+        self.mock_customer = customer_patcher.start()
+        self.mock_product = product_patcher.start()
+        self.mock_invoice = invoice_patcher.start()
+        self.mock_charge = charge_patcher.start()
+        self.mock_run_pipeline = run_pipeline_patcher.start()
+
+    def test_run_cancel(self):
+        self.mock_customer.return_value = self.customer
+        self.mock_product.return_value = self.product
+        self.mock_run_pipeline.return_value = None
+
+        did_route = StripeCustomerSubscriptionUpdated(
+            self.subscription_cancelled_event
+        ).run()
+        assert did_route
+
+    def test_run_charge(self):
+        self.mock_customer.return_value = self.customer
+        self.mock_product.return_value = self.product
+        self.mock_invoice.return_value = self.invoice
+        self.mock_charge.return_value = self.charge
+        self.mock_run_pipeline.return_value = None
+
+        did_route = StripeCustomerSubscriptionUpdated(
+            self.subscription_charge_event
+        ).run()
+        assert did_route
+
+    def test_run_reactivate(self):
+        self.mock_customer.return_value = self.customer
+        self.mock_product.return_value = self.product
+        self.mock_invoice.return_value = self.invoice
+        self.mock_charge.return_value = self.charge
+        self.mock_run_pipeline.return_value = None
+
+        did_route = StripeCustomerSubscriptionUpdated(
+            self.subscription_reactivate_event
+        ).run()
+        assert did_route
+
+    def test_run_no_action(self):
+        self.mock_customer.return_value = self.customer
+
+        did_route = StripeCustomerSubscriptionUpdated(
+            self.subscription_updated_event_no_match
+        ).run()
+        assert did_route == False
+
+    def test_get_user_id_missing(self):
+        self.mock_customer.return_value = self.customer_missing_user
+
+        with self.assertRaises(ClientError):
+            StripeCustomerSubscriptionUpdated(
+                self.subscription_updated_event_no_match
+            ).get_user_id("cust_123")
+
+    def test_get_user_id_fetch_error(self):
+        self.mock_customer.side_effect = InvalidRequestError(
+            message="invalid data", param="bad data"
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            StripeCustomerSubscriptionUpdated(
+                self.subscription_updated_event_no_match
+            ).get_user_id("cust_123")
+
+    def test_create_payload_error(self):
+        self.mock_product.side_effect = InvalidRequestError(
+            message="invalid data", param="bad data"
+        )
+
+        with self.assertRaises(InvalidRequestError):
+            StripeCustomerSubscriptionUpdated(
+                self.subscription_updated_event_no_match
+            ).create_payload(event_type="event.type", user_id="user_123")
