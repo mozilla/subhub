@@ -242,7 +242,7 @@ def delete_customer(uid: str) -> FlaskResponse:
                 if deleted_customer and user is None:
                     logger.debug(
                         "delete customer successful",
-                        deleted_customer=deleted_customer.user_id,
+                        deleted_customer=deleted_customer,
                     )
                     return dict(message="Customer deleted successfully"), 200
     return dict(message="Customer not available"), 400
