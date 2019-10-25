@@ -396,7 +396,7 @@ def create_return_data(subscriptions) -> JsonDict:
         if subscription["status"] == "incomplete":
             invoice = vendor.retrieve_stripe_invoice(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = vendor.retrieve_stripe_customer(invoice["charge"])
+                intents = vendor.retrieve_stripe_charge(invoice["charge"])
                 logger.debug("intents", intents=intents)
 
                 return_data["subscriptions"].append(
