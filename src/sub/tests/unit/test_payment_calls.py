@@ -658,7 +658,7 @@ def test_create_update_data(mock_product, mock_invoice, mock_charge, mock_custom
     )
     assert update_data_response["subscriptions"][1]["plan_id"] == "plan_test3"
     assert update_data_response["subscriptions"][1]["status"] == "incomplete"
-    assert update_data_response["subscriptions"][1]["cancel_at_period_end"] == False
+    assert update_data_response["subscriptions"][1]["cancel_at_period_end"] is False
     assert update_data_response["subscriptions"][1]["subscription_id"] == "sub_test2"
     assert update_data_response["subscriptions"][1]["failure_code"] == "card_declined"
     assert (

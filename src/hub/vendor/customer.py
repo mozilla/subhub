@@ -22,7 +22,7 @@ logger = get_logger()
 
 
 class StripeCustomerCreated(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> None:
         logger.info("customer created", payload=self.payload)
         cust_name = self.payload.data.object.name
         if not cust_name:
@@ -36,11 +36,10 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
         logger.info("customer created", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))
-        return data
 
 
 class StripeCustomerDeleted(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> None:
         logger.info("customer deleted", payload=self.payload)
         customer_id = self.payload.data.object.id
         uid = self.payload.data.object.metadata.userid
@@ -74,11 +73,10 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         logger.info("customer delete", data=data)
         routes = [StaticRoutes.SALESFORCE_ROUTE]
         self.send_to_routes(routes, json.dumps(data))
-        return data
 
 
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> None:
         try:
             logger.info("customer source expiring")
             customer_id = self.payload.data.object.customer
@@ -111,15 +109,13 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
             )
             routes = [StaticRoutes.SALESFORCE_ROUTE]
             self.send_to_routes(routes, json.dumps(data))
-            return data
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
-        return {"run_status": False}
 
 
 class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> None:
         logger.info("customer subscription created", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
@@ -209,7 +205,6 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             }
             self.customer_event_to_all_routes(data_projection_by_route, data)
             logger.info("customer subscription created", data=data)
-            return data
         else:
             logger.error(
                 "customer subscription created no userid",
@@ -219,11 +214,10 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             raise ClientError(
                 f"userid is None for customer {self.payload.object.customer}"
             )
-        return {"run_status": False}
 
 
 class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> None:
         logger.info("customer subscription deleted", payload=self.payload)
         try:
             customer_id = self.payload.data.object.customer
@@ -250,7 +244,6 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
             )
             routes = [StaticRoutes.FIREFOX_ROUTE]
             self.send_to_routes(routes, json.dumps(data))
-            return data
         else:
             logger.error(
                 "customer subscription deleted no userid",
@@ -261,11 +254,9 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
                 f"userid is None for customer {self.payload.object.customer}"
             )
 
-        return {"run_status": False}
-
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
-    def run(self) -> Dict[str, Any]:
+    def run(self) -> bool:
         """
         Parse the event data sent by Stripe contained within self.payload
         Evaluate the data to determine if it should be sent to external routes
@@ -290,11 +281,6 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
         data = None
         routes = None
-        logger.info(
-            "cancel",
-            current_cancel_at_period_end=current_cancel_at_period_end,
-            previous_cancel_at_period_end=previous_cancel_at_period_end,
-        )
         if current_cancel_at_period_end and not previous_cancel_at_period_end:
             data = self.create_payload("customer.subscription_cancelled", user_id)
             logger.info("customer subscription cancel at period end", data=data)
@@ -314,10 +300,10 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
         if data is not None and routes is not None:
             self.send_to_routes(routes, json.dumps(data))
-            return data
+            return True
 
         logger.info("Conditions not met to send data to external routes")
-        return {"run_status": False}
+        return False
 
     def get_user_id(self, customer_id) -> str:
         """

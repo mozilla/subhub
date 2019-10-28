@@ -20,29 +20,15 @@ from sub import payments
 from sub.app import create_app
 from sub.shared.cfg import CFG
 from sub.customer import create_customer
+from sub.tests.mock_customer import MockCustomer
 from shared.log import get_logger
 from shared.dynamodb import dynamodb
+
 
 logger = get_logger()
 
 THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))
 UID = str(uuid.uuid4())
-
-
-class MockCustomer:
-    id = None
-    object = "customer"
-    subscriptions = [{"data": "somedata"}]
-
-    def properties(self, cls):
-        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
-
-    def get(self, key, default=None):
-        properties = self.properties(MockCustomer)
-        if key in properties:
-            return key
-        else:
-            return default
 
 
 def get_file(filename, path=THIS_PATH, **overrides):
@@ -97,7 +83,7 @@ def create_subscription_for_processing(monkeypatch):
 
     subhub_account.get_user = get_user
 
-    customer = Mock(return_value=MockCustomer())
+    customer = MagicMock(return_value=MockCustomer())
     none = Mock(return_value=None)
     updated_customer = Mock(
         return_value={
