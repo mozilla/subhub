@@ -230,11 +230,6 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         with open("tests/unit/fixtures/stripe_sub_updated_event_cancel.json") as fh:
             self.subscription_cancelled_event = json.loads(fh.read())
 
-        with open("tests/unit/fixtures/stripe_cancel.json") as fh:
-            stripe_cancel = json.loads(fh.read())
-            fh.close()
-        self.stripe_cancelled_sub = stripe_cancel
-
         with open("tests/unit/fixtures/stripe_sub_updated_event_charge.json") as fh:
             self.subscription_charge_event = json.loads(fh.read())
 
@@ -271,17 +266,6 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             self.subscription_cancelled_event
         ).run()
         assert did_route
-        assert did_route["event_type"] == "customer.subscription_cancelled"
-
-    def test_run_cancel_load(self):
-        self.mock_customer.return_value = self.customer
-        self.mock_product.return_value = self.product
-        self.mock_run_pipeline.return_value = None
-
-        did_route = StripeCustomerSubscriptionUpdated(self.stripe_cancelled_sub).run()
-        logger.info("cancel load", did_route=did_route)
-        assert did_route
-        assert did_route["event_type"] == "customer.subscription_cancelled"
 
     def test_run_charge(self):
         self.mock_customer.return_value = self.customer
@@ -313,7 +297,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         did_route = StripeCustomerSubscriptionUpdated(
             self.subscription_updated_event_no_match
         ).run()
-        assert did_route["run_status"] is False
+        assert did_route == False
 
     def test_get_user_id_missing(self):
         self.mock_customer.return_value = self.customer_missing_user

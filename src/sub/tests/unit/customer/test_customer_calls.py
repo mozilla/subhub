@@ -11,6 +11,7 @@ from stripe import Customer
 
 from sub.payments import subscribe_to_plan, customer_update, create_update_data
 from sub.shared.tests.unit.utils import MockSubhubAccount
+from sub.tests.mock_customer import MockCustomer
 from shared.log import get_logger
 
 logger = get_logger()
@@ -18,22 +19,6 @@ logger = get_logger()
 
 UID = str(uuid.uuid4())
 THIS_PATH = os.path.join(os.path.realpath(os.path.dirname(__file__)))
-
-
-class MockCustomer:
-    id = None
-    object = "customer"
-    subscriptions = [{"data": "somedata"}]
-
-    def properties(self, cls):
-        return [i for i in cls.__dict__.keys() if i[:1] != "_"]
-
-    def get(self, key, default=None):
-        properties = self.properties(MockCustomer)
-        if key in properties:
-            return key
-        else:
-            return default
 
 
 def get_file(filename, path=THIS_PATH, **overrides):

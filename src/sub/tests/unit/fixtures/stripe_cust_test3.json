@@ -1,5 +1,5 @@
 {
-  "id": "cus_test1",
+  "id": "cus_test3",
   "object": "customer",
   "account_balance": 0,
   "address": null,
@@ -20,9 +20,7 @@
     "footer": null
   },
   "livemode": false,
-  "metadata": {
-    "userid": "user123"
-  },
+  "metadata": {},
   "name": null,
   "phone": null,
   "preferred_locales": [],
@@ -45,13 +43,14 @@
     "object": "list",
     "data": [
         {
-          "id": "sub_test1",
+          "id": "sub_test3",
           "object": "subscription",
           "application_fee_percent": null,
           "current_period_start": 1565895370,
           "current_period_end": 1568573770,
           "cancel_at_period_end": false,
           "ended_at": null,
+          "latest_invoice": "in_test1",
           "plan": {
               "id": "plan_test1",
               "object": "plan",
@@ -76,7 +75,7 @@
               "trial_period_days": 30,
               "usage_type": "licensed"
             },
-          "status": "active"
+          "status": "incomplete"
         }
     ],
     "has_more": false,

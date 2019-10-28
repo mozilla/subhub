@@ -12,21 +12,23 @@ from unittest.mock import Mock, MagicMock
 
 from sub.app import create_app
 from sub.shared.tests.unit.utils import MockSubhubUser
+from sub.tests.mock_customer import MockCustomer
 from shared.log import get_logger
 
 logger = get_logger()
 
 
-class MockCustomer:
+class MockDeletedCustomer:
     id = 123
     object = "customer"
     subscriptions = [{"data": "somedata"}]
+    deleted = True
 
     def properties(self, cls):
         return [i for i in cls.__dict__.keys() if i[:1] != "_"]
 
     def get(self, key, default=None):
-        properties = self.properties(MockCustomer)
+        properties = self.properties(MockDeletedCustomer)
         if key in properties:
             return key
         else:

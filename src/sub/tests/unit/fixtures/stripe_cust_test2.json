@@ -20,9 +20,7 @@
     "footer": null
   },
   "livemode": false,
-  "metadata": {
-    "userid": "user123"
-  },
+  "metadata": {},
   "name": null,
   "phone": null,
   "preferred_locales": [],
@@ -45,7 +43,7 @@
     "object": "list",
     "data": [
         {
-          "id": "sub_test1",
+          "id": "sub_test2",
           "object": "subscription",
           "application_fee_percent": null,
           "current_period_start": 1565895370,

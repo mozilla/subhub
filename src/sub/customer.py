@@ -4,7 +4,7 @@
 
 from stripe import Customer, Subscription
 from stripe.error import InvalidRequestError
-from typing import Union, Optional
+from typing import Dict, Any
 
 from sub.shared import vendor, utils
 from sub.shared.exceptions import IntermittentError, ServerError
@@ -127,7 +127,7 @@ def subscribe_customer(customer: Customer, plan_id: str) -> Subscription:
     return sub
 
 
-def has_existing_plan(customer: Customer, plan_id: str) -> bool:
+def has_existing_plan(customer: Dict[str, Any], plan_id: str) -> bool:
     """
     Check if user has the existing plan in an active or trialing state.
     :param customer:
@@ -151,5 +151,6 @@ def _validate_origin_system(origin_system: str):
     :param origin_system: The originating system in Mozilla
     """
     if origin_system not in CFG.ALLOWED_ORIGIN_SYSTEMS:
+        logger.info("origin systems", origins=CFG.ALLOWED_ORIGIN_SYSTEMS)
         msg = f"origin_system={origin_system} not one of allowed origin system values, please contact a system administrator in the #subscription-platform channel."
         raise InvalidRequestError(message=msg, param=str(origin_system))
