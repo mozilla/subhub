@@ -10,7 +10,7 @@
   "delinquent": false,
   "description": null,
   "discount": null,
-  "email": null,
+  "email": "test@example.com",
   "failure_code": "card_declined",
   "failure_message": "Your card was declined.",
   "invoice_prefix": "F351DA7",

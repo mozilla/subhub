@@ -2,14 +2,14 @@
   "created": 1326853478,
   "livemode": false,
   "id": "evt_00000000000000",
-  "type": "customer.updated",
+  "type": "customer.deleted",
   "object": "event",
   "request": null,
   "pending_webhooks": 1,
   "api_version": "2018-02-06",
   "data": {
     "object": {
-      "id": "cus_00000000000000",
+      "id": "cus_123",
       "object": "customer",
       "account_balance": 0,
       "address": {
@@ -106,9 +106,6 @@
       },
       "tax_info": null,
       "tax_info_verification": null
-    },
-    "previous_attributes": {
-      "description": "Old description"
     }
   }
 }

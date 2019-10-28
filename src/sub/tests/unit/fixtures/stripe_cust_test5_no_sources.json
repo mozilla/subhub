@@ -1,5 +1,5 @@
 {
-  "id": "cus_test1",
+  "id": "cus_test5",
   "object": "customer",
   "account_balance": 0,
   "address": null,
@@ -27,24 +27,17 @@
   "shipping": null,
   "sources": {
     "object": "list",
-    "data": [
-      {
-        "funding": "credit",
-        "last4": "1234",
-        "exp_month": 12,
-        "exp_year": 2020
-      }
-    ],
+    "data": [],
     "has_more": false,
     "total_count": 0,
-    "url": "/v1/customers/cus_test1/sources"
+    "url": "/v1/customers/cust_test1/sources"
   },
   "subscriptions": {
     "object": "list",
     "data": [],
     "has_more": false,
     "total_count": 0,
-    "url": "/v1/customers/cus_test1/subscriptions"
+    "url": "/v1/customers/cust_test1/subscriptions"
   },
   "tax_exempt": "none",
   "tax_ids": {
@@ -52,7 +45,7 @@
     "data": [],
     "has_more": false,
     "total_count": 0,
-    "url": "/v1/customers/cus_test1/tax_ids"
+    "url": "/v1/customers/cust_test1/tax_ids"
   },
   "tax_info": null,
   "tax_info_verification": null
