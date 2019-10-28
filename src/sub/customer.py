@@ -4,7 +4,7 @@
 
 from stripe import Customer, Subscription
 from stripe.error import InvalidRequestError
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from sub.shared import vendor, utils
 from sub.shared.exceptions import IntermittentError, ServerError
@@ -26,25 +26,16 @@ def create_customer(
     _validate_origin_system(origin_system)
     # First search Stripe to ensure we don't have an unlinked Stripe record
     # already in Stripe
-    customer = None
-    customers = vendor.get_customer_list(email=email)
-    for possible_customer in customers.data:
-        if possible_customer.email == email:
-            # If the userid doesn't match, the system is damaged.
-            if possible_customer.metadata.get("userid") != user_id:
-                customer_message = "customer email exists but userid mismatch"
-                raise ServerError(customer_message)
+    customer = search_customers(email=email, user_id=user_id)
 
-            customer = possible_customer
-            # If we have a mis-match on the source_token, overwrite with the
-            # new one.
-            if customer.default_source != source_token:
-                vendor.modify_customer(
-                    customer_id=customer.id,
-                    source_token=source_token,
-                    idempotency_key=utils.get_indempotency_key(),
-                )
-            break
+    # If we have a mis-match on the source_token, overwrite with the
+    # new one.
+    if customer is not None and customer.default_source != source_token:
+        customer = vendor.modify_customer(
+            customer_id=customer.id,
+            source_token=source_token,
+            idempotency_key=utils.get_indempotency_key(),
+        )
 
     # No existing Stripe customer, create one.
     if not customer:
@@ -60,16 +51,42 @@ def create_customer(
         uid=user_id, origin_system=origin_system, cust_id=customer.id
     )
 
-    try:
-        new_user = subhub_account.save_user(db_account)
-        if not new_user:
-            # Clean-up the Stripe customer record since we can't link it
-            vendor.delete_stripe_customer(customer_id=customer.id)
-    except IntermittentError("error saving db record") as e:  # type: ignore
-        logger.error("unable to save user or link it", error=e)
-        raise e
+    new_user = subhub_account.save_user(db_account)
+    if not new_user:
+        # Clean-up the Stripe customer record since we can't link it
+        vendor.delete_stripe_customer(customer_id=customer.id)
+        logger.error("unable to save user or link it")
+        raise IntermittentError("error saving db record")
+
     logger.debug("create customer", customer=customer)
     return customer
+
+
+def search_customers(email: str, user_id: str) -> Optional[Customer]:
+    """
+    Locate Stripe Customer by email
+    If a Customer is found:
+        If the userid in the metadata does not match the user_id provided
+            :raise ServerError
+        Else
+            :return Customer
+    Else:
+        :return None
+
+    :param email:
+    :param user_id:
+    :return:
+    """
+    customers = vendor.get_customer_list(email=email)
+    for possible_customer in customers.data:
+        if possible_customer.email == email:
+            # If the userid doesn't match, the system is damaged.
+            if possible_customer.metadata.get("userid") != user_id:
+                customer_message = "customer email exists but userid mismatch"
+                raise ServerError(customer_message)
+
+            return possible_customer
+    return None
 
 
 def existing_or_new_customer(
@@ -100,6 +117,16 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
 
 
 def existing_payment_source(existing_customer: Customer, source_token: str) -> Customer:
+    """
+    If Customer does not have an existing Payment Source and has not been Deleted:
+        - Set the Customer's payment source to the new token
+        - return the updated Customer
+    Else
+        - return the provided customer
+    :param existing_customer:
+    :param source_token:
+    :return:
+    """
     if not existing_customer.get("sources"):
         if not existing_customer.get("deleted"):
             existing_customer = vendor.modify_customer(
@@ -109,7 +136,7 @@ def existing_payment_source(existing_customer: Customer, source_token: str) -> C
             )
             logger.info("add source", existing_customer=existing_customer)
         else:
-            logger.info("existing source deleted")
+            logger.info("stripe customer is marked as deleted. cannot add source.")
     logger.debug("existing payment source", existing_customer=existing_customer)
     return existing_customer
 
