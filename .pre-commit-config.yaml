@@ -30,6 +30,11 @@ repos:
     -   id: pylint
         additional_dependencies: [pylint-venv]
         args: ['--disable=all']
+-   repo: https://github.com/psf/black
+    rev: stable
+    hooks:
+    -   id: black
+        language_version: python3.7
 # TODO: Enable in the future as we have issues to address.
 # -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
 #     sha: v1.0.3
