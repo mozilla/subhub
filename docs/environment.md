@@ -27,8 +27,8 @@ The environment variables as read from the application, in alphabetical order ar
   <summary>Learn more.</summary>
 
   #### Allowed Origin Systems
-  
-  This list of values provides SubHub with a way of identifying the originating sending system, 
+
+  This list of values provides SubHub with a way of identifying the originating sending system,
   this was developed as a way of pre-planning for future SubHub customers.
 
 </details>
@@ -98,7 +98,7 @@ The environment variables as read from the application, in alphabetical order ar
   <summary>Learn more.</summary>
 
   #### Basket Application Programming Interface (API) Key
-  
+
   Valid API Key issued to SubHub to authenticate in API calls to the Mozilla Basket service.
 
 </details>
@@ -189,15 +189,6 @@ The environment variables as read from the application, in alphabetical order ar
 
 </details>
 
-### DYNALITE_FILE
-<details>
-  <summary>Learn more.</summary>
-
-  #### DYNALITE_FILE
-
-  This is the value of the file that will be written to by the `dynalite process`.  Defaults to `dynalite.out`.
-
-</details>
 
 ### DYNALITE_PORT
 <details>
@@ -206,6 +197,18 @@ The environment variables as read from the application, in alphabetical order ar
    #### DYNALITE_PORT
 
    This value is used only when running `dynalite` locally.  Defaults to `8000`.
+
+</details>
+
+### DYNALITE_URL
+<details>
+  <summary>Learn more.</summary>
+
+   #### DYNALITE_URL
+
+   This configuration value is the fully qualified uniform resource
+   locator (URL) for a dockerized instance of an API vending the
+   AWS DynamDB interface.
 
 </details>
 
@@ -233,7 +236,7 @@ The environment variables as read from the application, in alphabetical order ar
   <summary>Learn more.</summary>
 
   #### HUB_API_KEY
-  
+
   API Key issued from Stripe to identify and validate calls originated from Stripe.
 
 </details>
@@ -279,9 +282,9 @@ The environment variables as read from the application, in alphabetical order ar
 ### PAYMENT_API_KEY
 <details>
   <summary>Learn more.</summary>
-  
+
   #### PAYMENT_API_KEY
-  
+
   API Key issued to SubHub customers to authenticate transactions incoming to SubHub.
 
 
@@ -293,7 +296,7 @@ The environment variables as read from the application, in alphabetical order ar
 
   #### PAYMENT_API_KEY
 
-  List of Stripe webhook events that will be monitored by SubHub.  To be monitored 
+  List of Stripe webhook events that will be monitored by SubHub.  To be monitored
   by SubHub, the event must be in this list otherwise it will not be listened for by hub.
 
 </details>
@@ -342,7 +345,7 @@ The environment variables as read from the application, in alphabetical order ar
 ### SALESFORCE_BASKET_URI
 <details>
   <summary>Learn more.</summary>
-  
+
   #### SALESFORCE_BASKET_URI
 
   A URL to send customer data to Mozilla Basket service.
