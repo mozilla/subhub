@@ -326,3 +326,101 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             StripeCustomerSubscriptionUpdated(
                 self.subscription_updated_event_no_match
             ).create_payload(event_type="event.type", user_id="user_123")
+
+    def test_create_payload_cancelled(self):
+        self.mock_product.return_value = self.product
+
+        user_id = "user123"
+        event_name = "customer.subscription_cancelled"
+
+        expected_payload = dict(
+            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
+            event_type=event_name,
+            uid=user_id,
+            customer_id="cus_FCUzOhOp9iutWa",
+            subscription_id="sub_FCUzkHmNY3Mbj1",
+            plan_amount=100,
+            nickname="Project Guardian (Daily)",
+            canceled_at=None,
+            cancel_at=None,
+            cancel_at_period_end=True,
+            current_period_start=1571949971,
+            current_period_end=1572036371,
+            invoice_id="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
+        )
+
+        actual_payload = StripeCustomerSubscriptionUpdated(
+            self.subscription_cancelled_event
+        ).create_payload(event_name, user_id)
+
+        assert actual_payload == expected_payload
+
+    def test_create_payload_recurring_charge(self):
+        self.mock_product.return_value = self.product
+        self.mock_invoice.return_value = self.invoice
+        self.mock_charge.return_value = self.charge
+
+        user_id = "user123"
+        event_name = "customer.recurring_charge"
+
+        expected_payload = dict(
+            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
+            event_type=event_name,
+            uid=user_id,
+            customer_id="cus_FCUzOhOp9iutWa",
+            subscription_id="sub_FCUzkHmNY3Mbj1",
+            plan_amount=100,
+            nickname="Project Guardian (Daily)",
+            canceled_at=None,
+            cancel_at=None,
+            cancel_at_period_end=False,
+            current_period_start=1571949971,
+            current_period_end=1572036371,
+            invoice_id="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
+            active=True,
+            subscriptionId="sub_FCUzkHmNY3Mbj1",  # required by FxA
+            productName="Project Guardian",
+            eventCreatedAt=1571949975,  # required by FxA
+            messageCreatedAt=int(time.time()),  # required by FxA
+            created=1559767571,
+            eventId="evt_1FXDCFJNcmPzuWtRrogbWpRZ",  # required by FxA
+            currency="usd",
+            invoice_number="3B74E3D0-0001",
+            brand="visa",
+            last4="0019",
+            charge="ch_test1",
+        )
+
+        actual_payload = StripeCustomerSubscriptionUpdated(
+            self.subscription_charge_event
+        ).create_payload(event_name, user_id)
+
+        assert actual_payload == expected_payload
+
+    def test_create_payload_reactivated(self):
+        self.mock_product.return_value = self.product
+        self.mock_invoice.return_value = self.invoice
+        self.mock_charge.return_value = self.charge
+
+        user_id = "user123"
+        event_name = "customer.subscription.reactivated"
+
+        expected_payload = dict(
+            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
+            event_type=event_name,
+            uid=user_id,
+            customer_id="cus_FCUzOhOp9iutWa",
+            subscription_id="sub_FCUzkHmNY3Mbj1",
+            plan_amount=100,
+            nickname="Project Guardian (Daily)",
+            close_date=1571949975,
+            current_period_end=1572036371,
+            brand="visa",
+            last4="0019",
+        )
+
+        actual_payload = StripeCustomerSubscriptionUpdated(
+            self.subscription_reactivate_event
+        ).create_payload(event_name, user_id)
+
+        assert actual_payload == expected_payload

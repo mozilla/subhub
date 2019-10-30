@@ -343,7 +343,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
             payload = dict(
                 event_id=self.payload.id,
-                event_type="customer.recurring_charge",
+                event_type=event_type,
                 uid=user_id,
                 customer_id=self.payload.data.object.customer,
                 subscription_id=self.payload.data.object.id,
