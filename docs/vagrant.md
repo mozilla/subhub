@@ -6,7 +6,8 @@
 
 ## Running
 
-* Starting: `vagrant up`
+* Starting: `vagrant up --provision`
+* Stopping: `vagrant halt`
 * Destroying: `vagrant destroy`
 * SSH: `vagrant ssh`
 * (Re) Provisioning: `vagrant provision`

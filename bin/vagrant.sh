@@ -6,7 +6,7 @@ sudo apt-get uninstall -y python
 # Install Python 3.7 and pip
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y python3.7 python3.7-dev python3-pip python3.7-venv python3.7-dgb gdb
+sudo apt-get install -y python3.7 python3.7-dev python3-pip python3.7-venv python3.7-gdb gdb
 
 # Install Yarn
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
@@ -27,21 +27,11 @@ sudo chmod +x /usr/local/bin/docker-compose
 # doit dependency
 # doit.dependency.DatabaseException: db type is dbm.gnu, but the module is not available
 sudo apt-get install -y python3.7-gdbm
+sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
+
 
 echo 'alias python=python3.7' >> ~/.bashrc
 echo 'alias pip=pip3' >> ~/.bashrc
+echo 'cd /opt/subhub' >> /home/vagrant/.bashrc
+
 source ~/.bashrc
-
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
-
-sudo chown -R vagrant:vagrant /opt/subhub
-sudo chown -R vagrant:vagrant /opt/subhub/node_modules
-
-
-cd /opt/subhub
-mkdir venv
-sudo chown -R vagrant:vagrant /opt/subhub/venv
-
-pip3 install -r automation_requirements.txt
-python3 dodo.py
-pip3 install --upgrade pip
