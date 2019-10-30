@@ -187,17 +187,6 @@ def test_DYNALITE_PORT():
         assert False
 
 
-def test_DYNALITE_FILE():
-    """
-    dynalite file
-    """
-    try:
-        CFG.DYNALITE_FILE
-        assert True
-    except:
-        assert False
-
-
 def test_SALESFORCE_BASKET_URI():
     """
     salesforce basket uri
