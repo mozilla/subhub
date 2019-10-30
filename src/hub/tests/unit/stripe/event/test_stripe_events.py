@@ -14,8 +14,9 @@ from flask import Response
 from mockito import when, mock, unstub
 from datetime import datetime, timedelta
 
+from hub.tests import conftest
+
 from hub.shared.tests.unit.utils import run_view, run_event_process
-from hub.verifications.events_check import EventCheck, process_events
 from hub.shared.cfg import CFG
 from shared.log import get_logger
 
@@ -25,6 +26,8 @@ CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def test_hours_back():
+    from hub.verifications.events_check import EventCheck
+
     event_check_class = EventCheck(hours_back=1)
     assert isinstance(
         event_check_class.get_time_h_hours_ago(hours_back=event_check_class.hours_back),
@@ -32,14 +35,18 @@ def test_hours_back():
     )
 
 
-def test_process_missing_event():
+def test_process_missing_event(dynamodb):
+    from hub.verifications.events_check import EventCheck, process_events
+
     missing_event = "event.json"
     with open(os.path.join(CWD, missing_event)) as f:
         event_check = EventCheck(6)
         event_check.process_missing_event(json.load(f))
 
 
-def test_retrieve_events():
+def test_retrieve_events(dynamodb):
+    from hub.verifications.events_check import EventCheck, process_events
+
     missing_event = "event.json"
 
     def get_hours_back():
@@ -58,6 +65,8 @@ def test_retrieve_events():
 
 
 def test_retrieve_events_more():
+    from hub.verifications.events_check import EventCheck
+
     missing_event = "more_event.json"
 
     def get_hours_back():
@@ -78,8 +87,10 @@ def test_retrieve_events_more():
     unstub()
 
 
-def test_process_events():
+def test_process_events(dynamodb):
+    os.environ["DYNALITE_URL"] = dynamodb
     missing_event = "event.json"
+    from hub.verifications.events_check import process_events
 
     def get_hours_back():
         h_hours_ago = datetime.now() - timedelta(hours=6)

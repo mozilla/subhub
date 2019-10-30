@@ -23,9 +23,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     config.vm.network :private_network, ip: "10.10.10.10"
 
     config.vm.synced_folder ".", "/vagrant", disabled: true
-    config.vm.synced_folder "./", "/opt/subhub", type: "rsync",
-                            rsync__auto: true,
-                            rsync__exclude: ['node_modules*', 'venv', '.doit.db']
+    config.vm.synced_folder "./", "/opt/subhub"
 
     config.vm.provider "virtualbox" do |vb|
       vb.name = "TravisCI"
@@ -38,4 +36,5 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
 
     config.vm.provision :shell, path: "./bin/vagrant.sh"
+    config.vm.provision :shell, path: "./bin/build.sh", privileged: false
   end
