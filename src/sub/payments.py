@@ -546,7 +546,7 @@ def create_update_data(customer) -> Dict[str, Any]:
         if subscription["status"] == "incomplete":
             invoice = vendor.retrieve_stripe_invoice(subscription["latest_invoice"])
             if invoice["charge"]:
-                intents = vendor.retrieve_stripe_customer(invoice["charge"])
+                intents = vendor.retrieve_stripe_invoice(invoice["charge"])
                 intents = intents.to_dict()
                 return_data["subscriptions"].append(
                     {
