@@ -1,10 +1,55 @@
+# codecov.io Documentation:
+#   https://docs.codecov.io/docs
 codecov:
-  archive:
-    uploads: no
+  branch: master
+  notify:
+    require_ci_to_pass: yes
 
 coverage:
   precision: 0
-  range: 80...100
+  round: down
+  range: "70...100"
 
+  status:
+    project:
+      # disable the default status that measures entire project
+      default: false
+      hub:
+        paths:
+          # only include coverage in "src/hub" folder
+          - src/hub
+        enabled: yes
+        threshold: 1%
+      shared:
+        paths:
+          # only include coverage in "src/shared" folder
+          - src/shared
+        enabled: yes
+        threshold: 1%
+      sub:
+        paths:
+          # only include coverage in "src/sub" folder
+          - src/sub
+        enabled: yes
+        threshold: 1%
+    patch:
+      default:
+        enabled: yes
+        threshold: 1%
+    changes: no
+
+  ignore:
+    - "docs/*"
+    - "node_modules/*"
+    - "etc/*"
+    - "bin/*"
+parsers:
+  gcov:
+    branch_detection:
+      conditional: yes
+      loop: yes
+      method: no
+      macro: no
 comment:
-  layout: "header, diff, changes"
+  layout: "reach, diff, files"
+  require_changes: yes
