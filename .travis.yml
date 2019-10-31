@@ -23,8 +23,6 @@ env:
 before_install:
   - sudo rm -f /etc/boto.cfg
   - pip install -r automation_requirements.txt
-  - npm install -g dynalite
-  - npm install -g kinesalite
   - sudo apt-get install -y awscli
   - ./bin/aws-credentials.sh
 
