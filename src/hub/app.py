@@ -79,7 +79,7 @@ def create_app(config=None):
     # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
-    host = f"http://dynalite:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
+    host = f"http://dynamodb:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
     stripe.api_key = CFG.STRIPE_API_KEY
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
