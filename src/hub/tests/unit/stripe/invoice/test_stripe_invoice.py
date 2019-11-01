@@ -10,19 +10,26 @@ from stripe.util import convert_to_stripe_object
 from stripe.error import InvalidRequestError
 
 from hub.vendor.invoices import StripeInvoicePaymentFailed
+from shared.cfg import CFG
 
 
 class StripeInvoicePaymentFailedTest(unittest.TestCase):
     def setUp(self) -> None:
-        with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        from shared.cfg import CFG
+
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_prod_test1.json"
+        ) as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open("tests/unit/fixtures/stripe_in_payment_failed_event.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_in_payment_failed_event.json"
+        ) as fh:
             self.payment_failed_event = json.loads(fh.read())
 
         with open(
-            "tests/unit/fixtures/stripe_in_payment_failed_event_sub_create.json"
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_in_payment_failed_event_sub_create.json"
         ) as fh:
             self.payment_failed_event_sub_create = json.loads(fh.read())
 

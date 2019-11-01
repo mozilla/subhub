@@ -83,7 +83,7 @@ def test_stripe_hub_customer_updated(mocker):
 
 @patch("stripe.Product.retrieve")
 def test_stripe_hub_customer_source_expiring(mock_product, mocker):
-    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
     mock_product.return_value = prod_test1
@@ -169,7 +169,7 @@ def test_stripe_hub_customer_subscription_created(mocker):
 def test_stripe_hub_customer_subscription_deleted(
     mock_product, mock_cust, mock_deleted_user, mocker
 ):
-    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
     mock_product.return_value = prod_test1
@@ -199,44 +199,66 @@ def test_stripe_hub_customer_subscription_deleted(
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
     def setUp(self) -> None:
-        with open("tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_cust_test1.json"
+        ) as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
-        with open("tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_cust_no_metadata.json"
+        ) as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
-        with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_prod_test1.json"
+        ) as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open("tests/unit/fixtures/stripe_in_test1.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_in_test1.json"
+        ) as fh:
             invoice_test1 = json.loads(fh.read())
         self.invoice = convert_to_stripe_object(invoice_test1)
 
-        with open("tests/unit/fixtures/stripe_in_test2.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_in_test2.json"
+        ) as fh:
             invoice_test2 = json.loads(fh.read())
         self.incomplete_invoice = convert_to_stripe_object(invoice_test2)
 
-        with open("tests/unit/fixtures/stripe_ch_test1.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_ch_test1.json"
+        ) as fh:
             charge_test1 = json.loads(fh.read())
         self.charge = convert_to_stripe_object(charge_test1)
 
-        with open("tests/unit/fixtures/stripe_ch_test2.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_ch_test2.json"
+        ) as fh:
             charge_test2 = json.loads(fh.read())
         self.incomplete_charge = convert_to_stripe_object(charge_test2)
 
-        with open("tests/unit/fixtures/stripe_sub_updated_event_cancel.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_sub_updated_event_cancel.json"
+        ) as fh:
             self.subscription_cancelled_event = json.loads(fh.read())
 
-        with open("tests/unit/fixtures/stripe_sub_updated_event_charge.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_sub_updated_event_charge.json"
+        ) as fh:
             self.subscription_charge_event = json.loads(fh.read())
 
-        with open("tests/unit/fixtures/stripe_sub_updated_event_reactivate.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_sub_updated_event_reactivate.json"
+        ) as fh:
             self.subscription_reactivate_event = json.loads(fh.read())
 
-        with open("tests/unit/fixtures/stripe_sub_updated_event_no_trigger.json") as fh:
+        with open(
+            f"{CFG.REPO_ROOT}/src/hub/tests/unit/fixtures/stripe_sub_updated_event_no_trigger.json"
+        ) as fh:
             self.subscription_updated_event_no_match = json.loads(fh.read())
 
         customer_patcher = patch("stripe.Customer.retrieve")

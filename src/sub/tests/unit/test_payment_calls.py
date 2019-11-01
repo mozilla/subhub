@@ -608,26 +608,27 @@ def test_format_nickname_non_standard_interval():
 @patch("stripe.Invoice.retrieve")
 @patch("stripe.Product.retrieve")
 def test_create_update_data(mock_product, mock_invoice, mock_charge, mock_customer):
+    from shared.cfg import CFG
 
-    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
-    fh = open("tests/unit/fixtures/stripe_prod_test2.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_prod_test2.json")
     prod_test2 = json.loads(fh.read())
     fh.close()
     mock_product.side_effect = [prod_test1, prod_test2]
 
-    fh = open("tests/unit/fixtures/stripe_in_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_in_test1.json")
     invoice_test1 = json.loads(fh.read())
     fh.close()
     mock_invoice.return_value = invoice_test1
 
-    fh = open("tests/unit/fixtures/stripe_ch_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_ch_test1.json")
     charge_test1 = json.loads(fh.read())
     fh.close()
     mock_charge.return_value = charge_test1
 
-    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_cust_test1.json")
     cust_test1 = json.loads(fh.read())
     fh.close()
     mock_customer.return_value = cust_test1
@@ -668,23 +669,25 @@ def test_create_update_data(mock_product, mock_invoice, mock_charge, mock_custom
 
 
 def get_test_subscriptions():
-    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    from shared.cfg import CFG
+
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_cust_test1.json")
     cust_test1 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_sub_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_sub_test1.json")
     sub_test1 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_sub_test2.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_sub_test2.json")
     sub_test2 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_plan_test1.json")
     plan_test1 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_plan_test3.json")
+    fh = open(f"{CFG.REPO_ROOT}/src/sub/tests/unit/fixtures/stripe_plan_test3.json")
     plan_test3 = json.loads(fh.read())
     fh.close()
 
