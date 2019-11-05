@@ -10,15 +10,14 @@ import stripe
 import stripe.error
 
 from typing import Optional, Union
-from flask import current_app, g, jsonify
+from flask import current_app, g, jsonify, request
 from flask_cors import CORS
-from flask import request
 from pythonjsonlogger import jsonlogger
 
 from shared import secrets
 from shared.exceptions import SubHubError
 from shared.db import SubHubAccount, SubHubDeletedAccount
-from shared.headers import dump_safe_headers
+from shared.headers import dump_safe_headers, extract_safe
 from shared.cfg import CFG
 from shared.log import get_logger
 
@@ -151,6 +150,7 @@ def create_app(config=None) -> connexion.FlaskApp:
     @app.app.before_request
     def before_request():
         headers = dump_safe_headers(request.headers)
+        logger.bind(correlation_id=extract_safe(headers, "X-Amzn-Trace-Id"))
         logger.debug("Request headers", headers=headers)
         logger.debug("Request body", body=request.get_data())
         g.subhub_account = current_app.subhub_account
@@ -165,6 +165,7 @@ def create_app(config=None) -> connexion.FlaskApp:
 
     @app.app.after_request
     def after_request(response):
+        logger.unbind("correlation_id")
         if not hasattr(g, "profiler") or hasattr(sys, "_called_from_test"):
             return response
         if CFG.PROFILING_ENABLED:
