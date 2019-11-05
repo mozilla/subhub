@@ -17,11 +17,26 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt-get update
 sudo apt-get install -y yarn
 
+sudo apt -y install apt-transport-https ca-certificates curl software-properties-common
+
+# Install docker engine
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo wget -qO- https://get.docker.com/ | bash
+
+sudo usermod -aG docker vagrant
+sudo systemctl enable docker # Auto-start on boot
+sudo systemctl start docker # Start right now
+
+# Install docker-compose
+curl -L https://github.com/docker/compose/releases/download/1.24.1/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+chmod +x /usr/local/bin/docker-compose
+
 # Install AWSCLI
 sudo apt-get install -y awscli
 
 # Install docker-compose
-sudo curl -L https://github.com/docker/compose/releases/download/1.18.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/1.24.1/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
 # doit dependency
