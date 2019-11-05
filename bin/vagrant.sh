@@ -29,7 +29,6 @@ sudo chmod +x /usr/local/bin/docker-compose
 sudo apt-get install -y python3.7-gdbm
 sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 2
 
-
 echo 'alias python=python3.7' >> ~/.bashrc
 echo 'alias pip=pip3' >> ~/.bashrc
 echo 'cd /opt/subhub' >> /home/vagrant/.bashrc
