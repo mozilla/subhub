@@ -6,7 +6,13 @@ import json
 import requests
 import responses
 
-from sub.shared.headers import dump_safe_headers
+from sub.shared.headers import dump_safe_headers, extract_safe
+
+CONTENT_TYPE_HEADER_ONLY_HEADERS = {"content-type": "application/json"}
+AUTHORIZATION_AND_HOST_ONLY_HEADERS = {
+    "Authorization": "728d329e-0e86-11e4-a748-0c84dc037c13",
+    "Host": "127.0.0.1",
+}
 
 
 def test_no_headers_provided():
@@ -14,15 +20,22 @@ def test_no_headers_provided():
     assert len(headers) == 0
 
 
+def test_safe_extract_with_no_header_available():
+    headers = extract_safe(None, "foo")
+    assert len(headers) == 0
+
+
+def test_safe_extract_with_header_available():
+    headers = extract_safe(AUTHORIZATION_AND_HOST_ONLY_HEADERS, "Host")
+    assert "127.0.0.1" == headers
+
+
 @responses.activate
 def test_non_safe_headers_no_provided():
     def request_callback(request):
         payload = json.loads(request.body)
         resp_body = {"value": sum(payload["numbers"])}
-        headers = {
-            "Authorization": "728d329e-0e86-11e4-a748-0c84dc037c13",
-            "Host": "127.0.0.1",
-        }
+        headers = AUTHORIZATION_AND_HOST_ONLY_HEADERS
         return (200, headers, json.dumps(resp_body))
 
     responses.add_callback(
@@ -35,7 +48,7 @@ def test_non_safe_headers_no_provided():
     resp = requests.post(
         "http://dev.fxa.mozilla-subhub.app/plans",
         json.dumps({"numbers": [1, 2, 3]}),
-        headers={"content-type": "application/json"},
+        headers=CONTENT_TYPE_HEADER_ONLY_HEADERS,
     )
 
     headers = dump_safe_headers(resp.headers)

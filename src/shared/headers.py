@@ -31,3 +31,11 @@ def dump_safe_headers(request_headers):
             continue
         safe_headers[header_key] = request_headers[header_key]
     return safe_headers
+
+
+def extract_safe(request_headers, key):
+    if request_headers is None:
+        return ""
+    if key in request_headers:
+        return request_headers[key]
+    return ""
