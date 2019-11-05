@@ -168,7 +168,16 @@ class StripeCustomerDeletedTest(TestCase):
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
             self.deleted_user
         )
-        assert payload == expected_payload
+
+        self.assertEqual(payload.keys(), expected_payload.keys())
+        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
+            self.assertAlmostEqual(
+                payload["messageCreatedAt"],
+                expected_payload["messageCreatedAt"],
+                delta=10,
+            )
+            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
+        self.assertEqual(payload, expected_payload)
 
     def test_create_payload_no_subscription_data(self):
         expected_payload = dict(
@@ -191,7 +200,16 @@ class StripeCustomerDeletedTest(TestCase):
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
             self.deleted_user_no_subscriptions
         )
-        assert payload == expected_payload
+
+        self.assertEqual(payload.keys(), expected_payload.keys())
+        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
+            self.assertAlmostEqual(
+                payload["messageCreatedAt"],
+                expected_payload["messageCreatedAt"],
+                delta=10,
+            )
+            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
+        self.assertEqual(payload, expected_payload)
 
 
 class StripeCustomerSourceExpiringTest(TestCase):
@@ -420,7 +438,15 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
             self.subscription_created_event
         ).create_payload(user_id)
 
-        assert payload == expected_payload
+        self.assertEqual(payload.keys(), expected_payload.keys())
+        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
+            self.assertAlmostEqual(
+                payload["messageCreatedAt"],
+                expected_payload["messageCreatedAt"],
+                delta=10,
+            )
+            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
+        self.assertEqual(payload, expected_payload)
 
     def test_create_payload_product_fetch_error(self):
         self.mock_invoice.return_value = self.invoice
@@ -533,7 +559,15 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
             self.subscription_deleted_event
         ).create_payload("user123")
 
-        assert actual_payload == expected_payload
+        self.assertEqual(actual_payload.keys(), expected_payload.keys())
+        if actual_payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
+            self.assertAlmostEqual(
+                actual_payload["messageCreatedAt"],
+                expected_payload["messageCreatedAt"],
+                delta=10,
+            )
+            expected_payload["messageCreatedAt"] = actual_payload["messageCreatedAt"]
+        self.assertEqual(actual_payload, expected_payload)
 
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
