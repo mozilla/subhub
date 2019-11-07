@@ -743,10 +743,3 @@ def task_tidy():
             'find . | grep -E "(__pycache__|\.pyc$)" | xargs rm -rf',
         ]
     }
-
-
-def task_dynamo():
-    return {
-        "task_dep": ["check", "tar"],
-        "actions": [f"env {envs()} docker-compose up dynamodb"],
-    }
