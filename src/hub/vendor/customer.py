@@ -230,14 +230,22 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         :raises ClientError
         """
         try:
-            updated_customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-            user_id = updated_customer.metadata.get("userid", None)
+            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
 
+        deleted = customer.get("deleted", False)
+        user_id = None
+        if not deleted:
+            user_id = customer.metadata.get("userid")
+
         if user_id is None:
-            logger.error("customer subscription created - no userid", error=customer_id)
+            logger.error(
+                "customer subscription created - no userid",
+                error=customer_id,
+                is_customer_deleted=deleted,
+            )
             raise ClientError(f"userid is None for customer {customer_id}")
 
         return user_id
@@ -326,14 +334,23 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         :raises ClientError
         """
         try:
-            updated_customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-            user_id = updated_customer.metadata.get("userid", None)
+            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
+
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
 
+        deleted = customer.get("deleted", False)
+        user_id = None
+        if not deleted:
+            user_id = customer.metadata.get("userid")
+
         if user_id is None:
-            logger.error("customer subscription deleted - no userid", error=customer_id)
+            logger.error(
+                "customer subscription deleted - no userid",
+                error=customer_id,
+                is_customer_deleted=deleted,
+            )
             raise ClientError(f"userid is None for customer {customer_id}")
 
         return user_id
@@ -413,14 +430,22 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         :raises ClientError
         """
         try:
-            updated_customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-            user_id = updated_customer.metadata.get("userid", None)
+            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
 
+        deleted = customer.get("deleted", False)
+        user_id = None
+        if not deleted:
+            user_id = customer.metadata.get("userid")
+
         if user_id is None:
-            logger.error("customer subscription updated - no userid", error=customer_id)
+            logger.error(
+                "customer subscription updated - no userid",
+                error=customer_id,
+                is_customer_deleted=deleted,
+            )
             raise ClientError(f"userid is None for customer {customer_id}")
 
         return user_id

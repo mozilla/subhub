@@ -324,6 +324,10 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
+        with open("tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+            cust_test1_deleted = json.loads(fh.read())
+        self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
+
         with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
@@ -389,6 +393,14 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
             StripeCustomerSubscriptionCreated(
                 self.subscription_created_event
             ).get_user_id("cust_123")
+
+    def test_get_user_id_deleted_cust(self):
+        self.mock_customer.return_value = self.deleted_customer
+
+        with self.assertRaises(ClientError):
+            StripeCustomerSubscriptionCreated(
+                self.subscription_created_event
+            ).get_user_id("cust_1")
 
     def test_get_user_id_none_error(self):
         self.mock_customer.return_value = self.customer_missing_user
@@ -494,6 +506,10 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
+        with open("tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+            cust_test1_deleted = json.loads(fh.read())
+        self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
+
         with open("tests/unit/fixtures/stripe_sub_deleted_event.json") as fh:
             self.subscription_deleted_event = json.loads(fh.read())
 
@@ -525,6 +541,14 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
         ).get_user_id("cust_123")
 
         assert user_id == expected_user_id
+
+    def test_get_user_id_deleted_cust(self):
+        self.mock_customer.return_value = self.deleted_customer
+
+        with self.assertRaises(ClientError):
+            StripeCustomerSubscriptionDeleted(
+                self.subscription_deleted_event
+            ).get_user_id("cust_1")
 
     def test_get_user_id_fetch_error(self):
         self.mock_customer.side_effect = InvalidRequestError(
@@ -579,6 +603,10 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         with open("tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
+
+        with open("tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+            cust_test1_deleted = json.loads(fh.read())
+        self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
 
         with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
@@ -689,6 +717,14 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             StripeCustomerSubscriptionUpdated(
                 self.subscription_updated_event_no_match
             ).get_user_id("cust_123")
+
+    def test_get_user_id_deleted_cust(self):
+        self.mock_customer.return_value = self.deleted_customer
+
+        with self.assertRaises(ClientError):
+            StripeCustomerSubscriptionUpdated(
+                self.subscription_updated_event_no_match
+            ).get_user_id("cust_1")
 
     def test_create_payload_error(self):
         self.mock_product.side_effect = InvalidRequestError(
