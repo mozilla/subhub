@@ -1,6 +1,7 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+import time
 
 from typing import List, Optional, Dict, Any
 from tenacity import retry, wait_exponential, stop_after_attempt
@@ -196,6 +197,48 @@ def build_stripe_subscription(
         )
         logger.debug("build stripe subscription", sub=sub)
         return sub
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+        AuthenticationError,
+    ) as e:
+        logger.error("sub error", error=e)
+        raise e
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+def update_stripe_subscription(
+    subscription: Dict[str, Any], plan_id: str, idempotency_key: str
+) -> Subscription:
+    """
+    Update a stripe subscription to a new plan
+    :param customer_id:
+    :param plan_id:
+    :param idempotency_key:
+    :return: Subscription object
+    """
+    try:
+        subscription = Subscription.modify(
+            subscription["id"],
+            cancel_at_period_end=False,
+            items=[{"id": subscription["items"]["data"][0]["id"], "plan": plan_id}],
+            metadata={
+                "previous_plan_id": subscription["plan"]["id"],
+                "plan_change_date": int(time.time()),
+            },
+            idempotency_key=idempotency_key,
+        )
+
+        logger.debug("update stripe subscription", sub=subscription)
+        return subscription
     except (
         InvalidRequestError,
         APIConnectionError,
@@ -422,6 +465,33 @@ def retrieve_plan_list(limit: int) -> List[Plan]:
         StripeErrorWithParamCode,
     ) as e:
         logger.error("retrieve plan list error", error=str(e))
+        raise e
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+def retrieve_stripe_plan(plan_id: str) -> Plan:
+    """
+    Retrieve Stripe Plan
+    :param plan_id:
+    :return:
+    """
+    try:
+        plan = Plan.retrieve(plan_id)
+        logger.debug("retrieve stripe plan", plan=plan)
+        return plan
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+    ) as e:
+        logger.error("retrieve plan error", error=str(e))
         raise e
 
 

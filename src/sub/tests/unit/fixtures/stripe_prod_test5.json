@@ -1,5 +1,5 @@
 {
-    "id": "prod_test1",
+    "id": "prod_test5",
     "object": "product",
     "active": true,
     "attributes": [],
@@ -10,12 +10,12 @@
     "images": [],
     "livemode": false,
     "metadata": {
-        "productSet": "FPN"
+        "productSet": "identity"
     },
-    "name": "Project Guardian",
+    "name": "Firefox VPN",
     "package_dimensions": null,
     "shippable": null,
-    "statement_descriptor": "Firefox Guardian",
+    "statement_descriptor": "Firefox Identity",
     "type": "service",
     "unit_label": null,
     "updated": 1567100794,

@@ -7,7 +7,7 @@ from stripe.error import InvalidRequestError
 from typing import Dict, Any, Optional
 
 from sub.shared import vendor, utils
-from sub.shared.exceptions import IntermittentError, ServerError
+from sub.shared.exceptions import IntermittentError, ServerError, EntityNotFoundError
 from sub.shared.db import SubHubAccount
 from sub.shared.cfg import CFG
 from shared.log import get_logger
@@ -114,6 +114,44 @@ def fetch_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
         customer = vendor.retrieve_stripe_customer(customer_id=db_account.cust_id)
     logger.debug("fetch customer", customer=customer)
     return customer
+
+
+def find_customer(subhub_account: SubHubAccount, user_id: str) -> Customer:
+    """
+    Find Customer by user_id
+    If user is not found or is deleted:
+        :raise EntityNotFoundError
+    :param subhub_account:
+    :param user_id:
+    :return:
+    """
+    try:
+        customer = fetch_customer(subhub_account, user_id)
+    except InvalidRequestError as e:
+        customer = None
+        if e.http_status != 404:
+            raise e
+
+    if customer is None or customer.get("deleted"):
+        raise EntityNotFoundError(message="Customer not found", error_number=4000)
+    return customer
+
+
+def find_customer_subscription(customer: Customer, sub_id: str) -> Dict[str, Any]:
+    """
+    Locate a Customer's Subscription by ID
+    If the Customer object does not contain the subscription
+        :raise EntityNotFoundError
+    :param customer:
+    :param sub_id:
+    :return:
+    """
+    subscription = next(
+        (sub for sub in customer["subscriptions"]["data"] if sub["id"] == sub_id), None
+    )
+    if subscription is None:
+        raise EntityNotFoundError("Subscription not found", error_number=4001)
+    return subscription
 
 
 def existing_payment_source(existing_customer: Customer, source_token: str) -> Customer:

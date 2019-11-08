@@ -15,7 +15,7 @@ from flask_cors import CORS
 from pythonjsonlogger import jsonlogger
 
 from shared import secrets
-from shared.exceptions import SubHubError
+from sub.shared.exceptions import SubHubError
 from shared.db import SubHubAccount, SubHubDeletedAccount
 from shared.headers import dump_safe_headers, extract_safe
 from shared.cfg import CFG
