@@ -334,56 +334,8 @@ paths:
                 example: 2020
               subscriptions:
                 type: array
-                required: [
-                  "subscription_id",
-                  "status",
-                  "plan_name",
-                  "plan_id",
-                  "ended_at",
-                  "current_period_start",
-                  "current_period_end",
-                  "cancel_at_period_end"
-                ]
                 items:
-                  type: object
-                  properties:
-                    subscription_id:
-                      type: string
-                      example: sub_abc123
-                    plan_id:
-                      type: string
-                      example: pro_basic_823
-                    plan_name:
-                      type: string
-                      example: "pro_basic"
-                    current_period_end:
-                      type: number
-                      description: Seconds since UNIX epoch.
-                      example: 1557361022
-                    current_period_start:
-                      type: number
-                      description: Seconds since UNIX epoch.
-                      example: 1557361022
-                    end_at:
-                      type: number
-                      description: Non-null if the subscription is ending at a period in time.
-                      example: 1557361022
-                    status:
-                      type: string
-                      description: Subscription status.
-                      example: active
-                    cancel_at_period_end:
-                      type: boolean
-                      description: Shows if subscription will be cancelled at the end of the period.
-                      example: true
-                    failure_code:
-                      type: string
-                      description: Shows the failure code for subscription that is incomplete.  This is an optional field.
-                      example: Card declined
-                    failure_message:
-                      type: string
-                      description: Shows the failure message for subscription that is incomplete.  This is an optional field.
-                      example: Your card was declined.
+                  $ref: '#/definitions/Subscriptions'
 
         400:
           description: Customer user ID does not match.
@@ -544,6 +496,14 @@ definitions:
         plan_name:
           type: string
           example: Monthly Rocket Launches
+        plan_metadata:
+          type: object
+          additionalProperties:
+            type: string
+        product_metadata:
+          type: object
+          additionalProperties:
+            type: string
   Subscriptions:
     type: object
     properties:
@@ -571,6 +531,14 @@ definitions:
             plan_name:
               type: string
               example: "pro_basic"
+            plan_metadata:
+              type: object
+              additionalProperties:
+                type: string
+            product_metadata:
+              type: object
+              additionalProperties:
+                type: string
             current_period_end:
               type: number
               description: Seconds since UNIX epoch.

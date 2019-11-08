@@ -32,7 +32,7 @@ class Message(AbstractRoute):
             return response
         return {"ResponseMetadata": {"HTTPStatusCode": 500}}
 
-    def get_sns_client(self):
+    def get_sns_client(self) -> boto3.client:
         return boto3.client("sns", region_name=CFG.AWS_REGION)
 
     def publish_sns_message(
