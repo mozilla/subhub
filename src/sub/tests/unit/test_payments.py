@@ -15,12 +15,14 @@ from sub.payments import (
     update_payment_method,
     customer_update,
     create_update_data,
+    format_plan,
+    format_subscription,
 )
 
 from unittest import TestCase
 from unittest.mock import DEFAULT
 from mock import patch, PropertyMock, MagicMock
-from stripe.util import convert_to_stripe_object
+from stripe.util import convert_to_stripe_object, convert_to_dict
 from stripe import Customer
 
 from shared.log import get_logger
@@ -32,89 +34,84 @@ class TestPayments(TestCase):
     def setUp(self) -> None:
         with open("tests/unit/fixtures/stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
-            fh.close()
         self.valid_customer = convert_to_stripe_object(cust_test1)
 
         with open("tests/unit/fixtures/stripe_cust_test2.json") as fh:
             cust_test2 = json.loads(fh.read())
-            fh.close()
         self.valid_customer_no_metadata = convert_to_stripe_object(cust_test2)
 
         with open("tests/unit/fixtures/stripe_cust_test3.json") as fh:
             cust_test3 = json.loads(fh.read())
-            fh.close()
         self.valid_customer3 = convert_to_stripe_object(cust_test3)
 
         with open("tests/unit/fixtures/stripe_deleted_cust.json") as fh:
             deleted_cust = json.loads(fh.read())
-            fh.close()
         self.deleted_cust = convert_to_stripe_object(deleted_cust)
 
         with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
-            fh.close()
         self.product = convert_to_stripe_object(prod_test1)
+
+        with open("tests/unit/fixtures/stripe_plan_test1.json") as fh:
+            plan_test1 = json.loads(fh.read())
+        self.plan = convert_to_stripe_object(plan_test1)
 
         with open("tests/unit/fixtures/stripe_in_test1.json") as fh:
             invoice_test1 = json.loads(fh.read())
-            fh.close()
         self.invoice = convert_to_stripe_object(invoice_test1)
 
         with open("tests/unit/fixtures/stripe_ch_test1.json") as fh:
             charge_test1 = json.loads(fh.read())
-            fh.close()
         self.charge = convert_to_stripe_object(charge_test1)
 
         with open("tests/unit/fixtures/stripe_sub_test1.json") as fh:
             subscription_test1 = json.loads(fh.read())
-            fh.close()
         self.subscription_test1 = convert_to_stripe_object(subscription_test1)
+
+        subscription_test1["plan"] = plan_test1
+        self.subscription_with_plan = convert_to_stripe_object(subscription_test1)
+
+        with open("tests/unit/fixtures/stripe_cust_test4_no_subs.json") as fh:
+            cust_test4 = json.loads(fh.read())
+        cust_test4["subscriptions"]["data"].append(subscription_test1)
+        self.customer4 = convert_to_stripe_object(cust_test4)
 
         with open("tests/unit/fixtures/stripe_sub_test3.json") as fh:
             subscription_test3 = json.loads(fh.read())
-            fh.close()
         self.subscription_test3 = convert_to_stripe_object(subscription_test3)
 
         with open("tests/unit/fixtures/stripe_sub_cancelled.json") as fh:
             subscription_test_cancelled = json.loads(fh.read())
-            fh.close()
         self.subscription_test_cancelled = convert_to_stripe_object(
             subscription_test_cancelled
         )
 
         with open("tests/unit/fixtures/stripe_sub_test_none.json") as fh:
             subscription_none = json.loads(fh.read())
-            fh.close()
         self.subscription_none = subscription_none
 
         with open("tests/unit/fixtures/sns_message.json") as fh:
             sns_message_payload = json.loads(fh.read())
-            fh.close()
         self.sns_message_payload = sns_message_payload
 
         with open("tests/unit/fixtures/stripe_subscriptions_no_data.json") as fh:
             subscription_no_data = json.loads(fh.read())
-            fh.close()
-        self.subscription_no_data = subscription_no_data
+        self.subscription_list = subscription_no_data
 
         with open("tests/unit/fixtures/subhub_valid_sub_test.json") as fh:
             valid_sub_test = json.loads(fh.read())
-            fh.close()
         self.valid_sub_test = convert_to_stripe_object(valid_sub_test)
 
         with open("tests/unit/fixtures/valid_plan_response.json") as fh:
             valid_plan_response = json.loads(fh.read())
-            fh.close()
         self.valid_plan_response = convert_to_stripe_object(valid_plan_response)
 
         with open("tests/unit/fixtures/subhub_account_user.json") as fh:
             subhub_user_account = json.loads(fh.read())
-            fh.close()
         self.subhub_user_account = subhub_user_account
 
         with open("tests/unit/fixtures/subhub_return_data.json") as fh:
             subhub_return_data = json.loads(fh.read())
-            fh.close()
         self.subhub_return_data = subhub_return_data
 
         self.false_existing_plan = None
@@ -131,7 +128,6 @@ class TestPayments(TestCase):
             "sub.payments.retrieve_stripe_subscriptions"
         )
         create_customer_patch = patch("sub.customer.create_customer")
-        create_return_data_patch = patch("sub.payments.create_return_data")
 
         stripe_subscription_create_patch = patch("stripe.Subscription.create")
         stripe_customer_retrieve_patch = patch("stripe.Customer.retrieve")
@@ -182,7 +178,6 @@ class TestPayments(TestCase):
         self.addCleanup(subhub_user_remove_patch.stop)
         self.addCleanup(subscription_status_patch.stop)
         self.addCleanup(stripe_list_subscriptions_patch.stop)
-        self.addCleanup(create_return_data_patch.stop)
         self.addCleanup(stripe_modify_customer_patch.stop)
         self.addCleanup(vendor_modify_customer_patch.stop)
         self.addCleanup(stripe_retrieve_invoice_patch.stop)
@@ -216,7 +211,6 @@ class TestPayments(TestCase):
         self.mock_subhub_user_remove = subhub_user_remove_patch.start()
         self.mock_subscription_status = subscription_status_patch.start()
         self.mock_stripe_list_subscriptions = stripe_list_subscriptions_patch.start()
-        self.mock_create_return_data = create_return_data_patch.start()
         self.mock_stripe_modify_customer = stripe_modify_customer_patch.start()
         self.mock_vendor_modify_customer = vendor_modify_customer_patch.start()
         self.mock_stripe_retrieve_invoice = stripe_retrieve_invoice_patch.start()
@@ -257,15 +251,24 @@ class TestPayments(TestCase):
         )
         assert created_sub[1] == 409
 
+    def test_find_newest_subscription(self):
+        sub1 = convert_to_dict(self.subscription_test1)
+        sub2 = convert_to_dict(self.subscription_test3)
+        self.subscription_list["data"].append(sub1)
+        self.subscription_list["data"].append(sub2)
+
+        expected = {"data": [sub1]}
+        subs = find_newest_subscription(self.subscription_list)
+        assert subs == expected
+
     def test_no_newest_subscription(self):
         subs = find_newest_subscription(None)
         assert subs is None
 
-    def test_newest_sub_continue(self):
-        subs = find_newest_subscription(self.subscription_no_data)
-        logger.info("find subs", subs=subs, data=subs["data"])
-        for sub in subs["data"]:
-            assert sub is None
+    def test_find_newest_subscription_no_subscriptions(self):
+        expected = {"data": [None]}
+        subs = find_newest_subscription(self.subscription_list)
+        assert subs == expected
 
     def test_cancel_subscription(self):
         self.mock_fetch_customer.return_value = self.valid_customer3
@@ -344,8 +347,15 @@ class TestPayments(TestCase):
         self.mock_subhub_user_account.return_value.user_id = "user123"
         self.mock_subhub_user_account.return_value.cust_id = "cus_test1"
         self.mock_subhub_user_account.return_value.origin_system = "fake_origin1"
-        self.mock_stripe_list_subscriptions.return_value = [self.subscription_test1]
-        self.mock_create_return_data.return_data = self.subhub_return_data
+        self.mock_stripe_retrieve_product = self.product
+        sub1 = convert_to_dict(self.subscription_test1)
+        sub1["plan"] = convert_to_dict(self.plan)
+        sub2 = convert_to_dict(self.subscription_test3)
+        sub2["plan"] = convert_to_dict(self.plan)
+        self.subscription_list["data"].append(sub1)
+        self.subscription_list["data"].append(sub2)
+        self.mock_stripe_list_subscriptions.return_value = self.subscription_list
+
         sub_status = subscription_status("user123")
         assert sub_status[1] == 200
 
@@ -384,6 +394,11 @@ class TestPayments(TestCase):
         )
         assert updated_payment_method[1] == 404
 
+    def test_customer_update(self):
+        self.mock_fetch_customer.return_value = self.valid_customer
+        customer_updated = customer_update("user123")
+        assert customer_updated[1] == 200
+
     def test_customer_update_none(self):
         self.mock_fetch_customer.return_value = None
         customer_updated = customer_update("user123")
@@ -403,3 +418,89 @@ class TestPayments(TestCase):
 
         logger.info("created update data", created_update_data=created_update_data)
         assert created_update_data["payment_type"] == "credit"
+
+    def test_create_update_data(self):
+        self.mock_stripe_retrieve_product.return_value = self.product
+        expected = {
+            "payment_type": self.customer4["sources"]["data"][0]["funding"],
+            "last4": self.customer4["sources"]["data"][0]["last4"],
+            "exp_month": self.customer4["sources"]["data"][0]["exp_month"],
+            "exp_year": self.customer4["sources"]["data"][0]["exp_year"],
+            "subscriptions": [
+                {
+                    "current_period_end": self.subscription_with_plan[
+                        "current_period_end"
+                    ],
+                    "current_period_start": self.subscription_with_plan[
+                        "current_period_start"
+                    ],
+                    "ended_at": self.subscription_with_plan["ended_at"],
+                    "plan_name": "Project Guardian (Monthly)",
+                    "plan_id": self.subscription_with_plan["plan"]["id"],
+                    "product_metadata": self.subscription_with_plan["metadata"],
+                    "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
+                    "status": self.subscription_with_plan["status"],
+                    "subscription_id": self.subscription_with_plan["id"],
+                    "cancel_at_period_end": self.subscription_with_plan[
+                        "cancel_at_period_end"
+                    ],
+                }
+            ],
+        }
+
+        actual = create_update_data(self.customer4)
+        assert actual == expected
+
+    def test_format_plan(self):
+        expected = {
+            "plan_id": self.plan["id"],
+            "product_id": self.product["id"],
+            "interval": self.plan["interval"],
+            "amount": self.plan["amount"],
+            "currency": self.plan["currency"],
+            "plan_name": "Project Guardian (Monthly)",
+            "product_name": self.product["name"],
+            "plan_metadata": self.plan["metadata"],
+            "product_metadata": self.product["metadata"],
+        }
+
+        actual = format_plan(self.plan, self.product)
+        self.assertDictEqual(actual, expected)
+
+    def test_format_subscription(self):
+        expected = {
+            "current_period_end": self.subscription_with_plan["current_period_end"],
+            "current_period_start": self.subscription_with_plan["current_period_start"],
+            "ended_at": self.subscription_with_plan["ended_at"],
+            "plan_name": "Project Guardian (Monthly)",
+            "plan_id": self.subscription_with_plan["plan"]["id"],
+            "product_metadata": self.subscription_with_plan["metadata"],
+            "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
+            "status": self.subscription_with_plan["status"],
+            "subscription_id": self.subscription_with_plan["id"],
+            "cancel_at_period_end": self.subscription_with_plan["cancel_at_period_end"],
+        }
+
+        actual = format_subscription(self.subscription_with_plan, self.product)
+        self.assertDictEqual(actual, expected)
+
+    def test_format_subscription_with_failure(self):
+        expected = {
+            "current_period_end": self.subscription_with_plan["current_period_end"],
+            "current_period_start": self.subscription_with_plan["current_period_start"],
+            "ended_at": self.subscription_with_plan["ended_at"],
+            "plan_name": "Project Guardian (Monthly)",
+            "plan_id": self.subscription_with_plan["plan"]["id"],
+            "product_metadata": self.subscription_with_plan["metadata"],
+            "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
+            "status": self.subscription_with_plan["status"],
+            "subscription_id": self.subscription_with_plan["id"],
+            "cancel_at_period_end": self.subscription_with_plan["cancel_at_period_end"],
+            "failure_code": self.charge["failure_code"],
+            "failure_message": self.charge["failure_message"],
+        }
+
+        actual = format_subscription(
+            self.subscription_with_plan, self.product, self.charge
+        )
+        self.assertDictEqual(actual, expected)

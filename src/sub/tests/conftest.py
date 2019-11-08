@@ -92,7 +92,7 @@ def create_subscription_for_processing(monkeypatch):
             "id": "cust_123",
         }
     )
-    product = Mock(return_value={"name": "Mozilla Product"})
+    product = Mock(return_value={"name": "Mozilla Product", "metadata": {}})
 
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
     monkeypatch.setattr("sub.payments.existing_or_new_customer", customer)

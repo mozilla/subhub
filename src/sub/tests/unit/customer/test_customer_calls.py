@@ -52,7 +52,7 @@ def test_subscribe_to_plan_returns_newest(monkeypatch):
         }
     )
 
-    product = Mock(return_value={"name": "Mozilla Product"})
+    product = Mock(return_value={"name": "Mozilla Product", "metadata": {}})
 
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
     monkeypatch.setattr("sub.payments.existing_or_new_customer", customer)
@@ -101,7 +101,7 @@ def test_customer_update_subscription_active(monkeypatch):
 
     subhub_account = Mock(return_value=MockSubhubAccount())
 
-    product = Mock(return_value={"name": "Mozilla Product"})
+    product = Mock(return_value={"name": "Mozilla Product", "metadata": {}})
 
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
     monkeypatch.setattr("stripe.Customer.retrieve", updated_customer)
@@ -138,7 +138,7 @@ def test_customer_update_subscription_cancel_at_period_end(monkeypatch):
 
     subhub_account = Mock(return_value=MockSubhubAccount())
 
-    product = Mock(return_value={"name": "Mozilla Product"})
+    product = Mock(return_value={"name": "Mozilla Product", "metadata": {}})
 
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
     monkeypatch.setattr("stripe.Customer.retrieve", updated_customer)
@@ -183,7 +183,7 @@ def customer_update_subscription_incomplete(monkeypatch, charge):
 
     invoice_retrieve = Mock(return_value={"charge": charge})
     subhub_account = Mock(return_value=MockSubhubAccount())
-    product = Mock(return_value={"name": "Mozilla Product"})
+    product = Mock(return_value={"name": "Mozilla Product", "metadata": {}})
 
     monkeypatch.setattr("stripe.Invoice.retrieve", invoice_retrieve)
     monkeypatch.setattr("flask.g.subhub_account", subhub_account)
