@@ -5,6 +5,7 @@
 import logging.config
 
 from shared.cfg import CFG
+from typing import Any
 
 LOGGER = None
 
@@ -46,7 +47,7 @@ def event_uppercase(logger, method_name, event_dict):
     return event_dict
 
 
-def get_logger():
+def get_logger() -> Any:
     global LOGGER
     if not LOGGER:
         from structlog import configure, processors, stdlib, threadlocal, get_logger

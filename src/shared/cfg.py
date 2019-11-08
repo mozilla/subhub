@@ -184,6 +184,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("EVENT_TABLE", f"events-{CFG.DEPLOYED_ENV}")
 
     @property
+    def STRIPE_REQUEST_TIMEOUT(self):
+        return self("STRIPE_REQUEST_TIMEOUT", 9, cast=int)
+
+    @property
     def STRIPE_MOCK_HOST(self):
         return self("STRIPE_MOCK_HOST", "stripe")
 

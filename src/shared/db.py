@@ -181,7 +181,7 @@ class SubHubDeletedAccountModel(Model):
     cust_id = UnicodeAttribute(range_key=True)
     origin_system = UnicodeAttribute()
     customer_status = UnicodeAttribute()
-    subscription_info = ListAttribute()
+    subscription_info = ListAttribute()  # type: ignore
 
 
 def _create_deleted_account_model(table_name_, region_, host_) -> Any:
@@ -205,7 +205,7 @@ def _create_deleted_account_model(table_name_, region_, host_) -> Any:
         cust_id = UnicodeAttribute(range_key=True)
         origin_system = UnicodeAttribute()
         customer_status = UnicodeAttribute()
-        subscription_info = ListAttribute(default=list)
+        subscription_info = ListAttribute(default=list)  # type: ignore
         cust_index = CustomerIndex()
 
     return SubHubDeletedAccountModel
