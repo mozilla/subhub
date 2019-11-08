@@ -34,7 +34,6 @@ NEWLINE = "\n"
 VENV = f"{CFG.REPO_ROOT}/venv"
 PYTHON3 = f"{VENV}/bin/python3.7"
 PIP3 = f"{PYTHON3} -m pip"
-MYPY = f"{VENV}/bin/mypy"
 NODE_MODULES = f"{CFG.REPO_ROOT}/node_modules"
 SLS = f"{NODE_MODULES}/serverless/bin/serverless"
 SVCS = [
@@ -501,33 +500,13 @@ def task_perf_remote():
     }
 
 
-@skip("mypy")
-def task_mypy():
-    """
-    run mpyp, a static type checker for Python 3
-    """
-    for pkg in ("sub", "hub"):
-        yield {
-            "name": pkg,
-            "task_dep": ["check", "yarn", "venv"],
-            "actions": [
-                f"cd {CFG.REPO_ROOT}/src && env {envs(MYPYPATH=VENV)} {MYPY} -p {pkg}"
-            ],
-        }
-
-
 @skip("test")
 def task_test():
     """
     run tox in tests/
     """
     return {
-        "task_dep": [
-            "check",
-            "yarn",
-            "venv",
-            #'mypy', FIXME: this needs to be activated once mypy is figured out
-        ],
+        "task_dep": ["check", "yarn", "venv",],
         "actions": [f"cd {CFG.REPO_ROOT} && tox"],
     }
 
