@@ -39,6 +39,10 @@ repos:
     hooks:
     -   id: mypy
         args: [--no-strict-optional, --ignore-missing-imports]
+-   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
+    sha: v1.1.0
+    hooks:
+    -   id: python-safety-dependencies-check
 # TODO: Enable in the future as we have issues to address.
 # -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
 #     sha: v1.0.3
