@@ -10,6 +10,7 @@ import stripe
 from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
+from typing import Any
 
 from shared import secrets
 from shared.exceptions import SubHubError
@@ -75,8 +76,8 @@ if is_docker():
     logger.info("Stripe API URL", url=stripe.api_base, local=CFG.STRIPE_LOCAL)
 
 
-def create_app(config=None):
-    # configure_logger()
+def create_app(config=None) -> Any:
+    stripe.timeout = CFG.STRIPE_REQUEST_TIMEOUT
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://dynamodb:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
