@@ -301,6 +301,51 @@ paths:
       parameters:
         - $ref: '#/parameters/uidParam'
         - $ref: '#/parameters/subIdParam'
+    patch:
+      operationId: sub.payments.update_subscription
+      tags:
+        - Subscriptions
+      summary: Upgrade/Downgrade a Subscription
+      description: Change the plan associated with a customer's subscription
+      security:
+        - PayApiKey: []
+      produces:
+        - application/json
+      responses:
+        '200':
+          description: Subscription upgrade/downgrade was successful
+          schema:
+            $ref: '#/definitions/Subscriptions'
+        '400':
+          description: The Plan is not eligible for upgrade/downgrade
+          schema:
+            $ref: '#/definitions/ClientError'
+        '404':
+          description: Subscription or User could not be found
+          schema:
+            $ref: '#/definitions/ClientError'
+        500:
+          description: Server Error
+          schema:
+            $ref: '#/definitions/ServerError'
+        503:
+          description: Intermittent Error
+          schema:
+            $ref: '#/definitions/IntermittentError'
+      parameters:
+        - $ref: '#/parameters/uidParam'
+        - $ref: '#/parameters/subIdParam'
+        - in: body
+          name: data
+          schema:
+            type: object
+            required:
+              - plan_id
+            properties:
+              plan_id:
+                type: string
+                description: New Plan ID
+                example: plan_FxFGE9jvhYvCMe
   /sub/customer/{uid}:
     get:
       operationId: sub.payments.customer_update
@@ -576,6 +621,15 @@ definitions:
       code:
         type: string
         example: 404
+  ClientError:
+    type: object
+    properties:
+      message:
+        type: string
+        example: Customer not found
+      errno:
+        type: integer
+        example: 4000
   IntermittentError:
     type: object
     properties:

@@ -6,6 +6,8 @@ from sub.shared.exceptions import (
     SubHubError,
     IntermittentError,
     ClientError,
+    EntityNotFoundError,
+    ValidationError,
     ServerError,
     SecretStringMissingError,
 )
@@ -54,6 +56,26 @@ def test_client_error():
     assert ex2.payload == payload
     assert ex2.status_code == status_code
     assert ex2.to_dict() == dict(message=message, some="payload")
+
+
+def test_entity_not_found_error():
+    message = "Entity not found"
+    error_number = 4000
+    error = EntityNotFoundError(message, error_number)
+
+    assert error.payload == {"errno": error_number}
+    assert error.status_code == 404
+    assert error.to_dict() == dict(message=message, errno=error_number)
+
+
+def test_validation_error():
+    message = "Validation error"
+    error_number = 1000
+    error = ValidationError(message, error_number)
+
+    assert error.payload == {"errno": error_number}
+    assert error.status_code == 400
+    assert error.to_dict() == dict(message=message, errno=error_number)
 
 
 def test_server_error():

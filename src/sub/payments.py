@@ -8,13 +8,15 @@ import json
 
 from datetime import datetime
 from typing import List, Dict, Any, Optional
-from stripe import Customer, Product
+from stripe import Customer, Product, Plan
+from stripe.error import InvalidRequestError
 from stripe.util import convert_to_dict
 from flask import g
 
 from sub.shared.vendor import (
     modify_customer,
     build_stripe_subscription,
+    update_stripe_subscription,
     retrieve_plan_list,
     retrieve_stripe_product,
     cancel_stripe_subscription_period_end,
@@ -28,12 +30,19 @@ from sub.shared.vendor import (
     retrieve_stripe_charge,
     retrieve_stripe_product,
     retrieve_stripe_invoice,
+    retrieve_stripe_plan,
 )
 from sub.shared import utils
+from sub.shared.exceptions import ValidationError, EntityNotFoundError
 from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
 from sub.shared.utils import format_plan_nickname
-from sub.customer import existing_or_new_customer, has_existing_plan
-from sub.customer import fetch_customer
+from sub.customer import (
+    existing_or_new_customer,
+    has_existing_plan,
+    fetch_customer,
+    find_customer,
+    find_customer_subscription,
+)
 from sub.shared.db import SubHubDeletedAccount
 from sub.messages import Message
 from shared.log import get_logger
@@ -149,6 +158,111 @@ def retrieve_stripe_subscriptions(customer: Customer) -> List[Dict[str, Any]]:
         return customer_subscriptions
     except AttributeError as e:
         logger.error("error getting subscriptions", customer=customer, error=e)
+        raise e
+
+
+def update_subscription(uid: str, sub_id: str, data: Dict[str, Any]) -> FlaskResponse:
+    """
+    Update a Customer's Subscription with a new Plan
+    Locate a Stripe Customer from the provided uid and locate the Customer's subscription from the provided sub_id
+        - If the Customer is not found, or the Customer object does not contain a Subscription with the sub_id
+            :return 404 Not Found
+    Determine if the new plan_id can replace the current Subscription Plan:
+        - If the new plan_id and current plan_id are the same
+            : return 400 Bad Request
+        - If the new plan and the old plan have different intervals:
+            : return 400 Bad Request
+        - If the products do not have the same ProductSet metadata
+            :return 400 Bad Request
+    Make call to Stripe to update the Subscription
+        :return 200 OK - Updated Subscription in response body
+
+    :param uid:
+    :param sub_id:
+    :param data:
+    :return:
+    """
+    customer = find_customer(g.subhub_account, uid)
+    subscription = find_customer_subscription(customer, sub_id)
+
+    current_plan = subscription["plan"]
+    new_plan_id = data["plan_id"]
+
+    new_product = validate_plan_change(current_plan, new_plan_id)
+
+    updated_subscription = update_stripe_subscription(
+        subscription, new_plan_id, utils.get_indempotency_key()
+    )
+
+    formatted_subscription = format_subscription(
+        convert_to_dict(updated_subscription), new_product
+    )
+
+    return formatted_subscription, 200
+
+
+def validate_plan_change(current_plan: Dict[str, Any], new_plan_id: str) -> Product:
+    """
+    Validate that a new plan qualifies to replace a current plan. Return the new Product
+    :param current_plan:
+    :param new_plan_id:
+    :return:
+    """
+    if current_plan["id"] == new_plan_id:
+        raise ValidationError(message="The plans are the same", error_number=1003)
+
+    new_plan = find_stripe_plan(new_plan_id)
+    if (
+        current_plan["interval"] != new_plan["interval"]
+        or current_plan["interval_count"] != new_plan["interval_count"]
+    ):
+        raise ValidationError(
+            message="The plans do not have the same interval", error_number=1002
+        )
+
+    new_product = find_stripe_product(new_plan["product"])
+    if current_plan["product"] != new_plan["product"]:
+        old_product = find_stripe_product(current_plan["product"])
+        old_product_set = old_product.metadata.get("productSet", None)
+        new_product_set = new_product.metadata.get("productSet", None)
+        if old_product_set != new_product_set or old_product_set is None:
+            raise ValidationError(
+                message="The plans are not a part of a tiered relationship",
+                error_number=1001,
+            )
+
+    return new_product
+
+
+def find_stripe_plan(plan_id: str) -> Plan:
+    """
+    Find the Stripe Plan by ID
+    :raise EntityNotFoundError
+    :param plan_id:
+    :return:
+    """
+    try:
+        plan = retrieve_stripe_plan(plan_id)
+        return plan
+    except InvalidRequestError as e:
+        if e.http_status == 404:
+            raise EntityNotFoundError(message="Plan not found", error_number=4003)
+        raise e
+
+
+def find_stripe_product(product_id: str) -> Product:
+    """
+    Find the Stripe Product by ID
+    :raise EntityNotFoundError
+    :param plan_id:
+    :return:
+    """
+    try:
+        product = retrieve_stripe_product(product_id)
+        return product
+    except InvalidRequestError as e:
+        if e.http_status == 404:
+            raise EntityNotFoundError(message="Product not found", error_number=4002)
         raise e
 
 

@@ -49,6 +49,24 @@ class ClientError(SubHubError):
         )
 
 
+class EntityNotFoundError(ClientError):
+    """Not Found Exception"""
+
+    def __init__(self, message: str, error_number: int) -> None:
+        payload = {"errno": error_number}
+
+        super().__init__(message, status_code=404, payload=payload)
+
+
+class ValidationError(ClientError):
+    """Input Validation Exception"""
+
+    def __init__(self, message: str, error_number: int) -> None:
+        payload = {"errno": error_number}
+
+        super().__init__(message, status_code=400, payload=payload)
+
+
 class ServerError(SubHubError):
     """Server  Exception"""
 

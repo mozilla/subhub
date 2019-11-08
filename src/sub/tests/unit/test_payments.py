@@ -3,6 +3,11 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import json
+from unittest import TestCase
+from mock import patch, MagicMock
+
+from stripe.util import convert_to_stripe_object, convert_to_dict
+from stripe.error import InvalidRequestError
 
 from sub.payments import (
     subscribe_to_plan,
@@ -17,13 +22,11 @@ from sub.payments import (
     create_update_data,
     format_plan,
     format_subscription,
+    find_stripe_plan,
+    find_stripe_product,
 )
+from sub.shared.exceptions import EntityNotFoundError
 
-from unittest import TestCase
-from unittest.mock import DEFAULT
-from mock import patch, PropertyMock, MagicMock
-from stripe.util import convert_to_stripe_object, convert_to_dict
-from stripe import Customer
 
 from shared.log import get_logger
 
@@ -134,6 +137,8 @@ class TestPayments(TestCase):
         stripe_subscription_create_patch = patch("stripe.Subscription.create")
         stripe_customer_retrieve_patch = patch("stripe.Customer.retrieve")
         stripe_product_retrieve_patch = patch("stripe.Product.retrieve")
+        stripe_plan_retrieve_patch = patch("stripe.Plan.retieve")
+        stripe_plan_retrieve_patch = patch("stripe.Plan.retrieve")
         stripe_cancel_subscription_patch = patch("stripe.Subscription.modify")
         stripe_delete_customer_patch = patch("stripe.Customer.delete")
         stripe_cancel_subscription_immediately_patch = patch(
@@ -167,6 +172,7 @@ class TestPayments(TestCase):
         self.addCleanup(retrieve_stripe_subscriptions_patch.stop)
         self.addCleanup(create_customer_patch.stop)
         self.addCleanup(stripe_product_retrieve_patch.stop)
+        self.addCleanup(stripe_plan_retrieve_patch.stop)
         self.addCleanup(stripe_subscription_create_patch.stop)
         self.addCleanup(stripe_customer_retrieve_patch.stop)
         self.addCleanup(stripe_cancel_subscription_patch.stop)
@@ -193,6 +199,7 @@ class TestPayments(TestCase):
         self.mock_find_newest_subscription = find_newest_subscription_patch.start()
         self.mock_create_customer = create_customer_patch.start()
         self.mock_stripe_retrieve_product = stripe_product_retrieve_patch.start()
+        self.mock_stripe_retrieve_plan = stripe_plan_retrieve_patch.start()
         self.mock_retrieve_stripe_subscriptions = (
             retrieve_stripe_subscriptions_patch.start()
         )
@@ -439,7 +446,7 @@ class TestPayments(TestCase):
                     "ended_at": self.subscription_with_plan["ended_at"],
                     "plan_name": "Project Guardian (Monthly)",
                     "plan_id": self.subscription_with_plan["plan"]["id"],
-                    "product_metadata": self.subscription_with_plan["metadata"],
+                    "product_metadata": self.product["metadata"],
                     "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
                     "status": self.subscription_with_plan["status"],
                     "subscription_id": self.subscription_with_plan["id"],
@@ -476,7 +483,7 @@ class TestPayments(TestCase):
             "ended_at": self.subscription_with_plan["ended_at"],
             "plan_name": "Project Guardian (Monthly)",
             "plan_id": self.subscription_with_plan["plan"]["id"],
-            "product_metadata": self.subscription_with_plan["metadata"],
+            "product_metadata": self.product["metadata"],
             "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
             "status": self.subscription_with_plan["status"],
             "subscription_id": self.subscription_with_plan["id"],
@@ -493,7 +500,7 @@ class TestPayments(TestCase):
             "ended_at": self.subscription_with_plan["ended_at"],
             "plan_name": "Project Guardian (Monthly)",
             "plan_id": self.subscription_with_plan["plan"]["id"],
-            "product_metadata": self.subscription_with_plan["metadata"],
+            "product_metadata": self.product["metadata"],
             "plan_metadata": self.subscription_with_plan["plan"]["metadata"],
             "status": self.subscription_with_plan["status"],
             "subscription_id": self.subscription_with_plan["id"],
@@ -506,3 +513,27 @@ class TestPayments(TestCase):
             self.subscription_with_plan, self.product, self.charge
         )
         self.assertDictEqual(actual, expected)
+
+    def test_find_plan_not_found(self):
+        self.mock_stripe_retrieve_plan.side_effect = InvalidRequestError(
+            "message", param="plan_id", http_status=404
+        )
+
+        with self.assertRaises(EntityNotFoundError) as e:
+            find_stripe_plan("plan_test1")
+
+        error = e.exception
+        assert error.status_code == 404
+        assert error.to_dict() == dict(message="Plan not found", errno=4003)
+
+    def test_find_product_not_found(self):
+        self.mock_stripe_retrieve_product.side_effect = InvalidRequestError(
+            "message", param="prod_id", http_status=404
+        )
+
+        with self.assertRaises(EntityNotFoundError) as e:
+            find_stripe_product("prod_test1")
+
+        error = e.exception
+        assert error.status_code == 404
+        assert error.to_dict() == dict(message="Product not found", errno=4002)
