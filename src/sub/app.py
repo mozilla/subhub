@@ -10,8 +10,9 @@ import stripe
 import stripe.error
 
 from typing import Optional, Union
-from flask import current_app, g, jsonify, request
+from flask import current_app, g, jsonify, request, session
 from flask_cors import CORS
+from flask_session import Session
 from pythonjsonlogger import jsonlogger
 
 from shared import secrets
@@ -96,12 +97,17 @@ def create_app(config=None) -> connexion.FlaskApp:
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir="./", options=options)
+    app.app.config["SESSION_TYPE"] = "filesystem"
+    app.app.config["SECRET_KEY"] = CFG.SECRET_KEY
+    # Session length in seconds.
+    app.app.config["PERMANENT_SESSION_LIFETIME"] = 9
     app.add_api(
         "swagger.yaml",
         pass_context_arg_name="request",
         strict_validation=True,
         validate_responses=True,
     )
+    Session(app.app)
 
     app.app.subhub_account = SubHubAccount(
         table_name=CFG.USER_TABLE, region=region, host=host
@@ -149,6 +155,7 @@ def create_app(config=None) -> connexion.FlaskApp:
 
     @app.app.before_request
     def before_request():
+        session.permanent = True
         headers = dump_safe_headers(request.headers)
         logger.bind(correlation_id=extract_safe(headers, "X-Amzn-Trace-Id"))
         logger.debug("Request headers", headers=headers)

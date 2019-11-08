@@ -184,6 +184,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("EVENT_TABLE", f"events-{CFG.DEPLOYED_ENV}")
 
     @property
+    def SECRET_KEY(self):
+        return self("SECRET_KEY", "SECRET_KEY")
+
+    @property
     def STRIPE_MOCK_HOST(self):
         return self("STRIPE_MOCK_HOST", "stripe")
 
