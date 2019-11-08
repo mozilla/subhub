@@ -281,6 +281,14 @@ def check_black():
     }
 
 
+def check_precommit():
+    return {
+        "name": "precommit",
+        "task_dep": ["check:noroot"],
+        "actions": [f"pre-commit install >> /dev/null"],
+    }
+
+
 def check_reqs():
     """
     check requirements
@@ -358,6 +366,7 @@ def task_check():
     yield gen_file_check("header", check_header, "src/**/*.py", message=header_message)
     yield check_black()
     yield check_reqs()
+    yield check_precommit()
 
 
 def task_creds():
