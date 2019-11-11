@@ -516,7 +516,7 @@ def task_test():
     run tox in tests/
     """
     return {
-        "task_dep": ["check", "yarn", "venv",],
+        "task_dep": ["check", "venv",],
         "actions": [f"cd {CFG.REPO_ROOT} && tox"],
     }
 
