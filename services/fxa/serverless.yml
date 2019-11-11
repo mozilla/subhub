@@ -32,17 +32,6 @@ custom:
   git-repo: "https://github.com/mozilla/subhub"
   alerts:
     dashboards: true
-  dynamodb:
-    stages:
-      - dev
-    start:
-      port: 8000
-      inMemory: true
-      heapInitial: 200m
-      heapMax: 1g
-      migrate: true
-      seed: true
-      convertEmptyValues: true
   serverlessTerminationProtection:
     stages:
       - prod
@@ -119,12 +108,9 @@ plugins:
   - serverless-python-requirements
   - serverless-domain-manager
   - serverless-plugin-tracing
-  - serverless-dynamodb-local
   - serverless-package-external
   - serverless-plugin-canary-deployments
   - serverless-stack-termination-protection
-  # NOTE: serverless-offline needs to be the last plugin loaded.
-  - serverless-offline
 
 provider:
   name: aws
