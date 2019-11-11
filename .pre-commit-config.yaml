@@ -18,6 +18,7 @@ repos:
           '--indent', '4',
           '--no-sort-keys',
         ]
+    -   id: requirements-txt-fixer
     -   id: trailing-whitespace
 -   repo: meta
     hooks:
