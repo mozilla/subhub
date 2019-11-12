@@ -395,25 +395,52 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         previous_cancel_at_period_end = previous_attributes.get(
             "cancel_at_period_end", False
         )
+        previous_plan = previous_attributes.get("plan")
+        logger.debug(
+            "previous plan",
+            previous_plan=previous_plan,
+            previous_attributes=previous_attributes,
+        )
 
         data = None
         routes = None
         if current_cancel_at_period_end and not previous_cancel_at_period_end:
-            data = self.create_payload("customer.subscription_cancelled", user_id)
+            data = self.create_payload(
+                "customer.subscription_cancelled", user_id, previous_plan=None
+            )
             logger.info("customer subscription cancel at period end", data=data)
             routes = [StaticRoutes.SALESFORCE_ROUTE]
         elif (
             not current_cancel_at_period_end
             and not previous_cancel_at_period_end
             and self.payload.data.object.status == "active"
+            and not previous_plan
         ):
-            data = self.create_payload("customer.recurring_charge", user_id)
+            data = self.create_payload(
+                "customer.recurring_charge", user_id, previous_plan=None
+            )
             logger.info("customer subscription new recurring", data=data)
             routes = [StaticRoutes.SALESFORCE_ROUTE]
-        elif not current_cancel_at_period_end and previous_cancel_at_period_end:
-            data = self.create_payload("customer.subscription.reactivated", user_id)
+        elif previous_plan:
+            data = self.create_payload(
+                "customer.subscription_change", user_id, previous_plan=previous_plan
+            )
+            logger.info("customer subscription change", data=data)
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+        elif (
+            not current_cancel_at_period_end
+            and previous_cancel_at_period_end
+            and previous_plan is None
+        ):
+            data = self.create_payload(
+                "customer.subscription.reactivated", user_id, previous_plan=None
+            )
             logger.info("customer subscription reactivated", data=data)
             routes = [StaticRoutes.SALESFORCE_ROUTE]
+        else:
+            logger.warning(
+                "customer subscription updated not processed", payload=self.payload
+            )
 
         if data is not None and routes is not None:
             self.send_to_routes(routes, json.dumps(data))
@@ -439,7 +466,8 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         deleted = customer.get("deleted", False)
         user_id = None
         if not deleted:
-            user_id = customer.metadata.get("userid")
+            metadata = customer.get("metadata", None)
+            user_id = metadata.get("userid", None)
 
         if user_id is None:
             logger.error(
@@ -451,14 +479,16 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
         return user_id
 
-    def create_payload(self, event_type, user_id) -> Dict[str, Any]:
+    def create_payload(self, event_type, user_id, previous_plan) -> Dict[str, Any]:
         """
         Create payload to be sent to external sources based on event_type
         :param event_type:
         :param user_id:
+        :param previous_plan:
         :return payload:
         :raises InvalidRequestError:
         """
+        logger.info("create payload", event_type=event_type)
         try:
             product = vendor.retrieve_stripe_product(
                 self.payload.data.object.plan.product
@@ -484,6 +514,12 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
                 payload.update(self.get_recurring_data(product_name=product["name"]))
             elif event_type == "customer.subscription.reactivated":
                 payload.update(self.get_reactivation_data())
+            elif event_type == "customer.subscription_change":
+                payload.update(
+                    self.get_subscription_change(
+                        payload, previous_plan=previous_plan, new_product=product
+                    )
+                )
 
             return payload
         except InvalidRequestError as e:
@@ -559,3 +595,91 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             last4=last4,
             brand=brand,
         )
+
+    def get_subscription_change(
+        self,
+        payload: Dict[str, Any],
+        previous_plan: Dict[str, Any],
+        new_product: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        """
+        Format data specific to a changed subscription
+        :param payload:
+        :param previous_plan:
+        :param new_product:
+        :return dict:
+        """
+        previous_product = vendor.retrieve_stripe_product(previous_plan["product"])
+        event_type = self.get_subscription_type(new_product, previous_product)
+        invoice = vendor.retrieve_stripe_invoice(
+            invoice_id=self.payload.data.object.latest_invoice
+        )
+        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
+            customer=payload.get("customer_id", None)
+        )
+        logger.debug(
+            "sub change",
+            event_type=event_type,
+            payload=payload,
+            self_payload=self.payload,
+            upcoming_invoice=upcoming_invoice,
+            amount_due=upcoming_invoice.get("amount_due", 0),
+        )
+        plan = vendor.retrieve_stripe_plan(previous_plan.get("id", None))
+        nickname_old = format_plan_nickname(
+            product_name=previous_plan.get("nickname", "Not available"),
+            plan_interval=plan.get("interval", None),
+        )
+        return dict(
+            nickname_old=nickname_old,
+            nickname_new=payload.pop("nickname"),
+            event_type=event_type,
+            close_date=self.payload.get("created", None),
+            plan_amount_new=payload.pop("plan_amount"),
+            plan_amount_old=self.get_previous_plan_amount(
+                previous_plan=previous_plan.get("id", None)
+            ),
+            current_period_end=self.payload.data.object.current_period_end,
+            invoice_number=invoice.get("number", None),
+            invoice_id=invoice.get("id", None),
+            proration_amount=upcoming_invoice.get("amount_due", 0),
+        )
+
+    def get_subscription_type(
+        self, new_product: Dict[str, Any], previous_product: Dict[str, Any]
+    ) -> str:
+        """
+        Determine if new product is an upgrade or downgrade
+        :param new_product:
+        :param previous_product:
+        :return:
+        """
+        logger.debug(
+            "get sub meta", new_product=new_product, previous_product=previous_product
+        )
+        new_product_metadata = new_product.get("metadata", None)
+        new_product_set_order = new_product_metadata.get("productSetOrder", 0)
+        previous_product_metadata = previous_product.get("metadata", None)
+        previous_product_set_order = previous_product_metadata.get("productSetOrder", 0)
+        logger.debug(
+            "get subscription type",
+            new_product_set_order=new_product_set_order,
+            previous_product_set_order=previous_product_set_order,
+        )
+        if new_product_set_order > previous_product_set_order:
+            return "customer.subscription.upgrade"
+        elif previous_product_set_order > new_product_set_order:
+            return "customer.subscription.downgrade"
+        else:
+            raise InvalidRequestError(
+                message="Not valid subscription change", param="invalid_change"
+            )
+
+    def get_previous_plan_amount(self, previous_plan: str) -> int:
+        """
+        Get new plan amount for upgrade/downgrade
+        :param previous_plan:
+        :return:
+        """
+        plan = vendor.retrieve_stripe_plan(previous_plan)
+        return plan.get("amount", 0)

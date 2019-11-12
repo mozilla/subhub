@@ -1,0 +1,9 @@
+{
+    "id": "plan_123",
+    "amount": 499,
+    "amount_decimal": "499",
+    "created": 1573274099,
+    "nickname": "Previous Product",
+    "product": "prod_test1",
+    "interval": "month"
+}
