@@ -1,18 +1,19 @@
+backoff==1.8.0
+docker==4.1.0
+jsoncompare==0.1.2
+locustio==0.11.0
+mock==3.0.5
 # requirements for subhub testing to run
 # do not add requirements for subhub, src/app_requirements.txt already handles that
 mockito==1.1.1
+mypy==0.720
+patch==1.16
+purl==1.5
+pyparsing==2.4.0
 pytest==5.0.1
+pytest-bdd==3.2.1
 pytest-cov==2.7.1
 pytest-mock==1.10.4
-mock==3.0.5
-patch==1.16
 pytest-watch==4.2.0
-locustio==0.11.0
-purl==1.5
-jsoncompare==0.1.2
-pyparsing==2.4.0
-mypy==0.720
-responses==0.10.6
-docker==4.1.0
-backoff==1.8.0
 requests==2.22.0
+responses==0.10.6
