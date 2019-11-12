@@ -200,12 +200,12 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         customer_id = self.payload.data.object.customer
         user_id = self.get_user_id(customer_id)
 
-        data = self.create_payload(user_id)
+        data: Dict[str, Any] = self.create_payload(user_id)
 
         # NOTE:
         # Firefox's route has a particular casing requirement
         # Salesforce's route doesn't care.
-        data_projection_by_route = {
+        data_projection_by_route: Dict[str, Any] = {
             StaticRoutes.FIREFOX_ROUTE: [
                 "uid",
                 "active",
@@ -259,11 +259,11 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         try:
             invoice_id = self.payload.data.object.latest_invoice
             latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
-            invoice_number = latest_invoice.number  # type: ignore
-            charge_id = latest_invoice.charge  # type: ignore
+            invoice_number = latest_invoice.number
+            charge_id = latest_invoice.charge
             latest_charge = vendor.retrieve_stripe_charge(charge_id)
-            last4 = latest_charge.payment_method_details.card.last4  # type: ignore
-            brand = latest_charge.payment_method_details.card.brand  # type: ignore
+            last4 = latest_charge.payment_method_details.card.last4
+            brand = latest_charge.payment_method_details.card.brand
 
             logger.info("latest invoice", latest_invoice=latest_invoice)
             logger.info("latest charge", latest_charge=latest_charge)
@@ -511,11 +511,11 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         """
         invoice_id = self.payload.data.object.latest_invoice
         latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
-        invoice_number = latest_invoice.number  # type: ignore
-        charge_id = latest_invoice.charge  # type: ignore
+        invoice_number = latest_invoice.number
+        charge_id = latest_invoice.charge
         latest_charge = vendor.retrieve_stripe_charge(charge_id)
-        last4 = latest_charge.payment_method_details.card.last4  # type: ignore
-        brand = latest_charge.payment_method_details.card.brand  # type: ignore
+        last4 = latest_charge.payment_method_details.card.last4
+        brand = latest_charge.payment_method_details.card.brand
 
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
@@ -549,8 +549,8 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         invoice_id = self.payload.data.object.latest_invoice
         latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
         latest_charge = vendor.retrieve_stripe_charge(latest_invoice.charge)
-        last4 = latest_charge.payment_method_details.card.last4  # type: ignore
-        brand = latest_charge.payment_method_details.card.brand  # type: ignore
+        last4 = latest_charge.payment_method_details.card.last4
+        brand = latest_charge.payment_method_details.card.brand
 
         return dict(
             close_date=self.payload.created,
