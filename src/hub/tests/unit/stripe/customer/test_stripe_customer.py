@@ -24,12 +24,11 @@ from hub.shared.db import SubHubDeletedAccountModel
 
 class StripeCustomerCreatedTest(TestCase):
     def setUp(self) -> None:
-        with open("src/hub/tests/unit/fixtures/stripe_cust_created_event.json") as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_created_event.json") as fh:
             self.customer_created_event = json.loads(fh.read())
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_cust_created_event_missing_name.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_cust_created_event_missing_name.json") as fh:
             self.customer_created_event_missing_name = json.loads(fh.read())
 
         run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
@@ -101,15 +100,11 @@ class StripeCustomerDeletedTest(TestCase):
             origin_system=self.origin_system,
             customer_status="deleted",
         )
-
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_customer_deleted_event.json"
-        ) as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_customer_deleted_event.json") as fh:
             self.customer_deleted_event = json.loads(fh.read())
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_customer_deleted_event_no_metadata.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_customer_deleted_event_no_metadata.json") as fh:
             self.customer_deleted_event_no_meta = json.loads(fh.read())
 
         get_deleted_user_patcher = patch("flask.g.subhub_deleted_users.get_user")
@@ -216,26 +211,25 @@ class StripeCustomerDeletedTest(TestCase):
 
 class StripeCustomerSourceExpiringTest(TestCase):
     def setUp(self) -> None:
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_sub_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_sub_test1.json") as fh:
             self.subscription = json.loads(fh.read())
 
-        with open("src/hub/tests/unit/fixtures/stripe_sub_test2.json") as fh:
+        with open(f"{fixture_dir}stripe_sub_test2.json") as fh:
             self.subscription2 = json.loads(fh.read())
 
-        with open("src/hub/tests/unit/fixtures/stripe_plan_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_plan_test1.json") as fh:
             self.plan = json.loads(fh.read())
 
-        with open("src/hub/tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_source_expiring_event.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_source_expiring_event.json") as fh:
             self.source_expiring_event = json.loads(fh.read())
 
         customer_patcher = patch("stripe.Customer.retrieve")
@@ -320,31 +314,32 @@ class StripeCustomerSourceExpiringTest(TestCase):
 
 class StripeCustomerSubscriptionCreatedTest(TestCase):
     def setUp(self) -> None:
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_test1_deleted.json") as fh:
             cust_test1_deleted = json.loads(fh.read())
         self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
 
-        with open("src/hub/tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_in_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_in_test1.json") as fh:
             invoice_test1 = json.loads(fh.read())
         self.invoice = convert_to_stripe_object(invoice_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_ch_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_ch_test1.json") as fh:
             charge_test1 = json.loads(fh.read())
         self.charge = convert_to_stripe_object(charge_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_sub_created_event.json") as fh:
+        with open(f"{fixture_dir}stripe_sub_created_event.json") as fh:
             self.subscription_created_event = json.loads(fh.read())
 
         customer_patcher = patch("stripe.Customer.retrieve")
@@ -502,19 +497,20 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
 
 class StripeCustomerSubscriptionDeletedTest(TestCase):
     def setUp(self) -> None:
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_test1_deleted.json") as fh:
             cust_test1_deleted = json.loads(fh.read())
         self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
 
-        with open("src/hub/tests/unit/fixtures/stripe_sub_deleted_event.json") as fh:
+        with open(f"{fixture_dir}stripe_sub_deleted_event.json") as fh:
             self.subscription_deleted_event = json.loads(fh.read())
 
         customer_patcher = patch("stripe.Customer.retrieve")
@@ -600,73 +596,91 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
     def setUp(self) -> None:
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_no_metadata.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
 
-        with open("src/hub/tests/unit/fixtures/stripe_cust_test1_deleted.json") as fh:
+        with open(f"{fixture_dir}stripe_cust_test1_deleted.json") as fh:
             cust_test1_deleted = json.loads(fh.read())
         self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
 
-        with open("src/hub/tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_in_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_prod_bad_test1.json") as fh:
+            bad_prod_test1 = json.loads(fh.read())
+        self.bad_product = convert_to_stripe_object(bad_prod_test1)
+
+        with open(f"{fixture_dir}stripe_in_test1.json") as fh:
             invoice_test1 = json.loads(fh.read())
         self.invoice = convert_to_stripe_object(invoice_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_in_test2.json") as fh:
+        with open(f"{fixture_dir}stripe_in_test2.json") as fh:
             invoice_test2 = json.loads(fh.read())
         self.incomplete_invoice = convert_to_stripe_object(invoice_test2)
 
-        with open("src/hub/tests/unit/fixtures/stripe_ch_test1.json") as fh:
+        with open(f"{fixture_dir}stripe_ch_test1.json") as fh:
             charge_test1 = json.loads(fh.read())
         self.charge = convert_to_stripe_object(charge_test1)
 
-        with open("src/hub/tests/unit/fixtures/stripe_ch_test2.json") as fh:
+        with open(f"{fixture_dir}stripe_ch_test2.json") as fh:
             charge_test2 = json.loads(fh.read())
         self.incomplete_charge = convert_to_stripe_object(charge_test2)
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_sub_updated_event_cancel.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_sub_updated_event_cancel.json") as fh:
             self.subscription_cancelled_event = json.loads(fh.read())
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_sub_updated_event_charge.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_sub_updated_event_charge.json") as fh:
             self.subscription_charge_event = json.loads(fh.read())
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_sub_updated_event_reactivate.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_sub_updated_event_reactivate.json") as fh:
             self.subscription_reactivate_event = json.loads(fh.read())
 
-        with open(
-            "src/hub/tests/unit/fixtures/stripe_sub_updated_event_no_trigger.json"
-        ) as fh:
+        with open(f"{fixture_dir}stripe_sub_updated_event_change.json") as fh:
+            self.subscription_change_event = json.loads(fh.read())
+
+        with open(f"{fixture_dir}stripe_sub_updated_event_no_trigger.json") as fh:
             self.subscription_updated_event_no_match = json.loads(fh.read())
+
+        with open(f"{fixture_dir}stripe_previous_plan1.json") as fh:
+            self.previous_plan = json.loads(fh.read())
+
+        with open(f"{fixture_dir}valid_plan_response.json") as fh:
+            self.plan_list = json.loads(fh.read())
+
+        with open(f"{fixture_dir}stripe_prod_test2.json") as fh:
+            self.new_product = json.loads(fh.read())
+
+        with open(f"{fixture_dir}stripe_in_test2.json") as fh:
+            self.upcoming_invoice = json.loads(fh.read())
 
         customer_patcher = patch("stripe.Customer.retrieve")
         product_patcher = patch("stripe.Product.retrieve")
         invoice_patcher = patch("stripe.Invoice.retrieve")
         charge_patcher = patch("stripe.Charge.retrieve")
+        plan_retrieve_patcher = patch("stripe.Plan.retrieve")
+        upcoming_invoice_patcher = patch("stripe.Invoice.upcoming")
         run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(customer_patcher.stop)
         self.addCleanup(product_patcher.stop)
         self.addCleanup(invoice_patcher.stop)
+        self.addCleanup(upcoming_invoice_patcher.stop)
+        self.addCleanup(plan_retrieve_patcher.stop)
         self.addCleanup(charge_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
 
         self.mock_customer = customer_patcher.start()
         self.mock_product = product_patcher.start()
         self.mock_invoice = invoice_patcher.start()
+        self.mock_upcoming_invoice = upcoming_invoice_patcher.start()
+        self.mock_plan_retrieve = plan_retrieve_patcher.start()
         self.mock_charge = charge_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
 
@@ -746,7 +760,9 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         with self.assertRaises(InvalidRequestError):
             StripeCustomerSubscriptionUpdated(
                 self.subscription_updated_event_no_match
-            ).create_payload(event_type="event.type", user_id="user_123")
+            ).create_payload(
+                event_type="event.type", user_id="user_123", previous_plan=None
+            )
 
     def test_create_payload_cancelled(self):
         self.mock_product.return_value = self.product
@@ -772,7 +788,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         actual_payload = StripeCustomerSubscriptionUpdated(
             self.subscription_cancelled_event
-        ).create_payload(event_name, user_id)
+        ).create_payload(event_type=event_name, user_id=user_id, previous_plan=None)
 
         assert actual_payload == expected_payload
 
@@ -814,7 +830,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         actual_payload = StripeCustomerSubscriptionUpdated(
             self.subscription_charge_event
-        ).create_payload(event_name, user_id)
+        ).create_payload(event_type=event_name, user_id=user_id, previous_plan=None)
 
         assert actual_payload == expected_payload
 
@@ -842,6 +858,45 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         actual_payload = StripeCustomerSubscriptionUpdated(
             self.subscription_reactivate_event
-        ).create_payload(event_name, user_id)
+        ).create_payload(event_type=event_name, user_id=user_id, previous_plan=None)
 
         assert actual_payload == expected_payload
+
+    def test_get_subscription_change(self):
+        self.mock_customer.return_value = self.product
+        self.mock_invoice.return_value = self.invoice
+        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
+        self.mock_product.return_value = self.product
+        self.mock_plan_retrieve.return_value = self.previous_plan
+
+        expected_sub_change = dict(
+            close_date=1571949975,
+            nickname_old="Previous Product (Monthly)",
+            nickname_new="Test Plan Original",
+            event_type="customer.subscription.upgrade",
+            plan_amount_old=499,
+            plan_amount_new=999,
+            proration_amount=1000,
+            current_period_end=1572036371,
+            invoice_number="3B74E3D0-0001",
+            invoice_id="in_test1",
+        )
+
+        payload = dict(
+            event_id="evt_change_test",
+            event_type="customer.subscription.updated",
+            uid=None,
+            customer_id="cus_123",
+            subscription_id="sub_123",
+            plan_amount=999,
+            nickname="Test Plan Original",
+        )
+
+        actual_sub_change = StripeCustomerSubscriptionUpdated(
+            self.subscription_change_event
+        ).get_subscription_change(
+            payload=payload,
+            previous_plan=self.previous_plan,
+            new_product=self.new_product,
+        )
+        assert expected_sub_change == actual_sub_change

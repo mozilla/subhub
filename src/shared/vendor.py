@@ -439,6 +439,28 @@ def retrieve_stripe_invoice(invoice_id: str) -> Invoice:
         raise e
 
 
+def retrieve_stripe_invoice_upcoming(customer: str) -> Invoice:
+    """
+    Retrieve an upcoming stripe invoice
+    :param customer:
+    :return:
+    """
+    try:
+        invoice = Invoice.upcoming(customer=customer)
+        logger.debug("retrieve stripe invoice upcoming", invoice=invoice)
+        return invoice
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+    ) as e:
+        logger.error("retrieve stripe invoice upcoming error", error=str(e))
+        raise e
+
+
 # end Invoice calls
 
 # start Plan calls
