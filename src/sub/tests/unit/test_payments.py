@@ -32,85 +32,87 @@ logger = get_logger()
 
 class TestPayments(TestCase):
     def setUp(self) -> None:
-        with open("tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.valid_customer = convert_to_stripe_object(cust_test1)
 
-        with open("tests/unit/fixtures/stripe_cust_test2.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test2.json") as fh:
             cust_test2 = json.loads(fh.read())
         self.valid_customer_no_metadata = convert_to_stripe_object(cust_test2)
 
-        with open("tests/unit/fixtures/stripe_cust_test3.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test3.json") as fh:
             cust_test3 = json.loads(fh.read())
         self.valid_customer3 = convert_to_stripe_object(cust_test3)
 
-        with open("tests/unit/fixtures/stripe_deleted_cust.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_deleted_cust.json") as fh:
             deleted_cust = json.loads(fh.read())
         self.deleted_cust = convert_to_stripe_object(deleted_cust)
 
-        with open("tests/unit/fixtures/stripe_prod_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_prod_test1.json") as fh:
             prod_test1 = json.loads(fh.read())
         self.product = convert_to_stripe_object(prod_test1)
 
-        with open("tests/unit/fixtures/stripe_plan_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_plan_test1.json") as fh:
             plan_test1 = json.loads(fh.read())
         self.plan = convert_to_stripe_object(plan_test1)
 
-        with open("tests/unit/fixtures/stripe_in_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_in_test1.json") as fh:
             invoice_test1 = json.loads(fh.read())
         self.invoice = convert_to_stripe_object(invoice_test1)
 
-        with open("tests/unit/fixtures/stripe_ch_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_ch_test1.json") as fh:
             charge_test1 = json.loads(fh.read())
         self.charge = convert_to_stripe_object(charge_test1)
 
-        with open("tests/unit/fixtures/stripe_sub_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_sub_test1.json") as fh:
             subscription_test1 = json.loads(fh.read())
         self.subscription_test1 = convert_to_stripe_object(subscription_test1)
 
         subscription_test1["plan"] = plan_test1
         self.subscription_with_plan = convert_to_stripe_object(subscription_test1)
 
-        with open("tests/unit/fixtures/stripe_cust_test4_no_subs.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test4_no_subs.json") as fh:
             cust_test4 = json.loads(fh.read())
         cust_test4["subscriptions"]["data"].append(subscription_test1)
         self.customer4 = convert_to_stripe_object(cust_test4)
 
-        with open("tests/unit/fixtures/stripe_sub_test3.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_sub_test3.json") as fh:
             subscription_test3 = json.loads(fh.read())
         self.subscription_test3 = convert_to_stripe_object(subscription_test3)
 
-        with open("tests/unit/fixtures/stripe_sub_cancelled.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_sub_cancelled.json") as fh:
             subscription_test_cancelled = json.loads(fh.read())
         self.subscription_test_cancelled = convert_to_stripe_object(
             subscription_test_cancelled
         )
 
-        with open("tests/unit/fixtures/stripe_sub_test_none.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_sub_test_none.json") as fh:
             subscription_none = json.loads(fh.read())
         self.subscription_none = subscription_none
 
-        with open("tests/unit/fixtures/sns_message.json") as fh:
+        with open("src/sub/tests/unit/fixtures/sns_message.json") as fh:
             sns_message_payload = json.loads(fh.read())
         self.sns_message_payload = sns_message_payload
 
-        with open("tests/unit/fixtures/stripe_subscriptions_no_data.json") as fh:
+        with open(
+            "src/sub/tests/unit/fixtures/stripe_subscriptions_no_data.json"
+        ) as fh:
             subscription_no_data = json.loads(fh.read())
         self.subscription_list = subscription_no_data
 
-        with open("tests/unit/fixtures/subhub_valid_sub_test.json") as fh:
+        with open("src/sub/tests/unit/fixtures/subhub_valid_sub_test.json") as fh:
             valid_sub_test = json.loads(fh.read())
         self.valid_sub_test = convert_to_stripe_object(valid_sub_test)
 
-        with open("tests/unit/fixtures/valid_plan_response.json") as fh:
+        with open("src/sub/tests/unit/fixtures/valid_plan_response.json") as fh:
             valid_plan_response = json.loads(fh.read())
         self.valid_plan_response = convert_to_stripe_object(valid_plan_response)
 
-        with open("tests/unit/fixtures/subhub_account_user.json") as fh:
+        with open("src/sub/tests/unit/fixtures/subhub_account_user.json") as fh:
             subhub_user_account = json.loads(fh.read())
         self.subhub_user_account = subhub_user_account
 
-        with open("tests/unit/fixtures/subhub_return_data.json") as fh:
+        with open("src/sub/tests/unit/fixtures/subhub_return_data.json") as fh:
             subhub_return_data = json.loads(fh.read())
         self.subhub_return_data = subhub_return_data
 

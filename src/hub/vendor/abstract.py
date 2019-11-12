@@ -33,7 +33,7 @@ class AbstractStripeHubEvent(ABC):
         RoutesPipeline(report_routes, message_to_route).run()
 
     @staticmethod
-    def send_to_all_routes(messages_to_routes):
+    def send_to_all_routes(messages_to_routes) -> None:
         logger.info("send to all routes", messages_to_routes=messages_to_routes)
         AllRoutes(messages_to_routes).run()
 
@@ -48,13 +48,13 @@ class AbstractStripeHubEvent(ABC):
         logger.info("Event not handled", payload=payload)
 
     @abstractmethod
-    def run(self) -> None:
+    def run(self) -> bool:
         raise NotImplementedError
 
     def create_data(self, **kwargs) -> Dict[str, str]:
         return dict(event_id=self.payload.id, event_type=self.payload.type, **kwargs)
 
-    def customer_event_to_all_routes(self, data_projection, data):
+    def customer_event_to_all_routes(self, data_projection, data) -> None:
         subsets = []
         for route in data_projection:
             try:
