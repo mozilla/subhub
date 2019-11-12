@@ -46,8 +46,32 @@ repos:
     hooks:
     -   id: python-safety-dependencies-check
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    sha: v1.0.3
+    rev: v1.0.3
     hooks:
     -   id: python-bandit-vulnerability-check
         args: [-l, --recursive, -x, tests, --skip, "B101,B106,B404"]
         files: .py$
+-   repo: https://github.com/Lucas-C/pre-commit-hooks
+    rev: v1.1.7
+    hooks:
+    -   id: insert-license
+        files: \.py
+        args:
+        - --license-filepath
+        - etc/license-header
+        - --comment-style
+    -   id: insert-license
+        files: \.yml
+        args:
+        - --license-filepath
+        - etc/license-header
+    -   id: insert-license
+        files: \.txt
+        args:
+        - --license-filepath
+        - etc/license-header
+    -   id: insert-license
+        files: \.ini
+        args:
+        - --license-filepath
+        - etc/license-header
