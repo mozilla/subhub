@@ -20,7 +20,7 @@ class RoutesPipeline:
             elif r == StaticRoutes.FIREFOX_ROUTE:
                 FirefoxRoute(self.data).route()
             else:
-                raise UnsupportedStaticRouteError(r, StaticRoutes)
+                raise UnsupportedStaticRouteError(r, StaticRoutes)  # type: ignore
 
 
 class AllRoutes:
@@ -34,4 +34,4 @@ class AllRoutes:
             elif m["type"] == "salesforce_route":
                 SalesforceRoute(m["data"]).route()
             else:
-                raise UnsupportedDataError(m, m["type"], StaticRoutes)
+                raise UnsupportedDataError(m, m["type"], StaticRoutes)  # type: ignore

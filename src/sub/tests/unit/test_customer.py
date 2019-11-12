@@ -26,27 +26,29 @@ from sub.shared.exceptions import IntermittentError, ServerError
 class CustomerTest(TestCase):
     def setUp(self) -> None:
 
-        with open("tests/unit/fixtures/stripe_cust_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer1 = convert_to_stripe_object(cust_test1)
 
-        with open("tests/unit/fixtures/stripe_cust_test2.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test2.json") as fh:
             cust_test2 = json.loads(fh.read())
         self.customer2 = convert_to_stripe_object(cust_test2)
 
-        with open("tests/unit/fixtures/stripe_cust_test4_no_subs.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test4_no_subs.json") as fh:
             cust_test1_no_subs = json.loads(fh.read())
         self.customer_no_subs = convert_to_stripe_object(cust_test1_no_subs)
 
-        with open("tests/unit/fixtures/stripe_cust_test5_no_sources.json") as fh:
+        with open(
+            "src/sub/tests/unit/fixtures/stripe_cust_test5_no_sources.json"
+        ) as fh:
             cust_test1_no_sources = json.loads(fh.read())
         self.customer_no_sources = convert_to_stripe_object(cust_test1_no_sources)
 
-        with open("tests/unit/fixtures/stripe_deleted_cust.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_deleted_cust.json") as fh:
             deleted_cust = json.loads(fh.read())
         self.deleted_customer = convert_to_stripe_object(deleted_cust)
 
-        with open("tests/unit/fixtures/stripe_cust_list.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_cust_list.json") as fh:
             cust_list = json.loads(fh.read())
         self.empty_customer_list = convert_to_stripe_object(cust_list)
 
@@ -54,7 +56,7 @@ class CustomerTest(TestCase):
         cust_list["data"].append(cust_test1)
         self.customer_list = convert_to_stripe_object(cust_list)
 
-        with open("tests/unit/fixtures/stripe_sub_test1.json") as fh:
+        with open("src/sub/tests/unit/fixtures/stripe_sub_test1.json") as fh:
             sub_test1 = json.loads(fh.read())
         self.subscription1 = convert_to_stripe_object(sub_test1)
 

@@ -51,15 +51,15 @@ def test_list_plans(mock_plans, mock_product, app):
     WHEN a request for plans is made
     THEN a success status of 200 is returned
     """
-    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_plan_test1.json")
     plan_test1 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_plan_test2.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_plan_test2.json")
     plan_test2 = json.loads(fh.read())
     fh.close()
 
-    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
 
@@ -178,7 +178,7 @@ def test_subscribe_success(
     """
 
     client = app.app.test_client()
-    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_cust_test1.json")
     cust_test1 = json.loads(fh.read())
     fh.close()
 
@@ -186,17 +186,17 @@ def test_subscribe_success(
     mock_has_plan.return_value = False
     mock_fetch_customer.return_value = convert_to_stripe_object(cust_test1)
 
-    fh = open("tests/unit/fixtures/stripe_sub_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_sub_test1.json")
     sub_test1 = json.loads(fh.read())
     fh.close()
-    fh = open("tests/unit/fixtures/stripe_plan_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_plan_test1.json")
     plan_test1 = json.loads(fh.read())
     fh.close()
     sub_test1["plan"] = plan_test1
     mock_subscription.return_value = sub_test1
     mock_new_sub.return_value = {"data": [sub_test1]}
 
-    fh = open("tests/unit/fixtures/stripe_prod_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_prod_test1.json")
     prod_test1 = json.loads(fh.read())
     fh.close()
     mock_product.return_value = prod_test1
@@ -230,7 +230,7 @@ def test_subscribe_customer_existing(mock_new_customer, mock_has_plan, app):
     """
 
     client = app.app.test_client()
-    fh = open("tests/unit/fixtures/stripe_cust_test1.json")
+    fh = open("src/sub/tests/unit/fixtures/stripe_cust_test1.json")
     cust_test1 = json.loads(fh.read())
     fh.close()
 
@@ -328,7 +328,7 @@ def test_customer_unsubscribe_server_stripe_error_with_params(app, monkeypatch):
 
 @mock.patch("sub.payments._get_all_plans")
 def test_plan_response_valid(mock_plans, app):
-    fh = open("tests/unit/fixtures/valid_plan_response.json")
+    fh = open("src/sub/tests/unit/fixtures/valid_plan_response.json")
     valid_response = json.loads(fh.read())
     fh.close()
 
@@ -349,7 +349,7 @@ def test_plan_response_valid(mock_plans, app):
 
 @mock.patch("sub.payments._get_all_plans")
 def test_plan_response_invalid(mock_plans, app):
-    fh = open("tests/unit/fixtures/invalid_plan_response.json")
+    fh = open("src/sub/tests/unit/fixtures/invalid_plan_response.json")
     invalid_response = json.loads(fh.read())
     fh.close()
 
