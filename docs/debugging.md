@@ -1,14 +1,18 @@
 # Debugging
 
+This document describes the process to run either the sub or hub components under
+the GNU project debugger (GDB).
+
 ## GDB
 
-1. Set environment variables for the environment to be debugged.
-2. Spin up associated docker container for dynalite if required, `docker-compose up dynalite`.  If you are debugging against AWS DynamoDB itself be sure to setup your AWS Credentials accordingly.
-3. Install packages: `sudo pip install -r src/app_requirements.txt`
-4. Set the PYTHONPATH for gdb: `export PYTHONPATH=/opt/subhub/src/:PYTHONPATH`
-5. Start gdb: `gdb python3.7`
-6. Run the application of choise: `run APPLICATION`
+1. Start the application via the run-local script, `./bin/run-local.sh "${APPLICATION}"`
+2. In another terminal, start the attach-gdb script, `sudo ./bin/attach-gdb.sh "${APPLICATION}"`
+3. Set some break points (reference 2) and debug.
 
-Where APPLICATION is either
+Where the APPLICATION variable is a member of the set:
 * `src/sub/app.py`
 * `src/hub/app.py`
+
+## References
+1. [Exploring Python Using GDB](https://stripe.com/blog/exploring-python-using-gdb)
+2. [GDB Cheat Sheet](https://gist.github.com/rkubik/b96c23bd8ed58333de37f2b8cd052c30)
