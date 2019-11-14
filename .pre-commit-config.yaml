@@ -42,7 +42,7 @@ repos:
     -   id: mypy
         args: [--no-strict-optional, --ignore-missing-imports]
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    sha: v1.0.3
+    rev: v1.0.3
     hooks:
     -   id: python-bandit-vulnerability-check
         args: [-l, --recursive, -x, tests, --skip, "B101,B106,B404"]
