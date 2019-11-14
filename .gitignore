@@ -107,19 +107,11 @@ venv.bak/
 # mypy
 .mypy_cache/
 
-# serverless
-.serverless
-node_modules/
-
 # doit
 .doit.db
 
 # idea
 .idea/
-
-
-# dynamodb local
-.dynamodb/
 
 # vscode blocker
 .vscode/

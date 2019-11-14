@@ -1,0 +1,5 @@
+# Serverless Ignore Rules
+.serverless
+
+# Node modules (serverless plugins)
+node_modules

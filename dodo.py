@@ -34,7 +34,8 @@ NEWLINE = "\n"
 VENV = f"{CFG.REPO_ROOT}/venv"
 PYTHON3 = f"{VENV}/bin/python3.7"
 PIP3 = f"{PYTHON3} -m pip"
-NODE_MODULES = f"{CFG.REPO_ROOT}/node_modules"
+SERVERLESS_DIRECTORY=f"{CFG.REPO_ROOT}/services/fxa"
+NODE_MODULES = f"{SERVERLESS_DIRECTORY}/node_modules"
 SLS = f"{NODE_MODULES}/serverless/bin/serverless"
 SVCS = [
     svc
@@ -357,7 +358,6 @@ def task_check():
     yield gen_prog_check("docker-compose")
     if not CFG("TRAVIS", None):
         yield gen_prog_check("awscli", "aws")
-    yield gen_file_check("json", json.load, "services/**/*.json")
     yield gen_file_check(
         "yaml", yaml.safe_load, "services/**/*.yaml", "services/**/*.yml"
     )
@@ -462,10 +462,10 @@ def task_yarn():
         2. [Don't warn about incompatible optional dependencies](https://github.com/yarnpkg/yarn/issues/3738)
     """
     return {
-        "task_dep": ["check"],
+        "task_dep": [],
         "actions": [
-            "[ -d node_modules/ ] && rm -rf node_modules/ || true",
-            "yarn install",
+            f"[ -d {NODE_MODULES} ] && rm -rf {NODE_MODULES} || true",
+            f"cd {SERVERLESS_DIRECTORY} && yarn install",
         ],
     }
 
