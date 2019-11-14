@@ -60,7 +60,6 @@ repos:
         args:
         - --license-filepath
         - etc/license-header
-        - --comment-style
     -   id: insert-license
         files: \.yml
         args:
