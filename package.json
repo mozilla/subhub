@@ -9,8 +9,6 @@
         "@hapi/hoek": "8.2.4",
         "serverless": "1.53.0",
         "serverless-domain-manager": "3.3.0",
-        "serverless-dynamodb-local": "0.2.38",
-        "serverless-offline": "5.12.0",
         "serverless-package-external": "1.1.1",
         "serverless-plugin-aws-alerts": "1.4.0",
         "serverless-plugin-canary-deployments": "0.4.8",
