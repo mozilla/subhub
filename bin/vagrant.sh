@@ -6,7 +6,7 @@ sudo apt-get uninstall -y python
 # Install Python 3.7 and pip
 sudo add-apt-repository ppa:deadsnakes/ppa
 sudo apt-get update
-sudo apt-get install -y python3.7 python3.7-dev python3-pip python3.7-venv python3.7-gdb gdb
+sudo apt-get install -y python3.7 python3.7-dev python3-pip python3.7-venv python3.7-gdb gdb python3-all-dbg
 
 # Install Yarn
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -

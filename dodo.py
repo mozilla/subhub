@@ -561,6 +561,12 @@ def task_print():
     }
 
 
+def task_env_print():
+    return {
+        "actions": [f"cd {CFG.REPO_ROOT} && env {envs()} > .env",],
+    }
+
+
 def task_tar():
     """
     tar up source files, dereferncing symlinks
