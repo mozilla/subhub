@@ -15,6 +15,7 @@ from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
 from hub.shared.utils import format_plan_nickname
+from hub.shared.vendor_utils import format_brand
 from shared.log import get_logger
 from hub.shared import vendor
 from hub.shared.db import SubHubDeletedAccountModel
@@ -263,7 +264,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             charge_id = latest_invoice.charge
             latest_charge = vendor.retrieve_stripe_charge(charge_id)
             last4 = latest_charge.payment_method_details.card.last4
-            brand = latest_charge.payment_method_details.card.brand
+            brand = format_brand(latest_charge.payment_method_details.card.brand)
 
             logger.info("latest invoice", latest_invoice=latest_invoice)
             logger.info("latest charge", latest_charge=latest_charge)
@@ -515,7 +516,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         charge_id = latest_invoice.charge
         latest_charge = vendor.retrieve_stripe_charge(charge_id)
         last4 = latest_charge.payment_method_details.card.last4
-        brand = latest_charge.payment_method_details.card.brand
+        brand = format_brand(latest_charge.payment_method_details.card.brand)
 
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
@@ -550,7 +551,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
         latest_charge = vendor.retrieve_stripe_charge(latest_invoice.charge)
         last4 = latest_charge.payment_method_details.card.last4
-        brand = latest_charge.payment_method_details.card.brand
+        brand = format_brand(latest_charge.payment_method_details.card.brand)
 
         return dict(
             close_date=self.payload.created,
