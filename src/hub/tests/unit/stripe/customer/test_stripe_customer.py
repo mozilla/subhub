@@ -445,7 +445,7 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
             current_period_start=1519435009,
             current_period_end=1521854209,
             invoice_number="3B74E3D0-0001",
-            brand="visa",
+            brand="Visa",
             last4="0019",
             charge="ch_test1",
         )
@@ -807,7 +807,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             eventId="evt_1FXDCFJNcmPzuWtRrogbWpRZ",  # required by FxA
             currency="usd",
             invoice_number="3B74E3D0-0001",
-            brand="visa",
+            brand="Visa",
             last4="0019",
             charge="ch_test1",
         )
@@ -836,7 +836,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             nickname="Project Guardian (Daily)",
             close_date=1571949975,
             current_period_end=1572036371,
-            brand="visa",
+            brand="Visa",
             last4="0019",
         )
 
