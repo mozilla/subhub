@@ -439,6 +439,36 @@ def retrieve_stripe_invoice(invoice_id: str) -> Invoice:
         raise e
 
 
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
+def retrieve_stripe_invoice_upcoming_by_subscription(
+    customer_id: str, subscription_id: str
+) -> Invoice:
+    """
+    Retrieve the next invoice for a customer that will be for a specific subscription
+    :param customer_id:
+    :param subscription_id:
+    :return:
+    """
+    try:
+        invoice = Invoice.upcoming(customer=customer_id, subscription=subscription_id)
+        logger.debug("retrieve stripe invoice upcoming", invoice=invoice)
+        return invoice
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+    ) as e:
+        logger.error("retrieve stripe invoice upcoming error", error=str(e))
+        raise e
+
+
 def retrieve_stripe_invoice_upcoming(customer: str) -> Invoice:
     """
     Retrieve an upcoming stripe invoice

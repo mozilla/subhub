@@ -280,6 +280,12 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 plan_interval=self.payload.data.object.plan.interval,
             )
 
+            next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+                customer_id=self.payload.data.object.customer,
+                subscription_id=self.payload.data.object.id,
+            )
+            next_invoice_date = next_invoice.get("period_start", 0)
+
             return self.create_data(
                 uid=user_id,
                 active=self.is_active_or_trialing,
@@ -301,6 +307,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 currency=self.payload.data.object.plan.currency,
                 current_period_start=self.payload.data.object.current_period_start,
                 current_period_end=self.payload.data.object.current_period_end,
+                next_invoice_date=next_invoice_date,
                 invoice_number=invoice_number,
                 brand=brand,
                 last4=last4,
@@ -560,12 +567,19 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
 
+        next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+            customer_id=self.payload.data.object.customer,
+            subscription_id=self.payload.data.object.id,
+        )
+        next_invoice_date = next_invoice.get("period_start", 0)
+
         return dict(
             canceled_at=self.payload.data.object.canceled_at,
             cancel_at=self.payload.data.object.cancel_at,
             cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
             current_period_start=self.payload.data.object.current_period_start,
             current_period_end=self.payload.data.object.current_period_end,
+            next_invoice_date=next_invoice_date,
             invoice_id=self.payload.data.object.latest_invoice,
             active=self.is_active_or_trialing,
             subscriptionId=self.payload.data.object.id,  # required by FxA
