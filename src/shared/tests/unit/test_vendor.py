@@ -314,8 +314,13 @@ class TestStripeInvoiceCalls(TestCase):
         self.invoice = convert_to_stripe_object(invoice)
 
         retrieve_invoice_patcher = patch("stripe.Invoice.retrieve")
+        preview_invoice_patcher = patch("stripe.Invoice.upcoming")
+
         self.addCleanup(retrieve_invoice_patcher.stop)
+        self.addCleanup(preview_invoice_patcher.stop)
+
         self.retrieve_invoice_mock = retrieve_invoice_patcher.start()
+        self.preview_invoice_mock = preview_invoice_patcher.start()
 
     def test_retrieve_success(self):
         self.retrieve_invoice_mock.side_effect = [APIError("message"), self.invoice]
@@ -328,6 +333,34 @@ class TestStripeInvoiceCalls(TestCase):
 
         with self.assertRaises(APIError):
             vendor.retrieve_stripe_invoice("in_test1")
+
+    def test_upcoming_by_subscription_success(self):
+        self.preview_invoice_mock.side_effect = [APIError("message"), self.invoice]
+
+        invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+            customer_id="cust_123", subscription_id="sub_123"
+        )
+        assert invoice == self.invoice
+
+    def test_upcoming_by_subscription_error(self):
+        self.preview_invoice_mock.side_effect = APIError("message")
+
+        with self.assertRaises(APIError):
+            vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+                customer_id="cust_123", subscription_id="sub_123"
+            )
+
+    def test_upcoming_success(self):
+        self.preview_invoice_mock.return_value = self.invoice
+
+        invoice = vendor.retrieve_stripe_invoice_upcoming(customer="cust_123")
+        assert invoice == self.invoice
+
+    def test_upcoming_error(self):
+        self.preview_invoice_mock.side_effect = APIError("message")
+
+        with self.assertRaises(APIError):
+            vendor.retrieve_stripe_invoice_upcoming(customer="cust_123")
 
 
 class TestStripePlanCalls(TestCase):
