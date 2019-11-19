@@ -639,6 +639,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             plan_amount_old=self.get_previous_plan_amount(
                 previous_plan=previous_plan.get("id", None)
             ),
+            interval=self.payload.data.object.plan.interval,
             current_period_end=self.payload.data.object.current_period_end,
             invoice_number=invoice.get("number", None),
             invoice_id=invoice.get("id", None),

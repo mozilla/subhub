@@ -880,6 +880,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             current_period_end=1572036371,
             invoice_number="3B74E3D0-0001",
             invoice_id="in_test1",
+            interval="month",
         )
 
         payload = dict(
