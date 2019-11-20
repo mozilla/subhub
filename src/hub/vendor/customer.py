@@ -553,6 +553,9 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         latest_charge = vendor.retrieve_stripe_charge(charge_id)
         last4 = latest_charge.payment_method_details.card.last4
         brand = format_brand(latest_charge.payment_method_details.card.brand)
+        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
+            customer=self.payload.data.object.customer
+        )
 
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
@@ -576,7 +579,24 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             brand=brand,
             last4=last4,
             charge=charge_id,
+            proration_amount=upcoming_invoice.get("amount_due", 0),
+            total_amount=self.get_total_upcoming_invoice_amount(
+                upcoming_invoice=upcoming_invoice
+            ),
         )
+
+    def get_total_upcoming_invoice_amount(
+        self, upcoming_invoice: Dict[str, Any]
+    ) -> float:
+        """
+        Get the total amount of the upcoming invoice
+        :param upcoming_invoice:
+        :return:
+        """
+        total_amount = 0
+        for line in upcoming_invoice["lines"]["data"]:
+            total_amount += line.get("amount", 0)
+        return total_amount
 
     def get_reactivation_data(self) -> Dict[str, Any]:
         """
