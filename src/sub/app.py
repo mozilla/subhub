@@ -14,12 +14,12 @@ from flask import current_app, g, jsonify, request
 from flask_cors import CORS
 from pythonjsonlogger import jsonlogger
 
-from shared import secrets
-from sub.shared.exceptions import SubHubError
-from shared.db import SubHubAccount, SubHubDeletedAccount
-from shared.headers import dump_safe_headers, extract_safe
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.shared import secrets
+from src.shared.exceptions import SubHubError
+from src.shared.db import SubHubAccount, SubHubDeletedAccount
+from src.shared.headers import dump_safe_headers, extract_safe
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
 
 json_handler = logging.StreamHandler(sys.stdout)
 json_handler.setFormatter(jsonlogger.JsonFormatter())

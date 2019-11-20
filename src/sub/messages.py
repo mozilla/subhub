@@ -11,8 +11,8 @@ import boto3
 
 from botocore.exceptions import ClientError
 
-from sub.shared.cfg import CFG
-from sub.shared.log import get_logger
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
 
 logger = get_logger()
 

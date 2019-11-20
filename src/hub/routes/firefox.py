@@ -9,9 +9,9 @@ from typing import Dict
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 
-from hub.routes.abstract import AbstractRoute
-from hub.shared.cfg import CFG
-from shared.log import get_logger
+from routes.abstract import AbstractRoute
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
 
 logger = get_logger()
 

@@ -1,0 +1,5 @@
+# Import environment-specific configuration.
+try-import %workspace%/environment.bazelrc
+
+# Try to import user-specific configuration local to workspace.
+try-import %workspace%/user.bazelrc

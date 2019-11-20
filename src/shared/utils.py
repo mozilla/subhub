@@ -4,7 +4,7 @@
 
 import uuid
 
-from shared.cfg import CFG
+from .cfg import CFG
 
 
 def format_plan_nickname(product_name: str, plan_interval: str) -> str:

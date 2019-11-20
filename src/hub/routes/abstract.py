@@ -6,7 +6,7 @@ import flask
 
 from abc import ABC
 
-from shared.log import get_logger
+from src.shared.log import get_logger
 
 logger = get_logger()
 

@@ -11,13 +11,13 @@ from datetime import datetime
 from typing import Optional, Dict, Any
 from flask import g
 
-from hub.vendor.abstract import AbstractStripeHubEvent
-from hub.routes.static import StaticRoutes
-from hub.shared.exceptions import ClientError
-from hub.shared.utils import format_plan_nickname
-from shared.log import get_logger
-from hub.shared import vendor
-from hub.shared.db import SubHubDeletedAccountModel
+from vendor.abstract import AbstractStripeHubEvent
+from routes.static import StaticRoutes
+from src.shared.exceptions import ClientError
+from src.shared.utils import format_plan_nickname
+from src.shared.log import get_logger
+from src.shared import vendor
+from src.shared.db import SubHubDeletedAccountModel
 
 logger = get_logger()
 

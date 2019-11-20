@@ -17,7 +17,7 @@ from stripe.error import (
     AuthenticationError,
 )
 
-from shared.log import get_logger
+from .log import get_logger
 
 logger = get_logger()
 

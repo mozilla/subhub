@@ -9,8 +9,8 @@ import json
 
 from typing import Dict, Any
 
-from shared.cfg import CFG
-from shared.exceptions import SecretStringMissingError
+from .cfg import CFG
+from .exceptions import SecretStringMissingError
 
 
 def get_secret(secret_id) -> Dict[str, Any]:

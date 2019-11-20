@@ -13,7 +13,7 @@ from stripe.error import InvalidRequestError
 from stripe.util import convert_to_dict
 from flask import g
 
-from sub.shared.vendor import (
+from src.shared.vendor import (
     modify_customer,
     build_stripe_subscription,
     update_stripe_subscription,
@@ -32,20 +32,20 @@ from sub.shared.vendor import (
     retrieve_stripe_invoice,
     retrieve_stripe_plan,
 )
-from sub.shared import utils
-from sub.shared.exceptions import ValidationError, EntityNotFoundError
-from sub.shared.types import JsonDict, FlaskResponse, FlaskListResponse
-from sub.shared.utils import format_plan_nickname
-from sub.customer import (
+from src.shared import utils
+from src.shared.exceptions import ValidationError, EntityNotFoundError
+from src.shared.types import JsonDict, FlaskResponse, FlaskListResponse
+from src.shared.utils import format_plan_nickname
+from customer import (
     existing_or_new_customer,
     has_existing_plan,
     fetch_customer,
     find_customer,
     find_customer_subscription,
 )
-from sub.shared.db import SubHubDeletedAccount
-from sub.messages import Message
-from shared.log import get_logger
+from src.shared.db import SubHubDeletedAccount
+from messages import Message
+from src.shared.log import get_logger
 
 logger = get_logger()
 

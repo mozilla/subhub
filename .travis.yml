@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 language: python
 dist: xenial
 sudo: required
@@ -8,7 +12,7 @@ services:
 addons:
   apt:
     sources: ['ubuntu-toolchain-r-test']
-    packages: ['bash', 'coreutils', 'awscli']
+    packages: ['bash', 'coreutils', 'awscli','curl','unzip','zip','openjdk-8-jdk','curl','graphviz']
 cache:
   directories:
     - /home/travis/.nvm
@@ -21,8 +25,11 @@ env:
     - DEPLOYED_ENV: travis
 
 before_install:
+  - curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
+  - echo "deb [arch=amd64] https://storage.googleapis.com/bazel-apt stable jdk1.8" | sudo tee /etc/apt/sources.list.d/bazel.list
+  - sudo apt-get update && sudo apt-get install -y bazel
+  - sudo apt-get install -y --only-upgrade bazel
   - sudo rm -f /etc/boto.cfg
-  - pip install -r automation_requirements.txt
   - sudo apt-get install -y awscli
   - ./bin/aws-credentials.sh
 
@@ -30,5 +37,4 @@ jobs:
   include:
     - stage: Unit Tests
       script:
-        - tox
-        - cd /home/travis/build/mozilla/subhub/reports && bash <(curl -s https://codecov.io/bash) -cF python
+        - bazel test //...

@@ -6,11 +6,11 @@ from stripe import Customer, Subscription
 from stripe.error import InvalidRequestError
 from typing import Dict, Any, Optional
 
-from sub.shared import vendor, utils
-from sub.shared.exceptions import IntermittentError, ServerError, EntityNotFoundError
-from sub.shared.db import SubHubAccount
-from sub.shared.cfg import CFG
-from shared.log import get_logger
+from src.shared import vendor, utils
+from src.shared.exceptions import IntermittentError, ServerError, EntityNotFoundError
+from src.shared.db import SubHubAccount
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
 
 logger = get_logger()
 

@@ -9,7 +9,7 @@ from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 from pynamodb.models import Model, DoesNotExist
 from pynamodb.exceptions import PutError, DeleteError
 
-from shared.log import get_logger
+from .log import get_logger
 
 logger = get_logger()
 

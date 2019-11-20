@@ -8,7 +8,7 @@ import json
 from flask import Response
 from typing import Dict, Any
 
-from hub.vendor.controller import StripeHubEventPipeline, event_process, view
+from vendor.controller import StripeHubEventPipeline, event_process, view
 
 CWD = os.path.realpath(os.path.dirname(__file__))
 

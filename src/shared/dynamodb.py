@@ -12,7 +12,7 @@ import string
 import random
 import json
 
-from shared.log import get_logger
+from .log import get_logger
 
 logger = get_logger()
 

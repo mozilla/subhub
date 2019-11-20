@@ -5,11 +5,11 @@
 from flask import jsonify
 from stripe.error import AuthenticationError, CardError, StripeError
 
-from sub.app import create_app
-from sub.app import server_stripe_error
-from sub.app import intermittent_stripe_error
-from sub.app import server_stripe_error_with_params
-from sub.app import server_stripe_card_error
+from src.sub.app import create_app
+from src.sub.app import server_stripe_error
+from src.sub.app import intermittent_stripe_error
+from src.sub.app import server_stripe_error_with_params
+from src.sub.app import server_stripe_card_error
 
 
 def test_create_app():

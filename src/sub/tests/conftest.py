@@ -16,13 +16,13 @@ import stripe
 from flask import g
 from unittest.mock import Mock, MagicMock, PropertyMock
 
-from sub import payments
+from src.sub import payments
 from sub.app import create_app
-from sub.shared.cfg import CFG
 from sub.customer import create_customer
 from sub.tests.mock_customer import MockCustomer
-from shared.log import get_logger
-from shared.dynamodb import dynamodb
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
+from src.shared.dynamodb import dynamodb
 
 
 logger = get_logger()

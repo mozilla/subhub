@@ -1,3 +1,10 @@
+# Bazel Ignores
+bazel-*
+
+# GraphViz
+*.in
+*.png
+
 # Pipfile
 Pipfile
 Pipfile.lock

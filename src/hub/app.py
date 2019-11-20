@@ -12,12 +12,12 @@ from flask_cors import CORS
 from flask import request
 from typing import Any
 
-from shared import secrets
-from shared.exceptions import SubHubError
-from shared.db import HubEvent, SubHubDeletedAccount
-from shared.headers import dump_safe_headers
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.shared import secrets
+from src.shared.exceptions import SubHubError
+from src.shared.db import HubEvent, SubHubDeletedAccount
+from src.shared.headers import dump_safe_headers
+from src.shared.cfg import CFG
+from src.shared.log import get_logger
 
 logger = get_logger()
 

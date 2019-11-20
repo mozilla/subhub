@@ -8,10 +8,10 @@ from stripe.error import InvalidRequestError
 from stripe import Product
 from typing import Dict, Any
 
-from hub.vendor.abstract import AbstractStripeHubEvent
-from hub.routes.static import StaticRoutes
-from hub.shared.utils import format_plan_nickname
-from shared.log import get_logger
+from vendor.abstract import AbstractStripeHubEvent
+from routes.static import StaticRoutes
+from src.shared.utils import format_plan_nickname
+from src.shared.log import get_logger
 
 logger = get_logger()
 

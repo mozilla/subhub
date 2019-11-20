@@ -4,7 +4,7 @@
 
 import logging.config
 
-from shared.cfg import CFG
+from .cfg import CFG
 from typing import Any
 
 LOGGER = None
