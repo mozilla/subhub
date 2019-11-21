@@ -74,8 +74,11 @@ def is_docker() -> bool:
 
 # excluding from coverage as this is for local testing only
 if is_docker():  # pragma: no cover
+    os.environ["HUB_DOCKER"] = "True"
     stripe.log = "DEBUG"
     if CFG.STRIPE_LOCAL is not True:
+        logger.info("stripe local", stripe_local=CFG.STRIPE_LOCAL)
+        stripe.log = "DEBUG"
         stripe.verify_ssl_certs = False
         stripe.api_base = (
             stripe.upload_api_base

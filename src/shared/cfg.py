@@ -197,7 +197,11 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def STRIPE_LOCAL(self):
-        return self("STRIPE_LOCAL", False, cast=bool)
+        return self("STRIPE_LOCAL", default=False, cast=bool)
+
+    @property
+    def HUB_LOCAL(self):
+        return self("HUB_LOCAL", default=False, cast=bool)
 
     @property
     def STRIPE_API_KEY(self):
