@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+import os
+import json
 import stripe
 
 from flask import request, Response
@@ -17,6 +19,7 @@ from hub.vendor.customer import (
     StripeCustomerSubscriptionDeleted,
 )
 from hub.vendor.invoices import StripeInvoicePaymentFailed
+from hub.vendor.events import EventMaker
 from shared.log import get_logger
 
 logger = get_logger()
@@ -28,6 +31,7 @@ class StripeHubEventPipeline:
         self.payload: dict = payload
 
     def run(self) -> None:
+        logger.debug("run", payload=self.payload)
         event_type = self.payload["type"]
         if event_type == "customer.subscription.created":
             StripeCustomerSubscriptionCreated(self.payload).run()
@@ -49,25 +53,40 @@ class StripeHubEventPipeline:
 
 def view() -> Response:
     try:
+        logger.debug("request", request=request)
         payload = request.data
-        logger.info("check payload", payload=payload)
-        logger.info("payload type", type=type(payload))
-        sig_header = request.headers["Stripe-Signature"]
-        event = stripe.Webhook.construct_event(payload, sig_header, CFG.HUB_API_KEY)
+        logger.debug("check payload", payload=payload)
+        if not os.environ.get("HUB_DOCKER"):
+            sig_header = request.headers["Stripe-Signature"]
+            logger.debug("sig header", sig_header=sig_header)
+            webhook_event = stripe.Webhook.construct_event(
+                payload, sig_header, CFG.HUB_API_KEY
+            )
+        else:
+            web_hook_payload = json.loads(payload.decode("utf-8"))
+            logger.debug(
+                "payload",
+                payload_type=type(web_hook_payload),
+                web_hook_payload=web_hook_payload,
+                webhhook_type=web_hook_payload["type"],
+            )
+            event = EventMaker(payload=web_hook_payload)
+            webhook_event = event.get_complete_event()
         return Response("", status=200)
     except ValueError as e:
         # Invalid payload
-        logger.error("ValueError", error=e)
+        logger.error("ValueError", error=e, payload=payload)
         return Response(str(e), status=400)
     except stripe.error.SignatureVerificationError as e:
         # Invalid signature
-        logger.error("SignatureVerificationError", error=e)
+        logger.error("SignatureVerificationError", error=e, payload=payload)
         return Response(str(e), status=400)
     except Exception as e:
-        logger.error("General Exception", error=e)
+        logger.error("General Exception", error=e, payload=payload)
         return Response(str(e), status=500)
     finally:
-        pipeline = StripeHubEventPipeline(event)
+        logger.debug("stripe event", webhook_event=webhook_event)
+        pipeline = StripeHubEventPipeline(webhook_event)
         pipeline.run()
 
 
