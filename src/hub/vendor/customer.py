@@ -4,6 +4,7 @@
 
 import json
 import time
+import os
 import stripe
 
 from stripe.error import InvalidRequestError
@@ -142,6 +143,7 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
             logger.info("customer source expiring")
             customer_id = self.payload.data.object.customer
             customer = vendor.retrieve_stripe_customer(customer_id)
+            logger.info("customer", customer=customer)
         except InvalidRequestError as e:
             logger.error("Unable to find customer", error=e)
             raise e
@@ -324,7 +326,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         Parse the event data sent by Stripe contained within self.payload
         :return True to indicate successfully sent
         """
-        logger.info("customer subscription deleted", payload=self.payload)
+        logger.debug("customer subscription deleted", payload=self.payload)
         customer_id = self.payload.data.object.customer
         user_id = self.get_user_id(customer_id)
 
@@ -351,7 +353,9 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         deleted = customer.get("deleted", False)
         user_id = None
         if not deleted:
-            user_id = customer.metadata.get("userid")
+            user_metadata = customer.get("metadata")
+            logger.debug("metadata", user_metadata=user_metadata)
+            user_id = user_metadata.get("userid")
 
         if user_id is None:
             logger.error(
@@ -495,7 +499,9 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         :return payload:
         :raises InvalidRequestError:
         """
-        logger.info("create payload", event_type=event_type)
+        logger.info(
+            "create payload", event_type=event_type, previous_plan=previous_plan
+        )
         try:
             product = vendor.retrieve_stripe_product(
                 self.payload.data.object.plan.product
