@@ -700,6 +700,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         self.mock_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
         self.mock_run_pipeline.return_value = None
+        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
 
         did_route = StripeCustomerSubscriptionUpdated(
             self.subscription_charge_event
@@ -796,6 +797,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         self.mock_product.return_value = self.product
         self.mock_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
+        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
 
         user_id = "user123"
         event_name = "customer.recurring_charge"
@@ -826,6 +828,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             brand="Visa",
             last4="0019",
             charge="ch_test1",
+            next_invoice_date=1555354567,
         )
 
         actual_payload = StripeCustomerSubscriptionUpdated(

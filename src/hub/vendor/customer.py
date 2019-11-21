@@ -553,6 +553,9 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         latest_charge = vendor.retrieve_stripe_charge(charge_id)
         last4 = latest_charge.payment_method_details.card.last4
         brand = format_brand(latest_charge.payment_method_details.card.brand)
+        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
+            customer=self.payload.data.object.customer
+        )
 
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
@@ -576,6 +579,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             brand=brand,
             last4=last4,
             charge=charge_id,
+            next_invoice_date=upcoming_invoice.get("period_start", None),
         )
 
     def get_reactivation_data(self) -> Dict[str, Any]:
