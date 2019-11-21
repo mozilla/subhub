@@ -280,6 +280,12 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 plan_interval=self.payload.data.object.plan.interval,
             )
 
+            next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+                customer_id=self.payload.data.object.customer,
+                subscription_id=self.payload.data.object.id,
+            )
+            next_invoice_date = next_invoice.get("period_start", 0)
+
             return self.create_data(
                 uid=user_id,
                 active=self.is_active_or_trialing,
@@ -301,6 +307,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 currency=self.payload.data.object.plan.currency,
                 current_period_start=self.payload.data.object.current_period_start,
                 current_period_end=self.payload.data.object.current_period_end,
+                next_invoice_date=next_invoice_date,
                 invoice_number=invoice_number,
                 brand=brand,
                 last4=last4,
@@ -553,9 +560,18 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         latest_charge = vendor.retrieve_stripe_charge(charge_id)
         last4 = latest_charge.payment_method_details.card.last4
         brand = format_brand(latest_charge.payment_method_details.card.brand)
+        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
+            customer=self.payload.data.object.customer
+        )
 
         logger.info("latest invoice", latest_invoice=latest_invoice)
         logger.info("latest charge", latest_charge=latest_charge)
+
+        next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
+            customer_id=self.payload.data.object.customer,
+            subscription_id=self.payload.data.object.id,
+        )
+        next_invoice_date = next_invoice.get("period_start", 0)
 
         return dict(
             canceled_at=self.payload.data.object.canceled_at,
@@ -563,6 +579,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
             current_period_start=self.payload.data.object.current_period_start,
             current_period_end=self.payload.data.object.current_period_end,
+            next_invoice_date=next_invoice_date,
             invoice_id=self.payload.data.object.latest_invoice,
             active=self.is_active_or_trialing,
             subscriptionId=self.payload.data.object.id,  # required by FxA
@@ -576,7 +593,24 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             brand=brand,
             last4=last4,
             charge=charge_id,
+            proration_amount=upcoming_invoice.get("amount_due", 0),
+            total_amount=self.get_total_upcoming_invoice_amount(
+                upcoming_invoice=upcoming_invoice
+            ),
         )
+
+    def get_total_upcoming_invoice_amount(
+        self, upcoming_invoice: Dict[str, Any]
+    ) -> float:
+        """
+        Get the total amount of the upcoming invoice
+        :param upcoming_invoice:
+        :return:
+        """
+        total_amount = 0
+        for line in upcoming_invoice["lines"]["data"]:
+            total_amount += line.get("amount", 0)
+        return total_amount
 
     def get_reactivation_data(self) -> Dict[str, Any]:
         """

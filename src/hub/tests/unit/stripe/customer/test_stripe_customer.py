@@ -345,24 +345,28 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
         customer_patcher = patch("stripe.Customer.retrieve")
         product_patcher = patch("stripe.Product.retrieve")
         invoice_patcher = patch("stripe.Invoice.retrieve")
+        preview_invoice_patcher = patch("stripe.Invoice.upcoming")
         charge_patcher = patch("stripe.Charge.retrieve")
         run_pipeline_patcher = patch("hub.routes.pipeline.AllRoutes.run")
 
         self.addCleanup(customer_patcher.stop)
         self.addCleanup(product_patcher.stop)
         self.addCleanup(invoice_patcher.stop)
+        self.addCleanup(preview_invoice_patcher.stop)
         self.addCleanup(charge_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
 
         self.mock_customer = customer_patcher.start()
         self.mock_product = product_patcher.start()
         self.mock_invoice = invoice_patcher.start()
+        self.mock_preview_invoice = preview_invoice_patcher.start()
         self.mock_charge = charge_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
 
     def test_run(self):
         self.mock_customer.return_value = self.customer
         self.mock_invoice.return_value = self.invoice
+        self.mock_preview_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
         self.mock_product.return_value = self.product
         self.mock_run_pipeline = None
@@ -413,6 +417,7 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
         self.mock_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
         self.mock_product.return_value = self.product
+        self.mock_preview_invoice.return_value = self.invoice
 
         user_id = "user123"
 
@@ -439,6 +444,7 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
             currency="usd",
             current_period_start=1519435009,
             current_period_end=1521854209,
+            next_invoice_date=1555354567,
             invoice_number="3B74E3D0-0001",
             brand="Visa",
             last4="0019",
@@ -698,8 +704,10 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         self.mock_customer.return_value = self.customer
         self.mock_product.return_value = self.product
         self.mock_invoice.return_value = self.invoice
+        self.mock_upcoming_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
         self.mock_run_pipeline.return_value = None
+        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
 
         did_route = StripeCustomerSubscriptionUpdated(
             self.subscription_charge_event
@@ -796,6 +804,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         self.mock_product.return_value = self.product
         self.mock_invoice.return_value = self.invoice
         self.mock_charge.return_value = self.charge
+        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
 
         user_id = "user123"
         event_name = "customer.recurring_charge"
@@ -813,6 +822,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             cancel_at_period_end=False,
             current_period_start=1571949971,
             current_period_end=1572036371,
+            next_invoice_date=1555354567,
             invoice_id="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
             active=True,
             subscriptionId="sub_FCUzkHmNY3Mbj1",  # required by FxA
@@ -826,6 +836,8 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             brand="Visa",
             last4="0019",
             charge="ch_test1",
+            proration_amount=1000,
+            total_amount=1499,
         )
 
         actual_payload = StripeCustomerSubscriptionUpdated(
