@@ -10,12 +10,13 @@ import ast
 import pwd
 import sys
 import time
+import shlex
 import platform
 
 from datetime import datetime
 from decouple import UndefinedValueError, AutoConfig, config
 from functools import lru_cache
-from subprocess import Popen, CalledProcessError, PIPE
+from subprocess import Popen, CalledProcessError, PIPE  # nosec
 from structlog import get_logger  # because circular dep otherwise
 
 logger = get_logger()
@@ -33,15 +34,13 @@ class GitCommandNotFoundError(Exception):
         super().__init__(msg)
 
 
-def call(
-    cmd, stdout=PIPE, stderr=PIPE, shell=True, nerf=False, throw=True, verbose=False
-):
+def call(cmd, stdout=PIPE, stderr=PIPE, nerf=False, throw=True, verbose=False):
     if verbose or nerf:
         logger.info(f"verbose cmd={cmd}")
         pass
     if nerf:
         return (None, "nerfed", "nerfed")
-    process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)
+    process = Popen(shlex.split(cmd), stdout=stdout, stderr=stderr)  # nosec
     _stdout, _stderr = [
         stream.decode("utf-8") if stream != None else None
         for stream in process.communicate()
