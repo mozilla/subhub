@@ -46,12 +46,10 @@ repos:
     sha: v1.1.0
     hooks:
     -   id: python-safety-dependencies-check
--   repo: https://github.com/Lucas-C/pre-commit-hooks-bandit
-    rev: v1.0.3
+-   repo: https://github.com/PyCQA/bandit
+    rev: 1.6.2
     hooks:
-    -   id: python-bandit-vulnerability-check
-        args: [-l, --recursive, -x, tests, --skip, "B101,B106,B404"]
-        files: .py$
+    -   id: bandit
 -   repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.7
     hooks:
