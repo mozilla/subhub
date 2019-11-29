@@ -12,9 +12,6 @@ HEADERS_WHITE_LIST = [
     "Content-Type",
     "Host",
     "X-Amzn-Trace-Id",
-    "X-Forwarded-For",
-    "X-Forwarded-Port",
-    "X-Forwarded-Proto",
 ]
 
 # `dump_headers` is a method to dump from headers from the `requests` library's
