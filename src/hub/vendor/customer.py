@@ -284,7 +284,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
                 customer_id=self.payload.data.object.customer,
                 subscription_id=self.payload.data.object.id,
             )
-            next_invoice_date = next_invoice.get("period_start", 0)
+            next_invoice_date = next_invoice.get("period_end", 0)
 
             return self.create_data(
                 uid=user_id,
@@ -571,7 +571,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             customer_id=self.payload.data.object.customer,
             subscription_id=self.payload.data.object.id,
         )
-        next_invoice_date = next_invoice.get("period_start", 0)
+        next_invoice_date = next_invoice.get("period_end", 0)
 
         return dict(
             canceled_at=self.payload.data.object.canceled_at,
