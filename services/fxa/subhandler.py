@@ -1,17 +1,20 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import sys
 import newrelic.agent
 import serverless_wsgi
 
 from os.path import join, dirname, realpath
+from typing import Dict, Any
 
 serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
-sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
+sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
 newrelic.agent.initialize()
 
@@ -40,6 +43,8 @@ def handle(event, context):
         logger.info("handling sub event", subhub_event=event, context=context)
         return serverless_wsgi.handle_request(sub_app.app, event, context)
     except Exception as e:  # pylint: disable=broad-except
-        logger.exception("exception occurred", subhub_event=event, context=context, error=e)
+        logger.exception(
+            "exception occurred", subhub_event=event, context=context, error=e
+        )
         # TODO: Add Sentry exception catch here
         raise

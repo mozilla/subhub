@@ -2,6 +2,8 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+from typing import Dict, Any
+
 # TODO(high): Write tests to cover this!
 
 # HEADERS_WHITE_LIST is an array collection containing
@@ -31,3 +33,10 @@ def extract_safe(request_headers, key):
     if key in request_headers:
         return request_headers[key]
     return ""
+
+
+def redact(event: Dict[str, Any]) -> Dict[str, Any]:
+    updated_event = event
+    updated_event["headers"]["Authorization"] = "REDACTED"
+    updated_event["multiValueHeaders"]["Authorization"] = "REDACTED"
+    return updated_event
