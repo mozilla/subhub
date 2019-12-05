@@ -24,7 +24,7 @@ logger = get_logger()
 
 class StripeHubEventPipeline:
     def __init__(self, payload) -> None:
-        assert isinstance(payload, dict)
+        assert isinstance(payload, dict)  # nosec
         self.payload: dict = payload
 
     def run(self) -> None:
@@ -47,7 +47,7 @@ class StripeHubEventPipeline:
             pass
 
 
-def view() -> tuple:
+def view() -> Response:
     try:
         payload = request.data
         logger.info("check payload", payload=payload)

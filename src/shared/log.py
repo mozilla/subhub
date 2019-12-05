@@ -8,7 +8,10 @@ from shared.cfg import CFG
 from typing import Any
 
 LOGGER = None
-
+CENSORED_EVENT_VALUES_BY_EVENT_KEY = {
+    "headers": ["Authorization", "X-Forwarded-For"],
+    "multiValueHeaders": ["Authorization"],
+}
 
 dict_config = {
     "version": 1,
@@ -47,6 +50,26 @@ def event_uppercase(logger, method_name, event_dict):
     return event_dict
 
 
+def censor_event_dict(event_dict):
+    for k, v in event_dict.items():
+        if isinstance(v, dict):
+            censor_event_dict(v)
+        else:
+            for event_key, event_values in CENSORED_EVENT_VALUES_BY_EVENT_KEY.items():
+                if event_dict is not None:
+                    _event_key = event_dict.get(event_key)
+                    if _event_key:
+                        for event_value in event_values:
+                            _event_value = _event_key.get(event_value)
+                            if _event_key:
+                                event_dict[event_key][event_value] = "*CENSORED*"
+            return event_dict
+
+
+def censor_header(logger, method_name, event_dict):
+    return censor_event_dict(event_dict)
+
+
 def get_logger() -> Any:
     global LOGGER
     if not LOGGER:
@@ -66,6 +89,8 @@ def get_logger() -> Any:
                 stdlib.add_logger_name,
                 # Uppercase structlog's event name which shouldn't be convoluted with AWS events.
                 event_uppercase,
+                # Censor secure data
+                censor_header,
                 # Allow for string interpolation
                 stdlib.PositionalArgumentsFormatter(),
                 # Render timestamps to ISO 8601
