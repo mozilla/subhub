@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import sys
 import newrelic.agent
@@ -11,7 +15,7 @@ serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
-sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
+sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
 newrelic.agent.initialize()
 
@@ -37,9 +41,12 @@ XRayMiddleware(hub_app.app, xray_recorder)
 @newrelic.agent.lambda_handler()
 def handle(event, context):
     try:
-        logger.info("handling hub event", subhub_event=event, context=context)
         return serverless_wsgi.handle_request(hub_app.app, event, context)
     except Exception as e:  # pylint: disable=broad-except
-        logger.exception("exception occurred", subhub_event=event, context=context, error=e)
+        logger.exception(
+            "exception occurred", subhub_event=event, context=context, error=e
+        )
         # TODO: Add Sentry exception catch here
         raise
+    finally:
+        logger.info("handling hub event", subhub_event=event, context=context)
