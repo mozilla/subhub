@@ -1,5 +1,7 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import sys
 import newrelic.agent
@@ -10,7 +12,7 @@ from os.path import join, dirname, realpath
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
-sys.path.insert(0, join(dirname(realpath(__file__)), 'src'))
+sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
 newrelic.agent.initialize()
 
@@ -33,11 +35,13 @@ patch_all()
 @newrelic.agent.lambda_handler()
 def handle_mia(event, context):
     try:
-        logger.info("handling mia event", subhub_event=event, context=context)
-        processing_duration=int(os.getenv('PROCESS_EVENTS_HOURS', '6'))
+        processing_duration = int(os.getenv("PROCESS_EVENTS_HOURS", "6"))
         events_check.process_events(processing_duration)
     except Exception as e:  # pylint: disable=broad-except
-        logger.exception("exception occurred", subhub_event=event, context=context, error=e)
+        logger.exception(
+            "exception occurred", subhub_event=event, context=context, error=e
+        )
         # TODO: Add Sentry exception catch here
         raise
-
+    finally:
+        logger.info("handling mia event", subhub_event=event, context=context)
