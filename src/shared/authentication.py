@@ -10,8 +10,6 @@ logger = get_logger()
 
 
 def test_token(test_api_token, cfg_api_token):
-    logger.info(f"test api token {test_api_token}")
-
     # Make sure the config API token has a meaningful value set,
     # to avoid an auth bypass on empty comparisons
     if cfg_api_token in (None, "None", ""):

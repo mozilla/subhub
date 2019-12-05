@@ -9,7 +9,6 @@
 # be logged into the application's produced logs.
 HEADERS_WHITE_LIST = ["Content-Length", "Content-Type", "Host", "X-Amzn-Trace-Id"]
 
-
 # `dump_headers` is a method to dump from headers from the `requests` library's
 # headers and compare against a known list of safe headers for utilization in
 # items such as logging and metrics.  It is an O(n) algorithm so as the amount
