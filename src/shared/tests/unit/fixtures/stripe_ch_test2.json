@@ -1,0 +1,143 @@
+{
+    "id": "",
+    "object": "charge",
+    "amount": 1000,
+    "amount_refunded": 0,
+    "application": null,
+    "application_fee": null,
+    "application_fee_amount": null,
+    "balance_transaction": "txn_1FCyC5JNcmPzuWtRZVJ3VRLC",
+    "billing_details": {
+        "address": {
+            "city": null,
+            "country": null,
+            "line1": null,
+            "line2": null,
+            "postal_code": null,
+            "state": null
+        },
+        "email": null,
+        "name": null,
+        "phone": null
+    },
+    "captured": false,
+    "created": 1558033578,
+    "currency": "usd",
+    "customer": "cus_F4yl2VV15h6ahh",
+    "description": "Payment for invoice 1D1C1268-0002",
+    "destination": null,
+    "dispute": null,
+    "failure_code": "card_declined",
+    "failure_message": "Your card was declined.",
+    "fraud_details": {
+        "stripe_report": "fraudulent"
+    },
+    "invoice": "in_1EaouDJNcmPzuWtReWEFz6j0",
+    "livemode": false,
+    "metadata": {},
+    "on_behalf_of": null,
+    "order": null,
+    "outcome": {
+        "network_status": "not_sent_to_network",
+        "reason": "merchant_blacklist",
+        "risk_level": "highest",
+        "risk_score": 76,
+        "seller_message": "Stripe blocked this payment.",
+        "type": "blocked"
+    },
+    "paid": false,
+    "payment_intent": "pi_1EaouDJNcmPzuWtRSbo5ntSi",
+    "payment_method": "card_1EaosmJNcmPzuWtRa3ygzXId",
+    "payment_method_details": {
+        "card": {
+            "brand": "visa",
+            "checks": {
+                "address_line1_check": null,
+                "address_postal_code_check": null,
+                "cvc_check": "pass"
+            },
+            "country": "US",
+            "exp_month": 12,
+            "exp_year": 2023,
+            "fingerprint": "bMt3PVLFsmMUsiqx",
+            "funding": "credit",
+            "last4": "0019",
+            "three_d_secure": {
+                "authenticated": false,
+                "succeeded": true,
+                "version": "1.0"
+            },
+            "wallet": null
+        },
+        "type": "card"
+    },
+    "receipt_email": null,
+    "receipt_number": null,
+    "receipt_url": "https://pay.stripe.com/receipts/acct_1EJOaaJNcmPzuWtR/ch_1EaouEJNcmPzuWtRIabj08KN/rcpt_F4yrXrJVsUxcXUB932zUcgWhpkNOIDM",
+    "refunded": false,
+    "refunds": {
+        "object": "list",
+        "data": [],
+        "has_more": false,
+        "total_count": 0,
+        "url": "/v1/charges/ch_1EaouEJNcmPzuWtRIabj08KN/refunds"
+    },
+    "review": null,
+    "shipping": null,
+    "source": {
+        "id": "src_1EaouDJNcmPzuWtRpQanmuk9",
+        "object": "source",
+        "amount": 1000,
+        "client_secret": "src_client_secret_F4yreVQ0YNwEjJ5TKFLQbDpe",
+        "created": 1558033578,
+        "currency": "usd",
+        "flow": "redirect",
+        "livemode": false,
+        "metadata": {},
+        "owner": {
+            "address": null,
+            "email": null,
+            "name": null,
+            "phone": null,
+            "verified_address": null,
+            "verified_email": null,
+            "verified_name": null,
+            "verified_phone": null
+        },
+        "redirect": {
+            "failure_reason": null,
+            "return_url": "stripejs://use_stripe_sdk/return_url",
+            "status": "not_required",
+            "url": "https://hooks.stripe.com/redirect/authenticate/src_1EaouDJNcmPzuWtRpQanmuk9?client_secret=src_client_secret_F4yreVQ0YNwEjJ5TKFLQbDpe"
+        },
+        "statement_descriptor": null,
+        "status": "consumed",
+        "three_d_secure": {
+            "card": "card_1EaosmJNcmPzuWtRa3ygzXId",
+            "exp_month": 12,
+            "exp_year": 2023,
+            "last4": "0019",
+            "country": "US",
+            "brand": "Visa",
+            "cvc_check": "unavailable",
+            "funding": "credit",
+            "fingerprint": "bMt3PVLFsmMUsiqx",
+            "three_d_secure": "optional",
+            "customer": null,
+            "authenticated": false,
+            "name": null,
+            "address_line1_check": null,
+            "address_zip_check": null,
+            "tokenization_method": null,
+            "dynamic_last4": null
+        },
+        "type": "three_d_secure",
+        "usage": "single_use"
+    },
+    "source_transfer": null,
+    "statement_descriptor": null,
+    "statement_descriptor_suffix": null,
+    "status": "failed",
+    "transfer_data": null,
+    "transfer_group": null
+}
