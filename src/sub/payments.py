@@ -68,7 +68,7 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
     )
     valid_country = check_customer_country(customer)
     if not valid_country:
-        return dict(message="Country no supported."), 400
+        return dict(message="Country not supported."), 400
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
         logger.debug("subscribe to plan", existing_plan=existing_plan)
