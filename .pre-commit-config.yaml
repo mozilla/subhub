@@ -50,6 +50,14 @@ repos:
     rev: 1.6.2
     hooks:
     -   id: bandit
+        args: [
+                '-c', 'bandit.yml'
+            ]
+        name: 'Checking vulnerabilities'
+        description: 'Bandit is a tool for finding common security issues in Python code'
+        entry: bandit
+        language: python
+        types: [python]
 -   repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.7
     hooks:
