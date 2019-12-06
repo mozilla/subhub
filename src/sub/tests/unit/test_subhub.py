@@ -115,48 +115,6 @@ def test_update_customer_payment_server_stripe_error_with_params(app, monkeypatc
     assert data["message"] == "Customer instance has invalid ID"
 
 
-def test_customer_signup_server_stripe_error_with_params(app, monkeypatch):
-    """
-    GIVEN the route POST v1/sub/customer/{id}/subcriptions is called
-    WHEN the plan id provided is invalid
-    THEN the StripeError should be handled by the app errorhandler
-    """
-    client = app.app.test_client()
-
-    customer = Mock(return_value=MockCustomer())
-    none = Mock(return_value=None)
-
-    create = Mock(
-        side_effect=stripe.error.InvalidRequestError(
-            message="No such plan: invalid", param="plan_id", code="invalid_plan"
-        )
-    )
-    monkeypatch.setattr("sub.payments.has_existing_plan", none)
-    monkeypatch.setattr("sub.payments.existing_or_new_customer", customer)
-    monkeypatch.setattr("stripe.Subscription.create", create)
-
-    path = "v1/sub/customer/process_test/subscriptions"
-    data = {
-        "pmt_token": "tok_visa",
-        "plan_id": "invalid",
-        "origin_system": "Test_system",
-        "email": "subtest@example.com",
-        "display_name": "John Tester",
-    }
-
-    response = client.post(
-        path,
-        headers={"Authorization": "fake_payment_api_key"},
-        data=json.dumps(data),
-        content_type="application/json",
-    )
-
-    loaded_data = json.loads(response.data)
-
-    assert response.status_code == 500
-    assert "No such plan" in loaded_data["message"]
-
-
 @mock.patch("stripe.Product.retrieve")
 @mock.patch("sub.payments.find_newest_subscription")
 @mock.patch("sub.payments.fetch_customer")
@@ -254,46 +212,6 @@ def test_subscribe_customer_existing(mock_new_customer, mock_has_plan, app):
     )
 
     assert response.status_code == 409
-
-
-def test_subscribe_card_declined_error_handler(app, monkeypatch):
-    """
-    GIVEN a route that attempts to make a stripe payment
-    WHEN the card is declined
-    THEN the error thrown by stripe will be handled and return a 402
-    """
-
-    client = app.app.test_client()
-
-    customer = Mock(return_value=MockCustomer())
-    none = Mock(return_value=None)
-
-    create = Mock(
-        side_effect=stripe.error.CardError(
-            message="card declined", param="", code="generic_decline"
-        )
-    )
-    monkeypatch.setattr("sub.payments.has_existing_plan", none)
-    monkeypatch.setattr("sub.payments.existing_or_new_customer", customer)
-    monkeypatch.setattr("stripe.Subscription.create", create)
-
-    path = "v1/sub/customer/subtest/subscriptions"
-    data = {
-        "pmt_token": "tok_visa",
-        "plan_id": "plan",
-        "origin_system": "Test_system",
-        "email": "subtest@example.com",
-        "display_name": "John Tester",
-    }
-
-    response = client.post(
-        path,
-        headers={"Authorization": "fake_payment_api_key"},
-        data=json.dumps(data),
-        content_type="application/json",
-    )
-
-    assert response.status_code == 402
 
 
 def test_customer_unsubscribe_server_stripe_error_with_params(app, monkeypatch):
