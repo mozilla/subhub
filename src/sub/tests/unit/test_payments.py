@@ -24,6 +24,7 @@ from sub.payments import (
     format_subscription,
     find_stripe_plan,
     find_stripe_product,
+    check_customer_country,
 )
 from sub.shared.exceptions import EntityNotFoundError
 
@@ -46,6 +47,34 @@ class TestPayments(TestCase):
         with open("src/sub/tests/unit/fixtures/stripe_cust_test3.json") as fh:
             cust_test3 = json.loads(fh.read())
         self.valid_customer3 = convert_to_stripe_object(cust_test3)
+
+        with open(
+            "src/sub/tests/unit/fixtures/stripe_cust_test_source_missing.json"
+        ) as fh:
+            cust_test_source_missing = json.loads(fh.read())
+        self.valid_customer_source_missing = convert_to_stripe_object(
+            cust_test_source_missing
+        )
+
+        with open(
+            "src/sub/tests/unit/fixtures/stripe_cust_test_source_missing_country.json"
+        ) as fh:
+            cust_test_source_missing_country = json.loads(fh.read())
+        self.valid_customer_source_missing_country = convert_to_stripe_object(
+            cust_test_source_missing_country
+        )
+
+        with open(
+            "src/sub/tests/unit/fixtures/stripe_cust_test_source_missing_data.json"
+        ) as fh:
+            cust_test_source_missing_data = json.loads(fh.read())
+        self.valid_customer_source_missing_data = convert_to_stripe_object(
+            cust_test_source_missing_data
+        )
+
+        with open("src/sub/tests/unit/fixtures/stripe_cust_test6.json") as fh:
+            cust_test6 = json.loads(fh.read())
+        self.valid_customer6 = convert_to_stripe_object(cust_test6)
 
         with open("src/sub/tests/unit/fixtures/stripe_deleted_cust.json") as fh:
             deleted_cust = json.loads(fh.read())
@@ -133,6 +162,7 @@ class TestPayments(TestCase):
             "sub.payments.retrieve_stripe_subscriptions"
         )
         create_customer_patch = patch("sub.customer.create_customer")
+        validate_country_code_patch = patch("sub.payments.check_customer_country")
 
         stripe_subscription_create_patch = patch("stripe.Subscription.create")
         stripe_customer_retrieve_patch = patch("stripe.Customer.retrieve")
@@ -190,6 +220,7 @@ class TestPayments(TestCase):
         self.addCleanup(vendor_modify_customer_patch.stop)
         self.addCleanup(stripe_retrieve_invoice_patch.stop)
         self.addCleanup(stripe_retrieve_charge_patch.stop)
+        self.addCleanup(validate_country_code_patch.stop)
 
         self.mock_valid_customer = valid_customer_patch.start()
         self.mock_deleted_customer = deleted_customer_patch.start()
@@ -200,6 +231,7 @@ class TestPayments(TestCase):
         self.mock_create_customer = create_customer_patch.start()
         self.mock_stripe_retrieve_product = stripe_product_retrieve_patch.start()
         self.mock_stripe_retrieve_plan = stripe_plan_retrieve_patch.start()
+        self.mock_validate_country_code = validate_country_code_patch.start()
         self.mock_retrieve_stripe_subscriptions = (
             retrieve_stripe_subscriptions_patch.start()
         )
@@ -537,3 +569,32 @@ class TestPayments(TestCase):
         error = e.exception
         assert error.status_code == 404
         assert error.to_dict() == dict(message="Product not found", errno=4002)
+
+    def test_us_customer(self):
+        valid_country = check_customer_country(self.valid_customer)
+        logger.info("us country", valid_country=valid_country)
+        assert valid_country is True
+
+    def test_hk_customer(self):
+        invalid_country = check_customer_country(self.valid_customer6)
+        logger.info("invalid country", invalid_country=invalid_country)
+        assert invalid_country is False
+
+    def test_customer_source_missing(self):
+        invalid_country = check_customer_country(self.valid_customer_source_missing)
+        logger.info("invalid country", invalid_country=invalid_country)
+        assert invalid_country is False
+
+    def test_customer_source_missing_data(self):
+        invalid_country = check_customer_country(
+            self.valid_customer_source_missing_data
+        )
+        logger.info("invalid country", invalid_country=invalid_country)
+        assert invalid_country is False
+
+    def test_customer_source_missing_country(self):
+        invalid_country = check_customer_country(
+            self.valid_customer_source_missing_country
+        )
+        logger.info("invalid country", invalid_country=invalid_country)
+        assert invalid_country is False
