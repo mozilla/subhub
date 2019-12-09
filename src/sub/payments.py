@@ -45,6 +45,7 @@ from sub.customer import (
 )
 from sub.shared.db import SubHubDeletedAccount
 from sub.messages import Message
+from sub.shared.cfg import CFG
 from shared.log import get_logger
 
 logger = get_logger()
@@ -65,6 +66,9 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
         origin_system=data["origin_system"],
         display_name=data["display_name"],
     )
+    valid_country = check_customer_country(customer)
+    if not valid_country:
+        return dict(message="Country not supported."), 400
     existing_plan = has_existing_plan(customer, plan_id=data["plan_id"])
     if existing_plan:
         logger.debug("subscribe to plan", existing_plan=existing_plan)
@@ -80,6 +84,18 @@ def subscribe_to_plan(uid: str, data: Dict[str, Any]) -> FlaskResponse:
         return create_return_data(newest_subscription), 201
 
     return dict(message=None), 400
+
+
+def check_customer_country(check_cust: Dict[str, Any]) -> bool:
+    customer_sources = check_cust.get("sources", None)
+    if customer_sources:
+        source_data = customer_sources.get("data", None)
+        if source_data:
+            first_source = source_data[0].get("country", None)
+            if first_source:
+                if first_source in CFG.SUPPORTED_COUNTRIES:
+                    return True
+    return False
 
 
 def find_newest_subscription(subscriptions: Dict[str, Any]) -> Optional[Dict[str, Any]]:
