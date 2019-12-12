@@ -12,12 +12,25 @@ from sub.shared.exceptions import (
     SecretStringMissingError,
 )
 
+from hub.shared.exceptions import SubHubError as HubError
+
 
 def test_subhub_error():
     message = "message"
     status_code = 513
     payload = dict(some="payload")
     ex = SubHubError(message, status_code=status_code, payload=payload)
+    assert (
+        str(ex)
+        == "SubHubError(message=message, status_code=513, payload={'some': 'payload'})"
+    )
+
+
+def test_hub_error():
+    message = "message"
+    status_code = 513
+    payload = dict(some="payload")
+    ex = HubError(message, status_code=status_code, payload=payload)
     assert (
         str(ex)
         == "SubHubError(message=message, status_code=513, payload={'some': 'payload'})"
