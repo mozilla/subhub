@@ -6,6 +6,7 @@ import os
 import sys
 import connexion
 import stripe
+import pynamodb
 
 from flask import current_app, g, jsonify
 from flask_cors import CORS
@@ -57,6 +58,11 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
+def database_connection_error(e):
+    logger.error("unable to connect to db", error=e)
+    return jsonify({"message": "Server Error", "status_code": "bad_connection"}), 500
+
+
 def is_docker() -> bool:
     path = "/proc/self/cgroup"
     return (
@@ -66,7 +72,8 @@ def is_docker() -> bool:
     )
 
 
-if is_docker():
+# excluding from coverage as this is for local testing only
+if is_docker():  # pragma: no cover
     stripe.log = "DEBUG"
     if CFG.STRIPE_LOCAL is not True:
         stripe.verify_ssl_certs = False
@@ -82,6 +89,7 @@ def create_app(config=None) -> Any:
     region = "localhost"
     host = f"http://dynamodb:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
     stripe.api_key = CFG.STRIPE_API_KEY
+    logger.debug("aws", aws=CFG.AWS_EXECUTION_ENV)
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
         host = None
@@ -95,6 +103,15 @@ def create_app(config=None) -> Any:
         table_name=CFG.DELETED_USER_TABLE, region=region, host=host
     )
 
+    # Setup error handlers
+    @app.app.errorhandler(SubHubError)
+    def display_subhub_errors(e: SubHubError):
+        if e.status_code == 500:
+            logger.error("display hub errors", error=e)
+        response = jsonify(e.to_dict())
+        response.status_code = e.status_code
+        return response
+
     if not app.app.hub_table.model.exists():
         app.app.hub_table.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
@@ -104,14 +121,6 @@ def create_app(config=None) -> Any:
         app.app.subhub_deleted_users.model.create_table(
             read_capacity_units=1, write_capacity_units=1, wait=True
         )
-
-    @app.app.errorhandler(SubHubError)
-    def display_subhub_errors(e: SubHubError):
-        if e.status_code == 500:
-            logger.error("display subhub errors", error=e)
-        response = jsonify(e.to_dict())
-        response.status_code = e.status_code
-        return response
 
     for error in (
         stripe.error.APIConnectionError,
@@ -132,6 +141,9 @@ def create_app(config=None) -> Any:
 
     for error in (stripe.error.CardError,):
         app.app.errorhandler(error)(server_stripe_card_error)
+
+    for error in (pynamodb.exceptions.GetError,):
+        app.app.errorhandler(error)(database_connection_error)
 
     @app.app.before_request
     def before_request():

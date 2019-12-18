@@ -8,6 +8,7 @@ import logging
 import connexion
 import stripe
 import stripe.error
+import pynamodb
 
 from typing import Optional, Union
 from flask import current_app, g, jsonify, request
@@ -38,7 +39,8 @@ def is_docker() -> bool:
     )
 
 
-if is_docker():
+# excluding from coverage as this is for local testing only
+if is_docker():  # pragma: no cover
     stripe.log = "DEBUG"
     if CFG.STRIPE_LOCAL is not True:
         stripe.verify_ssl_certs = False
@@ -82,13 +84,18 @@ def server_stripe_card_error(e):
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
+def database_connection_error(e):
+    logger.error("unable to connect to db", error=e)
+    return jsonify({"message": "Server Error", "status_code": "bad_connection"}), 500
+
+
 def create_app(config=None) -> connexion.FlaskApp:
     # configure_logger()
     logger.info("creating flask app", config=config)
     region = "localhost"
     host = f"http://dynamodb:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
     stripe.api_key = CFG.STRIPE_API_KEY
-    logger.info("aws", aws=CFG.AWS_EXECUTION_ENV)
+    logger.debug("aws", aws=CFG.AWS_EXECUTION_ENV)
     if CFG.AWS_EXECUTION_ENV:
         region = "us-west-2"
         host = None
@@ -122,7 +129,7 @@ def create_app(config=None) -> connexion.FlaskApp:
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
         if e.status_code == 500:
-            logger.error("display subhub errors", error=e)
+            logger.error("display sub errors", error=e)
         response = jsonify(e.to_dict())
         response.status_code = e.status_code
         return response
@@ -146,6 +153,9 @@ def create_app(config=None) -> connexion.FlaskApp:
 
     for error in (stripe.error.CardError,):
         app.app.errorhandler(error)(server_stripe_card_error)
+
+    for error in (pynamodb.exceptions.GetError,):
+        app.app.errorhandler(error)(database_connection_error)
 
     @app.app.before_request
     def before_request():
