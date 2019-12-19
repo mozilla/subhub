@@ -5,7 +5,7 @@
 import boto3
 import json
 
-from typing import Dict
+from typing import Dict, Any
 from botocore.exceptions import ClientError
 from stripe.error import APIConnectionError
 
@@ -17,7 +17,7 @@ logger = get_logger()
 
 
 class FirefoxRoute(AbstractRoute):
-    def route(self) -> None:
+    def route(self) -> Dict[str, Any]:
         try:
             sns_client = boto3.client("sns", region_name=CFG.AWS_REGION)
             response = sns_client.publish(
@@ -30,7 +30,10 @@ class FirefoxRoute(AbstractRoute):
             if response["ResponseMetadata"]["HTTPStatusCode"] == 200:
                 logger.info("message sent to Firefox queue", response=response)
                 logger.info("firefox payload", payload=self.payload)
-                route_payload = json.loads(self.payload)
+                if isinstance(self.payload, dict):
+                    route_payload = self.payload
+                else:
+                    route_payload = json.loads(self.payload)
                 self.report_route(route_payload, "firefox")
                 return response
         except ClientError as e:
