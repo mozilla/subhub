@@ -732,7 +732,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         did_route = StripeCustomerSubscriptionUpdated(
             self.subscription_updated_event_no_match
         ).run()
-        assert did_route == False
+        assert did_route is False
 
     def test_get_user_id_missing(self):
         self.mock_customer.return_value = self.customer_missing_user
