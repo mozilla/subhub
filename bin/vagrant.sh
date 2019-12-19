@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 
+cat <<EOT >> ~/.curlrc
+compressed
+fail
+location
+referer = “;auto”
+silent
+show-error
+EOT
+
 sudo apt-get update
 sudo apt-get uninstall -y python
 
