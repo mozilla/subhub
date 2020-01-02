@@ -4,6 +4,10 @@
 #
 # Available pre-commit hooks
 #   https://pre-commit.com/hooks.html
+
+default_language_version:
+    python: python3.7
+fail_fast: true
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.1.0
@@ -23,7 +27,6 @@ repos:
     -   id: trailing-whitespace
 -   repo: meta
     hooks:
-    -   id: check-hooks-apply
     -   id: check-useless-excludes
 -   repo: https://github.com/pre-commit/mirrors-pylint
     rev: v1.9.1
@@ -81,3 +84,18 @@ repos:
         args:
         - --license-filepath
         - etc/license-header
+    -   id: insert-license
+        files: \.tf
+        args:
+        - --license-filepath
+        - etc/license-header
+    -   id: insert-license
+        files: \.hcl
+        args:
+        - --license-filepath
+        - etc/license-header
+-   repo: git://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.19.0
+    hooks:
+    -   id: terraform_fmt
+    -   id: terraform_validate
