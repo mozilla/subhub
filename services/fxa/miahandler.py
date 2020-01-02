@@ -41,7 +41,6 @@ def handle_mia(event, context):
         logger.exception(
             "exception occurred", subhub_event=event, context=context, error=e
         )
-        # TODO: Add Sentry exception catch here
         raise
     finally:
         logger.info("handling mia event", subhub_event=event, context=context)

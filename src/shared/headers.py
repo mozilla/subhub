@@ -2,8 +2,6 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-# TODO(high): Write tests to cover this!
-
 # HEADERS_WHITE_LIST is an array collection containing
 # request header entities that are acceptable items to
 # be logged into the application's produced logs.
