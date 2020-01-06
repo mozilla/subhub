@@ -4,5 +4,5 @@
 
 exclude_dirs:
   - src/shared/tests
-  - src/sub/tests
   - src/hub/tests
+skips: [B101, B404]

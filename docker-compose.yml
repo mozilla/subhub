@@ -11,46 +11,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.base
-  sub:
-    container_name: sub
-    image: mozilla/sub
-    command: python3 sub/app.py dynamodb:8000
-    build:
-      context: src/sub
-      dockerfile: Dockerfile
-      args:
-        LOCAL_FLASK_PORT: 5000
-        DYNALITE_PORT: 8000
-    environment:
-        AWS_ACCESS_KEY_ID: "fake-id"
-        AWS_SECRET_ACCESS_KEY: "fake-key"
-        STRIPE_API_KEY: $STRIPE_API_KEY
-        SUPPORT_API_KEY: $SUPPORT_API_KEY
-        PAYMENT_API_KEY: $PAYMENT_API_KEY
-        STRIPE_MOCK_HOST: $STRIPE_MOCK_HOST
-        STRIPE_MOCK_PORT: $STRIPE_MOCK_PORT
-        DEPLOYED_BY: $DEPLOYED_BY
-        DEPLOYED_ENV: $DEPLOYED_ENV
-        DEPLOYED_WHEN: $DEPLOYED_WHEN
-        PROJECT_NAME: $PROJECT_NAME
-        BRANCH: $BRANCH
-        VERSION: $VERSION
-        REVISION: $REVISION
-        LOG_LEVEL: $LOG_LEVEL
-        STRIPE_LOCAL: $STRIPE_LOCAL
-        REMOTE_ORIGIN_URL: $REMOTE_ORIGIN_URL
-        PROFILING_ENABLED: $PROFILING_ENABLED
-        USER_TABLE: $USER_TABLE
-        DELETED_USER_TABLE: $DELETED_USER_TABLE
-        EVENT_TABLE: $EVENT_TABLE
-        DYNALITE_PORT: $DYNALITE_PORT
-    ports:
-      - "5000:5000"
-    depends_on:
-      - base
-      - stripe
-      - dynamodb
-
   hub:
     container_name: hub
     image: mozilla/hub
@@ -83,7 +43,6 @@ services:
         STRIPE_LOCAL: $STRIPE_LOCAL
         STRIPE_MOCK_PORT: $STRIPE_MOCK_PORT
         STRIPE_REQUEST_TIMEOUT: $STRIPE_REQUEST_TIMEOUT
-        USER_TABLE: $USER_TABLE
         VERSION: $VERSION
         REVISION: $REVISION
     ports:

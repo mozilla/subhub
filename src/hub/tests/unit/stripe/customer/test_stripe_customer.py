@@ -14,12 +14,15 @@ from hub.vendor.customer import (
     StripeCustomerCreated,
     StripeCustomerDeleted,
     StripeCustomerSourceExpiring,
-    StripeCustomerSubscriptionCreated,
     StripeCustomerSubscriptionUpdated,
     StripeCustomerSubscriptionDeleted,
 )
 from hub.shared.exceptions import ClientError
 from hub.shared.db import SubHubDeletedAccountModel
+
+from shared.log import get_logger
+
+logger = get_logger()
 
 
 class StripeCustomerCreatedTest(TestCase):
@@ -153,13 +156,8 @@ class StripeCustomerDeletedTest(TestCase):
             plan_amount=499,
             nickname=[self.subscription_item.get("nickname")],
             subscription_id=f"{self.subscription_item.get('subscription_id')}",
-            subscriptionId=f"{self.subscription_item.get('subscription_id')}",
             current_period_end=self.subscription_item.get("current_period_end"),
             current_period_start=self.subscription_item.get("current_period_start"),
-            uid=self.user_id,
-            eventCreatedAt=1326853478,
-            messageCreatedAt=int(time.time()),
-            eventId="evt_00000000000000",
         )
 
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
@@ -167,13 +165,6 @@ class StripeCustomerDeletedTest(TestCase):
         )
 
         self.assertEqual(payload.keys(), expected_payload.keys())
-        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
         self.assertEqual(payload, expected_payload)
 
     def test_create_payload_no_subscription_data(self):
@@ -185,13 +176,8 @@ class StripeCustomerDeletedTest(TestCase):
             plan_amount=0,
             nickname=[],
             subscription_id="",
-            subscriptionId="",
             current_period_end=None,
             current_period_start=None,
-            uid=self.user_id,
-            eventCreatedAt=1326853478,
-            messageCreatedAt=int(time.time()),
-            eventId="evt_00000000000000",
         )
 
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
@@ -199,13 +185,6 @@ class StripeCustomerDeletedTest(TestCase):
         )
 
         self.assertEqual(payload.keys(), expected_payload.keys())
-        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
         self.assertEqual(payload, expected_payload)
 
 
@@ -312,201 +291,16 @@ class StripeCustomerSourceExpiringTest(TestCase):
         assert payload == expected_payload
 
 
-class StripeCustomerSubscriptionCreatedTest(TestCase):
-    def setUp(self) -> None:
-        fixture_dir = "src/hub/tests/unit/fixtures/"
-        with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
-            cust_test1 = json.loads(fh.read())
-        self.customer = convert_to_stripe_object(cust_test1)
-
-        with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
-            cust_no_metadata = json.loads(fh.read())
-        self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
-
-        with open(f"{fixture_dir}stripe_cust_test1_deleted.json") as fh:
-            cust_test1_deleted = json.loads(fh.read())
-        self.deleted_customer = convert_to_stripe_object(cust_test1_deleted)
-
-        with open(f"{fixture_dir}stripe_prod_test1.json") as fh:
-            prod_test1 = json.loads(fh.read())
-        self.product = convert_to_stripe_object(prod_test1)
-
-        with open(f"{fixture_dir}stripe_in_test1.json") as fh:
-            invoice_test1 = json.loads(fh.read())
-        self.invoice = convert_to_stripe_object(invoice_test1)
-
-        with open(f"{fixture_dir}stripe_ch_test1.json") as fh:
-            charge_test1 = json.loads(fh.read())
-        self.charge = convert_to_stripe_object(charge_test1)
-
-        with open(f"{fixture_dir}stripe_sub_created_event.json") as fh:
-            self.subscription_created_event = json.loads(fh.read())
-
-        customer_patcher = patch("stripe.Customer.retrieve")
-        product_patcher = patch("stripe.Product.retrieve")
-        invoice_patcher = patch("stripe.Invoice.retrieve")
-        preview_invoice_patcher = patch("stripe.Invoice.upcoming")
-        charge_patcher = patch("stripe.Charge.retrieve")
-        run_pipeline_patcher = patch("hub.routes.pipeline.AllRoutes.run")
-
-        self.addCleanup(customer_patcher.stop)
-        self.addCleanup(product_patcher.stop)
-        self.addCleanup(invoice_patcher.stop)
-        self.addCleanup(preview_invoice_patcher.stop)
-        self.addCleanup(charge_patcher.stop)
-        self.addCleanup(run_pipeline_patcher.stop)
-
-        self.mock_customer = customer_patcher.start()
-        self.mock_product = product_patcher.start()
-        self.mock_invoice = invoice_patcher.start()
-        self.mock_preview_invoice = preview_invoice_patcher.start()
-        self.mock_charge = charge_patcher.start()
-        self.mock_run_pipeline = run_pipeline_patcher.start()
-
-    def test_run(self):
-        self.mock_customer.return_value = self.customer
-        self.mock_invoice.return_value = self.invoice
-        self.mock_preview_invoice.return_value = self.invoice
-        self.mock_charge.return_value = self.charge
-        self.mock_product.return_value = self.product
-        self.mock_run_pipeline = None
-
-        did_run = StripeCustomerSubscriptionCreated(
-            self.subscription_created_event
-        ).run()
-
-        assert did_run
-
-    def test_get_user_id(self):
-        self.mock_customer.return_value = self.customer
-
-        expected_user_id = "user123"
-        user_id = StripeCustomerSubscriptionCreated(
-            self.subscription_created_event
-        ).get_user_id("cust_123")
-
-        assert user_id == expected_user_id
-
-    def test_get_user_id_fetch_error(self):
-        self.mock_customer.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
-        )
-
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).get_user_id("cust_123")
-
-    def test_get_user_id_deleted_cust(self):
-        self.mock_customer.return_value = self.deleted_customer
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).get_user_id("cust_1")
-
-    def test_get_user_id_none_error(self):
-        self.mock_customer.return_value = self.customer_missing_user
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).get_user_id("cust_123")
-
-    def test_create_payload(self):
-        self.mock_invoice.return_value = self.invoice
-        self.mock_charge.return_value = self.charge
-        self.mock_product.return_value = self.product
-        self.mock_preview_invoice.return_value = self.invoice
-
-        user_id = "user123"
-
-        expected_payload = dict(
-            event_id="evt_00000000000000",
-            event_type="customer.subscription.created",
-            uid=user_id,
-            active=True,
-            subscriptionId="sub_00000000000000",  # required by FxA
-            subscription_id="sub_00000000000000",
-            productName="Project Guardian",
-            productId="prod_test1",
-            eventId="evt_00000000000000",  # required by FxA
-            eventCreatedAt=1326853478,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            invoice_id="in_test123",
-            plan_amount=500,
-            customer_id="cus_00000000000000",
-            nickname="Project Guardian (Monthly)",
-            created=1519435009,
-            canceled_at=1519680008,
-            cancel_at=None,
-            cancel_at_period_end=False,
-            currency="usd",
-            current_period_start=1519435009,
-            current_period_end=1521854209,
-            next_invoice_date=1555354567,
-            invoice_number="3B74E3D0-0001",
-            brand="Visa",
-            last4="0019",
-            charge="ch_test1",
-        )
-
-        payload = StripeCustomerSubscriptionCreated(
-            self.subscription_created_event
-        ).create_payload(user_id)
-
-        self.assertEqual(payload.keys(), expected_payload.keys())
-        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
-        self.assertEqual(payload, expected_payload)
-
-    def test_create_payload_product_fetch_error(self):
-        self.mock_invoice.return_value = self.invoice
-        self.mock_charge.return_value = self.charge
-        self.mock_product.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
-        )
-
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).create_payload("cust_123")
-
-    def test_create_payload_invoice_fetch_error(self):
-        self.mock_invoice.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
-        )
-        self.mock_charge.return_value = self.charge
-        self.mock_product.return_value = self.product
-
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).create_payload("cust_123")
-
-    def test_create_payload_charge_fetch_error(self):
-        self.mock_invoice.return_value = self.invoice
-        self.mock_charge.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
-        )
-
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionCreated(
-                self.subscription_created_event
-            ).create_payload("cust_123")
-
-
 class StripeCustomerSubscriptionDeletedTest(TestCase):
     def setUp(self) -> None:
         fixture_dir = "src/hub/tests/unit/fixtures/"
         with open(f"{fixture_dir}stripe_cust_test1.json") as fh:
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
+
+        with open(f"{fixture_dir}stripe_cust_test2.json") as fh:
+            cust_test2 = json.loads(fh.read())
+        self.customer_active_sub = convert_to_stripe_object(cust_test2)
 
         with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
@@ -519,14 +313,20 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
         with open(f"{fixture_dir}stripe_sub_deleted_event.json") as fh:
             self.subscription_deleted_event = json.loads(fh.read())
 
+        with open(f"{fixture_dir}stripe_sub_test3.json") as fh:
+            self.sub_to_delete = json.loads(fh.read())
+
         customer_patcher = patch("stripe.Customer.retrieve")
+        delete_customer_patcher = patch("stripe.Customer.delete")
         run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(customer_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
+        self.addCleanup(delete_customer_patcher.stop)
 
         self.mock_customer = customer_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
+        self.mock_delete_customer = delete_customer_patcher.start()
 
     def test_run(self):
         self.mock_customer.return_value = self.customer
@@ -538,66 +338,127 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
 
         assert did_run
 
-    def test_get_user_id(self):
-        self.mock_customer.return_value = self.customer
-
-        expected_user_id = "user123"
-        user_id = StripeCustomerSubscriptionDeleted(
+    def test_check_for_deleted_user(self):
+        self.mock_delete_customer.return_value = self.deleted_customer
+        to_delete_cus = StripeCustomerSubscriptionDeleted(
             self.subscription_deleted_event
-        ).get_user_id("cust_123")
-
-        assert user_id == expected_user_id
-
-    def test_get_user_id_deleted_cust(self):
-        self.mock_customer.return_value = self.deleted_customer
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_1")
-
-    def test_get_user_id_fetch_error(self):
-        self.mock_customer.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
         )
+        deleted_cus = to_delete_cus.delete_customer(self.mock_delete_customer)
+        assert deleted_cus.get("deleted") is True
 
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_123")
-
-    def test_get_user_id_none_error(self):
-        self.mock_customer.return_value = self.customer_missing_user
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_123")
-
-    def test_create_payload(self):
-        expected_payload = {
-            "uid": "user123",
-            "active": False,
-            "subscriptionId": "sub_00000000000000",
-            "productId": "prod_00000000000000",
-            "eventId": "evt_00000000000000",
-            "eventCreatedAt": 1326853478,
-            "messageCreatedAt": int(time.time()),
-        }
-
-        actual_payload = StripeCustomerSubscriptionDeleted(
+    def test_add_user_to_deleted_users_record(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
             self.subscription_deleted_event
-        ).create_payload("user123")
+        )
+        add_deleted_user = deleted_user.add_user_to_deleted_users_record(
+            user_id="test1",
+            cust_id="cust_1",
+            origin_system="origin1",
+            subscription_info=[
+                {
+                    "nickname": "test sub 1",
+                    "plan_amount": 100,
+                    "productId": "prod_tes1",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test1",
+                }
+            ],
+        )
+        assert add_deleted_user
 
-        self.assertEqual(actual_payload.keys(), expected_payload.keys())
-        if actual_payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                actual_payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = actual_payload["messageCreatedAt"]
-        self.assertEqual(actual_payload, expected_payload)
+    def test_update_deleted_user(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        deleted_user.add_user_to_deleted_users_record(
+            user_id="test1",
+            cust_id="cust_1",
+            origin_system="origin1",
+            subscription_info=[
+                {
+                    "nickname": "test sub 1",
+                    "plan_amount": 100,
+                    "productId": "prod_tes1",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test1",
+                }
+            ],
+        )
+        updated_user = deleted_user.update_deleted_user(
+            "test1",
+            "cust_1",
+            [
+                {
+                    "nickname": "test sub 2",
+                    "plan_amount": 100,
+                    "productId": "prod_tes2",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test2",
+                }
+            ],
+        )
+        logger.info("update deleted user", updated_user=updated_user)
+        assert len(updated_user) == 2
+
+    def test_get_origin_system(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        origin_test = deleted_user.get_origin_system(self.customer)
+        assert origin_test == "unknown"
+
+    def test_get_user_id(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        user_id = deleted_user.get_user_id(self.customer)
+        assert user_id == "user123"
+
+    def test_delete_customer(self):
+        self.mock_delete_customer.return_value = self.deleted_customer
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        deleted_cust = deleted_user.delete_customer("cust_test1")
+        assert deleted_cust.get("id") == "cust_test1"
+        assert deleted_cust.get("deleted") is True
+
+    def test_get_customer(self):
+        self.mock_customer.return_value = self.customer
+        logger.info("get customer", cus=self.customer, cus_id=self.customer.get("id"))
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        get_customer = delete_cus.get_customer(self.customer.get("id"))
+        assert get_customer.id == "cus_test1"
+
+    def test_check_all_subscriptions(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        check_all = delete_cus.check_all_subscriptions(
+            customer=self.customer_active_sub
+        )
+        assert check_all is True
+
+    def test_check_mark_delete(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        check_mark_deleted = delete_cus.check_mark_delete(
+            customer=self.customer_active_sub
+        )
+        assert check_mark_deleted is True
+
+    def test_get_subscription_info(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        logger.info("get sub", subs=self.customer_active_sub.get("subscriptions"))
+        logger.info("sub to delete", to_delete=self.sub_to_delete)
+        check_sub_info = delete_cus.get_subscription_info(
+            subscriptions=self.customer_active_sub.get("subscriptions"),
+            current_sub=self.sub_to_delete,
+        )
+        assert check_sub_info[0].get("nickname") == "Test Plan (Ion)"
 
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
@@ -796,52 +657,6 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         actual_payload = StripeCustomerSubscriptionUpdated(
             self.subscription_cancelled_event
-        ).create_payload(event_type=event_name, user_id=user_id, previous_plan=None)
-
-        assert actual_payload == expected_payload
-
-    def test_create_payload_recurring_charge(self):
-        self.mock_product.return_value = self.product
-        self.mock_invoice.return_value = self.invoice
-        self.mock_charge.return_value = self.charge
-        self.mock_upcoming_invoice.return_value = self.upcoming_invoice
-
-        user_id = "user123"
-        event_name = "customer.recurring_charge"
-
-        expected_payload = dict(
-            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
-            event_type=event_name,
-            uid=user_id,
-            customer_id="cus_FCUzOhOp9iutWa",
-            subscription_id="sub_FCUzkHmNY3Mbj1",
-            plan_amount=100,
-            nickname="Project Guardian (Daily)",
-            canceled_at=None,
-            cancel_at=None,
-            cancel_at_period_end=False,
-            current_period_start=1571949971,
-            current_period_end=1572036371,
-            next_invoice_date=1555354567,
-            invoice_id="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
-            active=True,
-            subscriptionId="sub_FCUzkHmNY3Mbj1",  # required by FxA
-            productName="Project Guardian",
-            eventCreatedAt=1571949975,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            created=1559767571,
-            eventId="evt_1FXDCFJNcmPzuWtRrogbWpRZ",  # required by FxA
-            currency="usd",
-            invoice_number="3B74E3D0-0001",
-            brand="Visa",
-            last4="0019",
-            charge="ch_test1",
-            proration_amount=1000,
-            total_amount=1499,
-        )
-
-        actual_payload = StripeCustomerSubscriptionUpdated(
-            self.subscription_charge_event
         ).create_payload(event_type=event_name, user_id=user_id, previous_plan=None)
 
         assert actual_payload == expected_payload

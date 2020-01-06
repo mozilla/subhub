@@ -235,12 +235,14 @@ class SubHubDeletedAccount:
 
     def get_user(self, uid: str, cust_id: str) -> Optional[SubHubDeletedAccountModel]:
         try:
+            logger.info("deleted users get user", uid=uid, cust_id=cust_id)
             subscription_user: Optional[Any] = self.model.get(
                 uid, cust_id, consistent_read=True
             )
+            logger.info("deleted users sub user", subscription_user=subscription_user)
             return subscription_user
         except DoesNotExist:
-            logger.debug("get user", uid=uid)
+            logger.error("get user", uid=uid)
             return None
 
     def find_by_cust(self, customer_id: str) -> Optional[SubHubDeletedAccountModel]:
@@ -266,6 +268,21 @@ class SubHubDeletedAccount:
         except DoesNotExist:
             logger.error("append custid", uid=uid, cust_id=cust_id)
             return False
+
+    def update_subscriptions(
+        self, uid: str, cust_id: str, subscriptions: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        logger.info("update subscriptions", uid=uid, subscriptions=subscriptions)
+        try:
+            updated_user = self.model.get(uid, cust_id, consistent_read=True)
+            for sub in subscriptions:
+                if sub not in updated_user.subscription_info:
+                    updated_user.subscription_info.append(sub)
+            updated_user.save()
+            return updated_user.subscription_info
+        except DoesNotExist as e:
+            logger.error("update subscriptions", uid=uid, error=e)
+            raise e
 
     def remove_from_db(self, uid: str) -> bool:
         try:

@@ -29,7 +29,6 @@ custom:
     fileName: "../../src/app_requirements.txt"
   packageExternal:
     external:
-      - '../../src/sub'
       - '../../src/hub'
       - '../../src/shared'
       - '../../src'
@@ -188,42 +187,6 @@ provider:
         - 'Fn::Join': [':', ['arn:aws:sns', Ref: AWS::Region, Ref: AWS::AccountId, '${self:provider.stage}-fxa-event-data']]
   resourcePolicy: ${self:custom.resourcePolicies.${self:custom.access.${self:provider.stage}}}
 functions:
-  sub:
-    name: '${self:custom.prefix}-sub'
-    description: "Function for handling subscription services interactions\n"
-    handler: subhandler.handle
-    events:
-      - http: {
-          path: "/sub/{proxy+}",
-          method: any,
-          cors: false,
-          private: false
-        }
-    type: ${file(functions.yml):${self:provider.stage}.DEPLOYMENT_TYPE}
-    reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
-    deploymentSettings:
-      # Available AWS CodeDeploy Preference Types
-      #  Canary10Percent30Minutes
-      #  Canary10Percent5Minutes
-      #  Canary10Percent10Minutes
-      #  Canary10Percent15Minutes
-      #  Linear10PercentEvery10Minutes
-      #  Linear10PercentEvery1Minute
-      #  Linear10PercentEvery2Minutes
-      #  Linear10PercentEvery3Minutes
-      #  AllAtOnce
-      #  Reference: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/automating-updates-to-serverless-apps.html
-      type: Linear10PercentEvery1Minute
-      alias: Live
-      alarms:
-        - name: SubAlarm
-          namespace: 'AWS/Lambda'
-          metric: Errors
-          threshold: 1
-          statistic: Minimum
-          period: 60
-          evaluationPeriods: 1
-          comparisonOperator: GreaterThanOrEqualToThreshold
   hub:
     name: ${self:custom.prefix}-hub
     description: >
