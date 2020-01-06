@@ -21,6 +21,10 @@ from hub.vendor.customer import (
 from hub.shared.exceptions import ClientError
 from hub.shared.db import SubHubDeletedAccountModel
 
+from shared.log import get_logger
+
+logger = get_logger()
+
 
 class StripeCustomerCreatedTest(TestCase):
     def setUp(self) -> None:
@@ -508,6 +512,10 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
             cust_test1 = json.loads(fh.read())
         self.customer = convert_to_stripe_object(cust_test1)
 
+        with open(f"{fixture_dir}stripe_cust_test2.json") as fh:
+            cust_test2 = json.loads(fh.read())
+        self.customer_active_sub = convert_to_stripe_object(cust_test2)
+
         with open(f"{fixture_dir}stripe_cust_no_metadata.json") as fh:
             cust_no_metadata = json.loads(fh.read())
         self.customer_missing_user = convert_to_stripe_object(cust_no_metadata)
@@ -538,66 +546,37 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
 
         assert did_run
 
-    def test_get_user_id(self):
+    def test_get_customer(self):
         self.mock_customer.return_value = self.customer
+        logger.info("get customer", cus=self.customer, cus_id=self.customer.get("id"))
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        get_customer = delete_cus.get_customer(self.customer.get("id"))
+        assert get_customer.id == "cus_test1"
 
-        expected_user_id = "user123"
-        user_id = StripeCustomerSubscriptionDeleted(
-            self.subscription_deleted_event
-        ).get_user_id("cust_123")
-
-        assert user_id == expected_user_id
-
-    def test_get_user_id_deleted_cust(self):
-        self.mock_customer.return_value = self.deleted_customer
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_1")
-
-    def test_get_user_id_fetch_error(self):
-        self.mock_customer.side_effect = InvalidRequestError(
-            message="invalid data", param="bad data"
+    def test_check_all_subscriptions(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        check_all = delete_cus.check_all_subscriptions(
+            customer=self.customer_active_sub
         )
+        assert check_all is True
 
-        with self.assertRaises(InvalidRequestError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_123")
+    def test_check_mark_delete(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        check_mark_deleted = delete_cus.check_mark_delete(
+            customer=self.customer_active_sub
+        )
+        assert check_mark_deleted is True
 
-    def test_get_user_id_none_error(self):
-        self.mock_customer.return_value = self.customer_missing_user
-
-        with self.assertRaises(ClientError):
-            StripeCustomerSubscriptionDeleted(
-                self.subscription_deleted_event
-            ).get_user_id("cust_123")
-
-    def test_create_payload(self):
-        expected_payload = {
-            "uid": "user123",
-            "active": False,
-            "subscriptionId": "sub_00000000000000",
-            "productId": "prod_00000000000000",
-            "eventId": "evt_00000000000000",
-            "eventCreatedAt": 1326853478,
-            "messageCreatedAt": int(time.time()),
-        }
-
-        actual_payload = StripeCustomerSubscriptionDeleted(
-            self.subscription_deleted_event
-        ).create_payload("user123")
-
-        self.assertEqual(actual_payload.keys(), expected_payload.keys())
-        if actual_payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                actual_payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = actual_payload["messageCreatedAt"]
-        self.assertEqual(actual_payload, expected_payload)
+    def test_get_subscription_info(self):
+        self.mock_customer.return_value = self.customer_active_sub
+        delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
+        logger.info("get sub", subs=self.customer_active_sub.get("subscriptions"))
+        check_sub_info = delete_cus.get_subscription_info(
+            subscriptions=self.customer_active_sub.get("subscriptions")
+        )
+        assert check_sub_info[0].get("nickname") == "Test Plan (Ion)"
 
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
