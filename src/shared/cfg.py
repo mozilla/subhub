@@ -311,6 +311,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("DEPLOY_DOMAIN", "localhost")
 
     @property
+    def DEPLOYED_CUSTOMER(self):
+        return self("DEPLOYED_CUSTOMER", "test")
+
+    @property
     def SRCTAR(self):
         return self("SRCTAR", ".src.tar.gz")
 
