@@ -16,12 +16,6 @@ package:
 
 custom:
   stage: ${opt:stage, self:provider.stage}
-
-  # AWS DynamoDB Table definitions used by resources/dynamodb-table.yml
-  usersTable: ${env:USER_TABLE}
-  deletedUsersTable: ${env:DELETED_USER_TABLE}
-  eventsTable: ${env:EVENT_TABLE}
-
   prefix: ${self:provider.stage}-${self:service.name}
   subdomain: ${self:provider.stage}.${self:service.name}
   pythonRequirements:
@@ -298,5 +292,4 @@ functions:
       - schedule: rate(${file(functions.yml):${self:provider.stage}.MIA_RATE_SCHEDULE})
     reservedConcurrency: ${file(functions.yml):${self:provider.stage}.LAMBDA_RESERVED_CONCURRENCY}
 resources:
-  - ${file(resources/dynamodb-table.yml)}
   - ${file(resources/sns-topic.yml)}
