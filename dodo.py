@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import re
 import pwd
@@ -54,6 +58,7 @@ def envs(sep=" ", **kwargs):
         BRANCH=CFG.BRANCH,
         DEPLOY_DOMAIN=CFG.DEPLOY_DOMAIN,
         DEPLOYED_BY=CFG.DEPLOYED_BY,
+        DEPLOYED_CUSTOMER=CFG.DEPLOYED_CUSTOMER,
         DEPLOYED_ENV=CFG.DEPLOYED_ENV,
         DEPLOYED_WHEN=CFG.DEPLOYED_WHEN,
         DELETED_USER_TABLE=CFG.DELETED_USER_TABLE,
@@ -78,7 +83,6 @@ def envs(sep=" ", **kwargs):
         STRIPE_MOCK_PORT=CFG.STRIPE_MOCK_PORT,
         SUPPORT_API_KEY=CFG.SUPPORT_API_KEY,
         PROJECT_NAME=CFG.PROJECT_NAME,
-        USER_TABLE=CFG.USER_TABLE,
         VERSION=CFG.VERSION,
     )
     return sep.join(
@@ -287,7 +291,7 @@ def check_precommit():
         "actions": [f"pre-commit install >> /dev/null"],
     }
 
-
+@skip("reqs")
 def check_reqs():
     """
     check requirements
@@ -297,7 +301,7 @@ def check_reqs():
     required = [
         line
         for line in open("automation_requirements.txt").read().strip().split("\n")
-        if not line.startswith("#")
+        if not line.startswith("#") and line != ''
     ]
     required = [
         tuple(item.split("==")) if "==" in item else (item, None) for item in required
@@ -470,46 +474,6 @@ def task_yarn():
     }
 
 
-def task_perf_local():
-    """
-    run locustio performance tests on local deployment
-    """
-    FLASK_PORT = 5000
-    ENVS = envs(
-        LOCAL_FLASK_PORT=FLASK_PORT,
-        AWS_ACCESS_KEY_ID="fake-id",
-        AWS_SECRET_ACCESS_KEY="fake-key",
-        PYTHONPATH=".",
-    )
-    cmd = f"env {ENVS} {PYTHON3} src/sub/app.py"  # FIXME: should work on hub too...
-    return {
-        "basename": "perf-local",
-        "task_dep": ["check", "venv"],
-        "actions": [
-            f"{PYTHON3} -m setup develop",
-            "echo $PATH",
-            LongRunning(
-                f"nohup env {envs} {PYTHON3} src/sub/app.py > /dev/null &"
-            ),  # FIXME: same as above
-            f"cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}",  # FIXME: same
-        ],
-    }
-
-
-def task_perf_remote():
-    """
-    run locustio performance tests on remote deployment
-    """
-    return {
-        "basename": "perf-remote",
-        "task_dep": ["check", "venv"],
-        "actions": [
-            f"{PYTHON3} -m setup develop",
-            f"cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}",  # FIXME: same as above
-        ],
-    }
-
-
 @skip("test")
 def task_test():
     """
@@ -571,7 +535,6 @@ def task_tar():
             "--exclude=__pycache__",
             "--exclude=*.pyc",
             "--exclude=.env",
-            "--exclude=sub/tests",
             "--exclude=hub/tests",
             "--exclude=shared/tests",
             "--exclude=.git",

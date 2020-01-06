@@ -9,7 +9,7 @@ import stripe
 
 from stripe.error import InvalidRequestError
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from flask import g
 
 from hub.vendor.abstract import AbstractStripeHubEvent
@@ -123,13 +123,8 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
             plan_amount=plan_amount,
             nickname=nicknames,
             subscription_id=subs,
-            subscriptionId=subs,  # required by FxA
             current_period_end=current_period_end,
             current_period_start=current_period_start,
-            uid=self.payload.data.object.metadata.userid,  # required by FxA
-            eventCreatedAt=self.payload.created,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            eventId=self.payload.id,  # required by FxA
         )
 
 
@@ -193,133 +188,7 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
         return name
 
 
-class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
-    def run(self) -> bool:
-        """
-        Parse the event data sent by Stripe contained within self.payload
-        :return True to indicate successfully sent
-        """
-        logger.info("customer subscription created", payload=self.payload)
-        customer_id = self.payload.data.object.customer
-        user_id = self.get_user_id(customer_id)
-
-        data: Dict[str, Any] = self.create_payload(user_id)
-
-        # NOTE:
-        # Firefox's route has a particular casing requirement
-        # Salesforce's route doesn't care.
-        data_projection_by_route: Dict[str, Any] = {
-            StaticRoutes.FIREFOX_ROUTE: [
-                "uid",
-                "active",
-                "subscriptionId",
-                "productId",
-                "eventId",
-                "eventCreatedAt",
-                "messageCreatedAt",
-            ],
-            StaticRoutes.SALESFORCE_ROUTE: data.keys(),
-        }
-        self.customer_event_to_all_routes(data_projection_by_route, data)
-        logger.info("customer subscription created", data=data)
-        return True
-
-    def get_user_id(self, customer_id) -> str:
-        """
-        Fetch the user_id associated with the Stripe customer_id
-        :param customer_id:
-        :return user_id:
-        :raises InvalidRequestError
-        :raises ClientError
-        """
-        try:
-            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-        except InvalidRequestError as e:
-            logger.error("Unable to find customer", error=e)
-            raise e
-
-        deleted = customer.get("deleted", False)
-        user_id = None
-        if not deleted:
-            user_id = customer.metadata.get("userid")
-
-        if user_id is None:
-            logger.error(
-                "customer subscription created - no userid",
-                error=customer_id,
-                is_customer_deleted=deleted,
-            )
-            raise ClientError(f"userid is None for customer {customer_id}")
-
-        return user_id
-
-    def create_payload(self, user_id) -> Dict[str, Any]:
-        """
-        Create payload to be sent to external sources
-        :param user_id:
-        :return:
-        """
-        try:
-            invoice_id = self.payload.data.object.latest_invoice
-            latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
-            invoice_number = latest_invoice.number
-            charge_id = latest_invoice.charge
-            latest_charge = vendor.retrieve_stripe_charge(charge_id)
-            last4 = latest_charge.payment_method_details.card.last4
-            brand = format_brand(latest_charge.payment_method_details.card.brand)
-
-            logger.info("latest invoice", latest_invoice=latest_invoice)
-            logger.info("latest charge", latest_charge=latest_charge)
-
-            product = vendor.retrieve_stripe_product(
-                self.payload.data.object.plan.product
-            )
-            product_name = product["name"]
-            product_id = product["id"]
-
-            plan_nickname = format_plan_nickname(
-                product_name=product_name,
-                plan_interval=self.payload.data.object.plan.interval,
-            )
-
-            next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
-                customer_id=self.payload.data.object.customer,
-                subscription_id=self.payload.data.object.id,
-            )
-            next_invoice_date = next_invoice.get("period_end", 0)
-
-            return self.create_data(
-                uid=user_id,
-                active=self.is_active_or_trialing,
-                subscriptionId=self.payload.data.object.id,  # required by FxA
-                subscription_id=self.payload.data.object.id,
-                productName=product_name,
-                productId=product_id,
-                eventId=self.payload.id,  # required by FxA
-                eventCreatedAt=self.payload.created,  # required by FxA
-                messageCreatedAt=int(time.time()),  # required by FxA
-                invoice_id=self.payload.data.object.latest_invoice,
-                plan_amount=self.payload.data.object.plan.amount,
-                customer_id=self.payload.data.object.customer,
-                nickname=plan_nickname,
-                created=self.payload.data.object.created,
-                canceled_at=self.payload.data.object.canceled_at,
-                cancel_at=self.payload.data.object.cancel_at,
-                cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-                currency=self.payload.data.object.plan.currency,
-                current_period_start=self.payload.data.object.current_period_start,
-                current_period_end=self.payload.data.object.current_period_end,
-                next_invoice_date=next_invoice_date,
-                invoice_number=invoice_number,
-                brand=brand,
-                last4=last4,
-                charge=charge_id,
-            )
-        except InvalidRequestError as e:
-            logger.error("Unable to gather subscription create data", error=e)
-            raise e
-
-
+# noinspection PyArgumentList
 class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
     def run(self) -> bool:
         """
@@ -328,28 +197,137 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         """
         logger.debug("customer subscription deleted", payload=self.payload)
         customer_id = self.payload.data.object.customer
-        user_id = self.get_user_id(customer_id)
-
-        data = self.create_payload(user_id)
-        routes = [StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
+        customer = self.get_customer(customer_id=customer_id)
+        user_id = self.get_user_id(customer=customer)
+        mark_delete = self.check_mark_delete(customer=customer)
+        active_subs = self.check_all_subscriptions(customer=customer)
+        logger.debug("mark_delete", mark_delete=mark_delete, active_subs=active_subs)
+        origin_system = self.get_origin_system(customer=customer)
+        logger.info("current sub", current_sub=self.payload.data.object)
+        subscription_list = self.get_subscription_info(
+            subscriptions=customer.get("subscriptions"),
+            current_sub=self.payload.data.object,
+        )
+        logger.debug("sub list", subscription_list=subscription_list)
+        check_deleted_user = self.check_for_deleted_user(
+            user_id=user_id, cust_id=customer_id
+        )
+        logger.info("check deleted user", check_deleted_user=check_deleted_user)
+        if check_deleted_user is not None:
+            deleted_user = self.update_deleted_user(
+                user_id=user_id,
+                cust_id=customer_id,
+                subscription_list=subscription_list,
+            )
+            logger.info("deleted user", deleted_user=deleted_user)
+        else:
+            deleted_user_added = self.add_user_to_deleted_users_record(
+                user_id=user_id,
+                cust_id=customer_id,
+                origin_system=origin_system,
+                subscription_info=subscription_list,
+            )
+        if mark_delete and not active_subs:
+            if deleted_user or deleted_user_added:
+                deleted_customer = self.delete_customer(customer_id=customer_id)
+                logger.info("deleted customer", deleted_customer=deleted_customer)
+                return True
+            else:
+                return False
         return True
 
-    def get_user_id(self, customer_id) -> str:
+    def check_for_deleted_user(
+        self, user_id: str, cust_id: str
+    ) -> Optional[SubHubDeletedAccountModel]:
+        return g.subhub_deleted_users.get_user(uid=user_id, cust_id=cust_id)
+
+    def update_deleted_user(
+        self, user_id: str, cust_id: str, subscription_list: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        logger.info(
+            "update deleted user",
+            user_id=user_id,
+            cust_id=cust_id,
+            subscription_list=subscription_list,
+        )
+        return g.subhub_deleted_users.update_subscriptions(
+            user_id, cust_id, subscription_list
+        )
+
+    def add_user_to_deleted_users_record(
+        self,
+        user_id: str,
+        cust_id: str,
+        origin_system: str,
+        subscription_info: List[Dict[str, Any]],
+    ) -> bool:
+        deleted_user = g.subhub_deleted_users.new_user(
+            uid=user_id,
+            cust_id=cust_id,
+            origin_system=origin_system,
+            subscription_info=subscription_info,
+        )
+        new_deleted_user = g.subhub_deleted_users.save_user(deleted_user)
+        return new_deleted_user
+
+    def get_subscription_info(
+        self, subscriptions: Dict[str, Any], current_sub: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
+        """
+        Format subscription info to insert into DeletedUsers record
+        :param subscriptions:
+        :return list of subscriptions subscription_info:
+        """
+        subscription_info: List = []
+        plan = current_sub.get("plan")
+        logger.info("plan", plan=plan, current_sub=current_sub)
+        nickname = plan.get("nickname")
+        interval = plan.get("interval")
+        product = plan.get("product")
+        plan_amount = plan.get("amount")
+        sub = dict(
+            plan_amount=plan_amount,
+            nickname=format_plan_nickname(nickname, interval),
+            productId=product,
+            current_period_end=current_sub.get("current_period_end"),
+            current_period_start=current_sub.get("current_period_start"),
+            subscription_id=current_sub.get("id"),
+        )
+        subscription_info.append(sub)
+        for subs in subscriptions["data"]:
+            plan = subs.get("plan")
+            nickname = plan.get("nickname")
+            interval = plan.get("interval")
+            plan_amount = plan.get("amount")
+            sub = dict(
+                plan_amount=plan_amount,
+                nickname=format_plan_nickname(nickname, interval),
+                productId=subs.plan.product,
+                current_period_end=subs.current_period_end,
+                current_period_start=subs.current_period_start,
+                subscription_id=subs.id,
+            )
+            subscription_info.append(sub)
+        return subscription_info
+
+    def get_origin_system(self, customer: Dict[str, Any]) -> str:
+        """
+        Fetch origin system from Customer
+        :param customer:
+        :return origin_system:
+        """
+        customer_metadata = customer.get("metadata")
+        origin_system = customer_metadata.get("origin_system", "unknown")
+        return origin_system
+
+    def get_user_id(self, customer: Dict[str, Any]) -> str:
         """
         Fetch the user_id associated with the Stripe customer_id
-        :param customer_id:
+        :param customer:
         :return user_id:
         :raises InvalidRequestError
         :raises ClientError
         """
-        try:
-            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-
-        except InvalidRequestError as e:
-            logger.error("Unable to find customer", error=e)
-            raise e
-
         deleted = customer.get("deleted", False)
         user_id = None
         if not deleted:
@@ -360,27 +338,62 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         if user_id is None:
             logger.error(
                 "customer subscription deleted - no userid",
-                error=customer_id,
+                error=customer.get("id"),
                 is_customer_deleted=deleted,
             )
-            raise ClientError(f"userid is None for customer {customer_id}")
+            raise ClientError(f"userid is None for customer {customer.get('id')}")
 
         return user_id
 
-    def create_payload(self, user_id) -> Dict[str, Any]:
+    def get_customer(self, customer_id: str) -> Dict[str, Any]:
         """
-        Create payload to be sent to external sources
-        :return payload:
+        Fetch Stripe customer
+        :param customer_id:
+        :return Customer:
+        :raises InvalidRequestError:
         """
-        return dict(
-            uid=user_id,
-            active=self.is_active_or_trialing,
-            subscriptionId=self.payload.data.object.id,
-            productId=self.payload.data.object.plan.product,
-            eventId=self.payload.id,
-            eventCreatedAt=self.payload.created,
-            messageCreatedAt=int(time.time()),
-        )
+        try:
+            return vendor.retrieve_stripe_customer(customer_id=customer_id)
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise e
+
+    def delete_customer(self, customer_id: str) -> Dict[str, Any]:
+        """
+        Delete Stripe Customer if marked for deletion and no active subscriptions exist
+        :param customer_id:
+        :return
+        """
+        return vendor.delete_stripe_customer(customer_id=customer_id)
+
+    def check_all_subscriptions(self, customer: Dict[str, Any]) -> bool:
+        """
+        Check if all subscriptions related to customer are cancelled
+        :param self:
+        :param customer:
+        :return bool:
+        """
+        active_subscriptions = False
+        subs = customer.get("subscriptions")
+        sub_data = subs.get("data")
+        for sub in sub_data:
+            logger.debug("sub", sub=sub, active=sub.get("status"))
+            if sub.get("status") == "active":
+                active_subscriptions = True
+            logger.debug("sub loop", active_subscriptions=active_subscriptions)
+        return active_subscriptions
+
+    def check_mark_delete(self, customer: Dict[str, Any]) -> bool:
+        """
+        Check if customer is marked for delete
+        :param customer:
+        :return bool:
+        """
+        metadata = customer.get("metadata", None)
+        mark_delete = metadata.get("delete", False)
+        if mark_delete:
+            return True
+        return False
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
@@ -427,11 +440,10 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             and self.payload.data.object.status == "active"
             and not previous_plan
         ):
-            data = self.create_payload(
-                "customer.recurring_charge", user_id, previous_plan=None
+            logger.info(
+                "customer subscription recurring handled via invoice payment succeeded"
             )
-            logger.info("customer subscription new recurring", data=data)
-            routes = [StaticRoutes.SALESFORCE_ROUTE]
+            return True
         elif previous_plan:
             data = self.create_payload(
                 "customer.subscription_change", user_id, previous_plan=previous_plan
@@ -523,8 +535,6 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
             if event_type == "customer.subscription_cancelled":
                 payload.update(self.get_cancellation_data())
-            elif event_type == "customer.recurring_charge":
-                payload.update(self.get_recurring_data(product_name=product["name"]))
             elif event_type == "customer.subscription.reactivated":
                 payload.update(self.get_reactivation_data())
             elif event_type == "customer.subscription_change":
@@ -551,58 +561,6 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             current_period_start=self.payload.data.object.current_period_start,
             current_period_end=self.payload.data.object.current_period_end,
             invoice_id=self.payload.data.object.latest_invoice,
-        )
-
-    def get_recurring_data(self, product_name) -> Dict[str, Any]:
-        """
-        Format data specific to recurring charge
-        :param product_name:
-        :return dict:
-        """
-        invoice_id = self.payload.data.object.latest_invoice
-        latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
-        invoice_number = latest_invoice.number
-        charge_id = latest_invoice.charge
-        latest_charge = vendor.retrieve_stripe_charge(charge_id)
-        last4 = latest_charge.payment_method_details.card.last4
-        brand = format_brand(latest_charge.payment_method_details.card.brand)
-        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
-            customer=self.payload.data.object.customer
-        )
-
-        logger.info("latest invoice", latest_invoice=latest_invoice)
-        logger.info("latest charge", latest_charge=latest_charge)
-
-        next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
-            customer_id=self.payload.data.object.customer,
-            subscription_id=self.payload.data.object.id,
-        )
-        next_invoice_date = next_invoice.get("period_end", 0)
-
-        return dict(
-            canceled_at=self.payload.data.object.canceled_at,
-            cancel_at=self.payload.data.object.cancel_at,
-            cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-            current_period_start=self.payload.data.object.current_period_start,
-            current_period_end=self.payload.data.object.current_period_end,
-            next_invoice_date=next_invoice_date,
-            invoice_id=self.payload.data.object.latest_invoice,
-            active=self.is_active_or_trialing,
-            subscriptionId=self.payload.data.object.id,  # required by FxA
-            productName=product_name,
-            eventCreatedAt=self.payload.created,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            created=self.payload.data.object.created,
-            eventId=self.payload.id,  # required by FxA
-            currency=self.payload.data.object.plan.currency,
-            invoice_number=invoice_number,
-            brand=brand,
-            last4=last4,
-            charge=charge_id,
-            proration_amount=upcoming_invoice.get("amount_due", 0),
-            total_amount=self.get_total_upcoming_invoice_amount(
-                upcoming_invoice=upcoming_invoice
-            ),
         )
 
     def get_total_upcoming_invoice_amount(

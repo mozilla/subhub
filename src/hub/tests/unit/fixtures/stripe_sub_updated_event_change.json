@@ -12,7 +12,7 @@
             "billing_cycle_anchor": 1559767571,
             "billing_thresholds": null,
             "cancel_at": null,
-            "cancel_at_period_end": false,
+            "cancel_at_period_end": true,
             "canceled_at": null,
             "collection_method": "charge_automatically",
             "created": 1559767571,

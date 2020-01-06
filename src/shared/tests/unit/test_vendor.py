@@ -9,7 +9,7 @@ from mock import patch
 from stripe.error import APIError, APIConnectionError, InvalidRequestError
 from stripe.util import convert_to_stripe_object
 
-from sub.shared import vendor, utils
+from hub.shared import vendor, utils
 
 DIRECTORY = os.path.dirname(__file__)
 
@@ -282,6 +282,11 @@ class TestStripeSubscriptionCalls(TestCase):
 
         with self.assertRaises(APIError):
             vendor.list_customer_subscriptions(cust_id="cust_123")
+
+    def test_retrieve_stripe_subscription(self):
+        self.mock_retrieve_subscription.return_value = self.subscription
+        subscription = vendor.retrieve_stripe_subscription(subscription_id="sub_123")
+        assert subscription == self.subscription  # nosec
 
 
 class TestStripeChargeCalls(TestCase):

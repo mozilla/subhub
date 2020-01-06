@@ -43,7 +43,7 @@ def call(
         return (None, "nerfed", "nerfed")
     process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)  # nosec
     _stdout, _stderr = [
-        stream.decode("utf-8") if stream != None else None
+        stream.decode("utf-8") if stream is not None else None
         for stream in process.communicate()
     ]
     exitcode = process.poll()
@@ -172,10 +172,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         }
 
     @property
-    def USER_TABLE(self):
-        return self("USER_TABLE", f"users-{CFG.DEPLOYED_ENV}")
-
-    @property
     def DELETED_USER_TABLE(self):
         return self("DELETED_USER_TABLE", f"deleted-users-{CFG.DEPLOYED_ENV}")
 
@@ -228,15 +224,11 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def SALESFORCE_BASKET_URI(self):
-        return self("SALESFORCE_BASKET_URI", "http://www.example.com")
+        return self("SALESFORCE_BASKET_URI", "http://www.example.com?api-key=")
 
     @property
     def BASKET_API_KEY(self):
         return self("BASKET_API_KEY", "fake_basket_api_key")
-
-    @property
-    def FXA_SQS_URI(self):
-        return self("FXA_SQS_URI", "https://google.com")
 
     @property
     def AWS_REGION(self):
@@ -309,6 +301,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     @property
     def DEPLOY_DOMAIN(self):
         return self("DEPLOY_DOMAIN", "localhost")
+
+    @property
+    def DEPLOYED_CUSTOMER(self):
+        return self("DEPLOYED_CUSTOMER", "test")
 
     @property
     def SRCTAR(self):
