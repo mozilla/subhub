@@ -4,6 +4,10 @@
 #
 # Available pre-commit hooks
 #   https://pre-commit.com/hooks.html
+
+default_language_version:
+    python: python3.7
+fail_fast: true
 repos:
 -   repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v2.1.0
@@ -23,7 +27,6 @@ repos:
     -   id: trailing-whitespace
 -   repo: meta
     hooks:
-    -   id: check-hooks-apply
     -   id: check-useless-excludes
 -   repo: https://github.com/pre-commit/mirrors-pylint
     rev: v1.9.1
@@ -50,6 +53,14 @@ repos:
     rev: 1.6.2
     hooks:
     -   id: bandit
+        args: [
+                '-c', 'bandit.yml'
+            ]
+        name: 'Checking vulnerabilities'
+        description: 'Bandit is a tool for finding common security issues in Python code'
+        entry: bandit
+        language: python
+        types: [python]
 -   repo: https://github.com/Lucas-C/pre-commit-hooks
     rev: v1.1.7
     hooks:
@@ -73,3 +84,18 @@ repos:
         args:
         - --license-filepath
         - etc/license-header
+    -   id: insert-license
+        files: \.tf
+        args:
+        - --license-filepath
+        - etc/license-header
+    -   id: insert-license
+        files: \.hcl
+        args:
+        - --license-filepath
+        - etc/license-header
+-   repo: git://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.19.0
+    hooks:
+    -   id: terraform_fmt
+    -   id: terraform_validate

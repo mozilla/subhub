@@ -7,7 +7,7 @@ from pynamodb.attributes import UnicodeAttribute, ListAttribute
 from pynamodb.connection import Connection
 from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
 from pynamodb.models import Model, DoesNotExist
-from pynamodb.exceptions import PutError, DeleteError
+from pynamodb.exceptions import PutError, DeleteError, GetError
 
 from shared.log import get_logger
 
@@ -61,6 +61,9 @@ class SubHubAccount:
             )
             logger.debug("get user", subscription_user=subscription_user)
             return subscription_user
+        except GetError as e:
+            logger.error("get error, unable to reach database", uid=uid)
+            raise e
         except DoesNotExist:
             logger.debug("get user does not exist", uid=uid)
             return None

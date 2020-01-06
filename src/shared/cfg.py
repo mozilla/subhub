@@ -224,7 +224,9 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def SALESFORCE_BASKET_URI(self):
-        return self("SALESFORCE_BASKET_URI", "https://google.com?api-key=")
+        return self(
+            "SALESFORCE_BASKET_URI", "https://subhub.free.beeceptor.com?api-key="
+        )
 
     @property
     def BASKET_API_KEY(self):
@@ -237,6 +239,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     @property
     def AWS_REGION(self):
         return self("AWS_REGION", "us-west-2")
+
+    @property
+    def SUPPORTED_COUNTRIES(self):
+        return self("SUPPORTED_COUNTRIES", "US, CA").split(",")
 
     @property
     def PAYMENT_API_KEY(self):

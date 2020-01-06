@@ -392,20 +392,26 @@ def retrieve_stripe_charge(charge_id: str) -> Charge:
     :param charge_id:
     :return: Charge
     """
-    try:
-        charge = Charge.retrieve(charge_id)
-        logger.debug("retrieve stripe charge", charge=charge)
-        return charge
-    except (
-        InvalidRequestError,
-        APIConnectionError,
-        APIError,
-        RateLimitError,
-        IdempotencyError,
-        StripeErrorWithParamCode,
-    ) as e:
-        logger.error("retrieve stripe error", error=str(e))
-        raise e
+    if charge_id is None:
+        logger.error(
+            "hub::shared::vendor::retrieve_stripe_charge received a None charge_id, ignoring."
+        )
+        return None
+    else:
+        try:
+            charge = Charge.retrieve(charge_id)
+            logger.debug("retrieve stripe charge", charge=charge)
+            return charge
+        except (
+            InvalidRequestError,
+            APIConnectionError,
+            APIError,
+            RateLimitError,
+            IdempotencyError,
+            StripeErrorWithParamCode,
+        ) as e:
+            logger.error("retrieve stripe error", error=str(e))
+            raise e
 
 
 # end Charge calls
