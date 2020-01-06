@@ -46,7 +46,7 @@ repos:
     -   id: mypy
         args: [--no-strict-optional, --ignore-missing-imports]
 -   repo: https://github.com/Lucas-C/pre-commit-hooks-safety
-    sha: v1.1.0
+    rev: v1.1.0
     hooks:
     -   id: python-safety-dependencies-check
 -   repo: https://github.com/PyCQA/bandit
