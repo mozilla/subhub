@@ -17,7 +17,7 @@ from shared.log import get_logger
 logger = get_logger()
 
 
-def random_label(length):
+def random_label(length: int) -> str:
     letters = string.ascii_lowercase
     return "".join(random.choice(letters) for i in range(length))
 

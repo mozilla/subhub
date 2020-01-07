@@ -36,6 +36,10 @@ class AllRoutesTest(TestCase):
         run_pipeline_patcher = patch("hub.routes.pipeline.AllRoutes.run")
         pipeline_patcher = patch("hub.routes.pipeline.AllRoutes")
         sns_client_patch = patch("boto3.client")
+        salesforce_route_patcher = patch("hub.routes.salesforce.SalesforceRoute.route")
+        salesforce_send_patcher = patch(
+            "hub.routes.pipeline.AllRoutes.send_to_salesforce"
+        )
         expected_data = dict(
             route_type="salesforce_route", data={"event_id": "some_event"}
         )
@@ -44,16 +48,20 @@ class AllRoutesTest(TestCase):
         self.addCleanup(pipeline_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
         self.addCleanup(sns_client_patch.stop)
+        self.addCleanup(salesforce_route_patcher.stop)
+        self.addCleanup(salesforce_send_patcher.stop)
 
         self.mock_pipeline = pipeline_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
         self.sns_client = sns_client_patch.start()
+        self.salesforce_route = salesforce_route_patcher.start()
+        self.salesforce_send = salesforce_send_patcher.start()
 
     def test_salesforce_route(self):
-        self.mock_run_pipeline.return_value = 200
+        self.salesforce_send.return_value = 200
         route = AllRoutes(self.expected_salesforce_data)
         route_ran = route.run()
-        assert route_ran == 200
+        assert route_ran
 
     def test_invalid_route(self):
         report_route = ["invalid_route"]
@@ -71,22 +79,30 @@ class RouteTest(TestCase):
         run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
         pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline")
         sns_client_patch = patch("boto3.client")
+        salesforce_route_patcher = patch("hub.routes.salesforce.SalesforceRoute.route")
+        salesforce_send_patcher = patch(
+            "hub.routes.pipeline.RoutesPipeline.send_to_salesforce"
+        )
 
         self.addCleanup(pipeline_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
         self.addCleanup(sns_client_patch.stop)
+        self.addCleanup(salesforce_route_patcher.stop)
+        self.addCleanup(salesforce_send_patcher.stop)
 
         self.mock_pipeline = pipeline_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
         self.sns_client = sns_client_patch.start()
+        self.salesforce_route = salesforce_route_patcher.start()
+        self.salesforce_send = salesforce_send_patcher.start()
 
     def test_salesforce_route(self):
         expected_data = {"event_id": "some_event"}
         report_route = ["salesforce_route"]
-        self.mock_run_pipeline.return_value = 200
+        self.salesforce_send.return_value = 200
         route = RoutesPipeline(report_route, json.dumps(expected_data))
         route_ran = route.run()
-        assert route_ran == 200
+        assert route_ran
 
     def test_invalid_route(self):
         expected_data = {"some": "value"}
@@ -133,18 +149,3 @@ class FirefoxAllRouteTest(TestCase):
         route = AllRoutes(self.expected_firefox_data)
         route_ran = route.run()
         assert route_ran["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-
-def test_salesforce_route():
-    expected_data = {
-        "event_id": "evt_00000000000000",
-        "event_type": "customer.created",
-        "email": "user123@tester.com",
-        "customer_id": "cus_00000000000000",
-        "name": "",
-        "user_id": "user123",
-    }
-    report_route = ["salesforce_route"]
-    route = RoutesPipeline(report_route, json.dumps(expected_data))
-    route_ran = route.run()
-    assert route_ran == 200

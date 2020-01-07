@@ -224,9 +224,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def SALESFORCE_BASKET_URI(self):
-        return self(
-            "SALESFORCE_BASKET_URI", "https://subhub.free.beeceptor.com?api-key="
-        )
+        return self("SALESFORCE_BASKET_URI", "http://www.example.com")
 
     @property
     def BASKET_API_KEY(self):
