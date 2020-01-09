@@ -95,11 +95,9 @@ existence of 3 environment variables:
 Where the value of the `STRIPE_API_KEY` is not a real Stripe API key used in the system but a fake one for testing.  The
 test environment uses `sk_test_123` as the value for validation here.
 
-Running the environment locally is split between the front end APIs (sub) and the back end APIs (hub).  To run the front
+Running the environment locally is the back end APIs (hub).  To run the front
 end APIs use the following command:
-```
-doit local sub
-```
+
 To run the backend APIs use the following command:
 ```
 doit local hub

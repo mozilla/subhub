@@ -1,3 +1,7 @@
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import os
 import re
 import pwd
@@ -467,46 +471,6 @@ def task_yarn():
         "actions": [
             "[ -d node_modules/ ] && rm -rf node_modules/ || true",
             "yarn install",
-        ],
-    }
-
-
-def task_perf_local():
-    """
-    run locustio performance tests on local deployment
-    """
-    FLASK_PORT = 5000
-    ENVS = envs(
-        LOCAL_FLASK_PORT=FLASK_PORT,
-        AWS_ACCESS_KEY_ID="fake-id",
-        AWS_SECRET_ACCESS_KEY="fake-key",
-        PYTHONPATH=".",
-    )
-    cmd = f"env {ENVS} {PYTHON3} src/sub/app.py"  # FIXME: should work on hub too...
-    return {
-        "basename": "perf-local",
-        "task_dep": ["check", "venv"],
-        "actions": [
-            f"{PYTHON3} -m setup develop",
-            "echo $PATH",
-            LongRunning(
-                f"nohup env {envs} {PYTHON3} src/sub/app.py > /dev/null &"
-            ),  # FIXME: same as above
-            f"cd src/sub/tests/performance && locust -f locustfile.py --host=http://localhost:{FLASK_PORT}",  # FIXME: same
-        ],
-    }
-
-
-def task_perf_remote():
-    """
-    run locustio performance tests on remote deployment
-    """
-    return {
-        "basename": "perf-remote",
-        "task_dep": ["check", "venv"],
-        "actions": [
-            f"{PYTHON3} -m setup develop",
-            f"cd src/sub/tests/performance && locust -f locustfile.py --host=https://{CFG.DEPLOY_DOMAIN}",  # FIXME: same as above
         ],
     }
 

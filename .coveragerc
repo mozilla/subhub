@@ -8,7 +8,7 @@ parallel = True
 # Store coverage at the location, reports/.coverage
 data_file = reports/.coverage
 # Collect coverage from the following sources
-source = src/shared, src/sub, src/hub
+source = src/shared, src/hub
 
 [report]
 # Ignore source errors that can't be found
