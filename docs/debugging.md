@@ -10,5 +10,4 @@
 6. Run the application of choise: `run APPLICATION`
 
 Where APPLICATION is either
-* `src/sub/app.py`
 * `src/hub/app.py`

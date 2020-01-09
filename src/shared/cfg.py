@@ -43,7 +43,7 @@ def call(
         return (None, "nerfed", "nerfed")
     process = Popen(cmd, stdout=stdout, stderr=stderr, shell=shell)  # nosec
     _stdout, _stderr = [
-        stream.decode("utf-8") if stream != None else None
+        stream.decode("utf-8") if stream is not None else None
         for stream in process.communicate()
     ]
     exitcode = process.poll()

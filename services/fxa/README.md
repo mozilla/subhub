@@ -15,7 +15,7 @@ Start offline services, `serverless offline start --host 0.0.0.0 --stage dev`
 
 Once this is done, you can access the DynamoDB Javascript Shell by
 navigating [here](http://localhost:8000/shell/).  Additionally, you may interact with the application as you would on AWS via commands such as:
-  * Perform a HTTP GET of `http://localhost:3000/v1/sub/version`
+  * Perform a HTTP GET of `http://localhost:3000/v1/hub/version`
 
 ### Domain Creation
 
@@ -33,7 +33,6 @@ You may inspect the contents of each packages with:
 
 Where `ARCHIVE` is a member of
 
-* sub
 * hub
 * mia
 
@@ -45,7 +44,6 @@ You can inspect the Serverless logs by function via the command:
 
 Where `FUNCTION` is a member of
 
-* sub
 * hub
 * mia
 
