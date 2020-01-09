@@ -21,8 +21,6 @@ Payment subscription REST api for customers:
 
 ### [RESTful Service Interactions](./docs/rest.md)
 
-### [Performance Testing](./src/sub/tests/performance/README.md)
-
 ### [Site Reliability Information (SRE)](./docs/sre_info.md)
 
 ### [AWS DynamoDB Backups](./docs/backups.md)
