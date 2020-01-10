@@ -9,7 +9,7 @@ import stripe
 
 from stripe.error import InvalidRequestError
 from datetime import datetime
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from flask import g
 
 from hub.vendor.abstract import AbstractStripeHubEvent
@@ -328,28 +328,87 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         """
         logger.debug("customer subscription deleted", payload=self.payload)
         customer_id = self.payload.data.object.customer
-        user_id = self.get_user_id(customer_id)
-
-        data = self.create_payload(user_id)
-        routes = [StaticRoutes.FIREFOX_ROUTE]
-        self.send_to_routes(routes, json.dumps(data))
+        customer = self.get_customer(customer_id)
+        user_id = self.get_user_id(customer=customer)
+        mark_delete = self.check_mark_delete(customer)
+        active_subs = self.check_all_subscriptions(customer=customer)
+        logger.debug("mark_delete", mark_delete=mark_delete, active_subs=active_subs)
+        if mark_delete and not active_subs:
+            origin_system = self.get_origin_system(customer=customer)
+            subscription_list = self.get_subscription_info(
+                subscriptions=customer.get("subscriptions")
+            )
+            logger.debug("sub list", subscription_list=subscription_list)
+            deleted_user = self.add_user_to_deleted_users_record(
+                user_id=user_id,
+                cust_id=customer_id,
+                origin_system=origin_system,
+                subscription_info=subscription_list,
+            )
+            if deleted_user:
+                deleted_customer = self.delete_customer(customer_id=customer_id)
+                logger.info("deleted customer", deleted_customer=deleted_customer)
+                return True
+            else:
+                return False
         return True
 
-    def get_user_id(self, customer_id) -> str:
+    def add_user_to_deleted_users_record(
+        self,
+        user_id: str,
+        cust_id: Optional[str],
+        origin_system: str,
+        subscription_info: List[Dict[str, Any]],
+    ) -> bool:
+        deleted_user = g.subhub_deleted_users.new_user(
+            uid=user_id,
+            cust_id=cust_id,
+            origin_system=origin_system,
+            subscription_info=subscription_info,
+        )
+        new_deleted_user = g.subhub_deleted_users.save_user(deleted_user)
+        return new_deleted_user
+
+    def get_subscription_info(self, subscriptions: Dict[str, Any]):
+        """
+        Format subscription info to insert into DeletedUsers record
+        :param subscriptions:
+        :return list of subscriptions subscription_info:
+        """
+        subscription_info: List = []
+        for subs in subscriptions["data"]:
+            plan = subs.get("plan")
+            nickname = plan.get("nickname")
+            interval = plan.get("interval")
+            sub = dict(
+                plan_amount=subs.plan.amount,
+                nickname=format_plan_nickname(nickname, interval),
+                productId=subs.plan.product,
+                current_period_end=subs.current_period_end,
+                current_period_start=subs.current_period_start,
+                subscription_id=subs.id,
+            )
+            subscription_info.append(sub)
+        return subscription_info
+
+    def get_origin_system(self, customer: Dict[str, Any]) -> str:
+        """
+        Fetch origin system from Customer
+        :param customer:
+        :return origin_system:
+        """
+        customer_metadata = customer.get("metadata")
+        origin_system = customer_metadata.get("origin_system", "unknown")
+        return origin_system
+
+    def get_user_id(self, customer: Dict[str, Any]) -> str:
         """
         Fetch the user_id associated with the Stripe customer_id
-        :param customer_id:
+        :param customer:
         :return user_id:
         :raises InvalidRequestError
         :raises ClientError
         """
-        try:
-            customer = vendor.retrieve_stripe_customer(customer_id=customer_id)
-
-        except InvalidRequestError as e:
-            logger.error("Unable to find customer", error=e)
-            raise e
-
         deleted = customer.get("deleted", False)
         user_id = None
         if not deleted:
@@ -360,27 +419,61 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         if user_id is None:
             logger.error(
                 "customer subscription deleted - no userid",
-                error=customer_id,
+                error=customer.get("id"),
                 is_customer_deleted=deleted,
             )
-            raise ClientError(f"userid is None for customer {customer_id}")
+            raise ClientError(f"userid is None for customer {customer.get('id')}")
 
         return user_id
 
-    def create_payload(self, user_id) -> Dict[str, Any]:
+    def get_customer(self, customer_id: str) -> Dict[str, Any]:
         """
-        Create payload to be sent to external sources
-        :return payload:
+        Fetch Stripe customer
+        :param customer_id:
+        :return Customer:
+        :raises InvalidRequestError:
         """
-        return dict(
-            uid=user_id,
-            active=self.is_active_or_trialing,
-            subscriptionId=self.payload.data.object.id,
-            productId=self.payload.data.object.plan.product,
-            eventId=self.payload.id,
-            eventCreatedAt=self.payload.created,
-            messageCreatedAt=int(time.time()),
-        )
+        try:
+            return vendor.retrieve_stripe_customer(customer_id=customer_id)
+        except InvalidRequestError as e:
+            logger.error("Unable to find customer", error=e)
+            raise e
+
+    def delete_customer(self, customer_id: str) -> Dict[str, Any]:
+        """
+        Delete Stripe Customer if marked for deletion and no active subscriptions exist
+        :param customer_id:
+        :return
+        """
+        return vendor.delete_stripe_customer(customer_id=customer_id)
+
+    def check_all_subscriptions(self, customer: Dict[str, Any]) -> bool:
+        """
+        Check if all subscriptions related to customer are cancelled
+        :param customer:
+        :return bool:
+        """
+        active_subscriptions = False
+        subs = customer.get("subscriptions")
+        sub_data = subs.get("data")
+        for sub in sub_data:
+            logger.debug("sub", sub=sub, active=sub.get("status"))
+            if sub.get("status") == "active":
+                active_subscriptions = True
+            logger.debug("sub loop", active_subscriptions=active_subscriptions)
+        return active_subscriptions
+
+    def check_mark_delete(self, customer: Dict[str, Any]) -> bool:
+        """
+        Check if customer is marked for delete
+        :param customer:
+        :return bool:
+        """
+        metadata = customer.get("metadata", None)
+        mark_delete = metadata.get("delete", False)
+        if mark_delete:
+            return True
+        return False
 
 
 class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
