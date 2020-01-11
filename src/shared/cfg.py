@@ -228,7 +228,7 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
 
     @property
     def SALESFORCE_BASKET_URI(self):
-        return self("SALESFORCE_BASKET_URI", "http://www.example.com")
+        return self("SALESFORCE_BASKET_URI", "http://www.example.com?api-key=")
 
     @property
     def BASKET_API_KEY(self):
