@@ -204,23 +204,8 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
         user_id = self.get_user_id(customer_id)
 
         data: Dict[str, Any] = self.create_payload(user_id)
-
-        # NOTE:
-        # Firefox's route has a particular casing requirement
-        # Salesforce's route doesn't care.
-        data_projection_by_route: Dict[str, Any] = {
-            StaticRoutes.FIREFOX_ROUTE: [
-                "uid",
-                "active",
-                "subscriptionId",
-                "productId",
-                "eventId",
-                "eventCreatedAt",
-                "messageCreatedAt",
-            ],
-            StaticRoutes.SALESFORCE_ROUTE: data.keys(),
-        }
-        self.customer_event_to_all_routes(data_projection_by_route, data)
+        routes = [StaticRoutes.SALESFORCE_ROUTE]
+        self.send_to_routes(routes, json.dumps(data))
         logger.info("customer subscription created", data=data)
         return True
 
@@ -320,6 +305,7 @@ class StripeCustomerSubscriptionCreated(AbstractStripeHubEvent):
             raise e
 
 
+# noinspection PyArgumentList
 class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
     def run(self) -> bool:
         """
@@ -328,24 +314,38 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         """
         logger.debug("customer subscription deleted", payload=self.payload)
         customer_id = self.payload.data.object.customer
-        customer = self.get_customer(customer_id)
+        customer = self.get_customer(customer_id=customer_id)
         user_id = self.get_user_id(customer=customer)
-        mark_delete = self.check_mark_delete(customer)
+        mark_delete = self.check_mark_delete(customer=customer)
         active_subs = self.check_all_subscriptions(customer=customer)
         logger.debug("mark_delete", mark_delete=mark_delete, active_subs=active_subs)
-        if mark_delete and not active_subs:
-            origin_system = self.get_origin_system(customer=customer)
-            subscription_list = self.get_subscription_info(
-                subscriptions=customer.get("subscriptions")
+        origin_system = self.get_origin_system(customer=customer)
+        logger.info("current sub", current_sub=self.payload.data.object)
+        subscription_list = self.get_subscription_info(
+            subscriptions=customer.get("subscriptions"),
+            current_sub=self.payload.data.object,
+        )
+        logger.debug("sub list", subscription_list=subscription_list)
+        check_deleted_user = self.check_for_deleted_user(
+            user_id=user_id, cust_id=customer_id
+        )
+        logger.info("check deleted user", check_deleted_user=check_deleted_user)
+        if check_deleted_user is not None:
+            deleted_user = self.update_deleted_user(
+                user_id=user_id,
+                cust_id=customer_id,
+                subscription_list=subscription_list,
             )
-            logger.debug("sub list", subscription_list=subscription_list)
-            deleted_user = self.add_user_to_deleted_users_record(
+            logger.info("deleted user", deleted_user=deleted_user)
+        else:
+            deleted_user_added = self.add_user_to_deleted_users_record(
                 user_id=user_id,
                 cust_id=customer_id,
                 origin_system=origin_system,
                 subscription_info=subscription_list,
             )
-            if deleted_user:
+        if mark_delete and not active_subs:
+            if deleted_user or deleted_user_added:
                 deleted_customer = self.delete_customer(customer_id=customer_id)
                 logger.info("deleted customer", deleted_customer=deleted_customer)
                 return True
@@ -353,10 +353,28 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
                 return False
         return True
 
+    def check_for_deleted_user(
+        self, user_id: str, cust_id: str
+    ) -> Optional[SubHubDeletedAccountModel]:
+        return g.subhub_deleted_users.get_user(uid=user_id, cust_id=cust_id)
+
+    def update_deleted_user(
+        self, user_id: str, cust_id: str, subscription_list: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
+        logger.info(
+            "update deleted user",
+            user_id=user_id,
+            cust_id=cust_id,
+            subscription_list=subscription_list,
+        )
+        return g.subhub_deleted_users.update_subscriptions(
+            user_id, cust_id, subscription_list
+        )
+
     def add_user_to_deleted_users_record(
         self,
         user_id: str,
-        cust_id: Optional[str],
+        cust_id: str,
         origin_system: str,
         subscription_info: List[Dict[str, Any]],
     ) -> bool:
@@ -369,19 +387,37 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         new_deleted_user = g.subhub_deleted_users.save_user(deleted_user)
         return new_deleted_user
 
-    def get_subscription_info(self, subscriptions: Dict[str, Any]):
+    def get_subscription_info(
+        self, subscriptions: Dict[str, Any], current_sub: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """
         Format subscription info to insert into DeletedUsers record
         :param subscriptions:
         :return list of subscriptions subscription_info:
         """
         subscription_info: List = []
+        plan = current_sub.get("plan")
+        logger.info("plan", plan=plan, current_sub=current_sub)
+        nickname = plan.get("nickname")
+        interval = plan.get("interval")
+        product = plan.get("product")
+        plan_amount = plan.get("amount")
+        sub = dict(
+            plan_amount=plan_amount,
+            nickname=format_plan_nickname(nickname, interval),
+            productId=product,
+            current_period_end=current_sub.get("current_period_end"),
+            current_period_start=current_sub.get("current_period_start"),
+            subscription_id=current_sub.get("id"),
+        )
+        subscription_info.append(sub)
         for subs in subscriptions["data"]:
             plan = subs.get("plan")
             nickname = plan.get("nickname")
             interval = plan.get("interval")
+            plan_amount = plan.get("amount")
             sub = dict(
-                plan_amount=subs.plan.amount,
+                plan_amount=plan_amount,
                 nickname=format_plan_nickname(nickname, interval),
                 productId=subs.plan.product,
                 current_period_end=subs.current_period_end,
@@ -450,6 +486,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
     def check_all_subscriptions(self, customer: Dict[str, Any]) -> bool:
         """
         Check if all subscriptions related to customer are cancelled
+        :param self:
         :param customer:
         :return bool:
         """
