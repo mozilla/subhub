@@ -351,7 +351,7 @@ class StripeCustomerSubscriptionCreatedTest(TestCase):
         invoice_patcher = patch("stripe.Invoice.retrieve")
         preview_invoice_patcher = patch("stripe.Invoice.upcoming")
         charge_patcher = patch("stripe.Charge.retrieve")
-        run_pipeline_patcher = patch("hub.routes.pipeline.AllRoutes.run")
+        run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(customer_patcher.stop)
         self.addCleanup(product_patcher.stop)
@@ -527,14 +527,20 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
         with open(f"{fixture_dir}stripe_sub_deleted_event.json") as fh:
             self.subscription_deleted_event = json.loads(fh.read())
 
+        with open(f"{fixture_dir}stripe_sub_test3.json") as fh:
+            self.sub_to_delete = json.loads(fh.read())
+
         customer_patcher = patch("stripe.Customer.retrieve")
+        delete_customer_patcher = patch("stripe.Customer.delete")
         run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(customer_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
+        self.addCleanup(delete_customer_patcher.stop)
 
         self.mock_customer = customer_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
+        self.mock_delete_customer = delete_customer_patcher.start()
 
     def test_run(self):
         self.mock_customer.return_value = self.customer
@@ -545,6 +551,94 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
         ).run()
 
         assert did_run
+
+    def test_check_for_deleted_user(self):
+        self.mock_delete_customer.return_value = self.deleted_customer
+        to_delete_cus = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        deleted_cus = to_delete_cus.delete_customer(self.mock_delete_customer)
+        assert deleted_cus.get("deleted") is True
+
+    def test_add_user_to_deleted_users_record(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        add_deleted_user = deleted_user.add_user_to_deleted_users_record(
+            user_id="test1",
+            cust_id="cust_1",
+            origin_system="origin1",
+            subscription_info=[
+                {
+                    "nickname": "test sub 1",
+                    "plan_amount": 100,
+                    "productId": "prod_tes1",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test1",
+                }
+            ],
+        )
+        assert add_deleted_user
+
+    def test_update_deleted_user(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        deleted_user.add_user_to_deleted_users_record(
+            user_id="test1",
+            cust_id="cust_1",
+            origin_system="origin1",
+            subscription_info=[
+                {
+                    "nickname": "test sub 1",
+                    "plan_amount": 100,
+                    "productId": "prod_tes1",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test1",
+                }
+            ],
+        )
+        updated_user = deleted_user.update_deleted_user(
+            "test1",
+            "cust_1",
+            [
+                {
+                    "nickname": "test sub 2",
+                    "plan_amount": 100,
+                    "productId": "prod_tes2",
+                    "current_period_start": 1234567,
+                    "current_period_end": 1234567,
+                    "subscription_id": "sub_test2",
+                }
+            ],
+        )
+        logger.info("update deleted user", updated_user=updated_user)
+        assert len(updated_user) == 2
+
+    def test_get_origin_system(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        origin_test = deleted_user.get_origin_system(self.customer)
+        assert origin_test == "unknown"
+
+    def test_get_user_id(self):
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        user_id = deleted_user.get_user_id(self.customer)
+        assert user_id == "user123"
+
+    def test_delete_customer(self):
+        self.mock_delete_customer.return_value = self.deleted_customer
+        deleted_user = StripeCustomerSubscriptionDeleted(
+            self.subscription_deleted_event
+        )
+        deleted_cust = deleted_user.delete_customer("cust_test1")
+        assert deleted_cust.get("id") == "cust_test1"
+        assert deleted_cust.get("deleted") is True
 
     def test_get_customer(self):
         self.mock_customer.return_value = self.customer
@@ -573,8 +667,10 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
         self.mock_customer.return_value = self.customer_active_sub
         delete_cus = StripeCustomerSubscriptionDeleted(self.subscription_deleted_event)
         logger.info("get sub", subs=self.customer_active_sub.get("subscriptions"))
+        logger.info("sub to delete", to_delete=self.sub_to_delete)
         check_sub_info = delete_cus.get_subscription_info(
-            subscriptions=self.customer_active_sub.get("subscriptions")
+            subscriptions=self.customer_active_sub.get("subscriptions"),
+            current_sub=self.sub_to_delete,
         )
         assert check_sub_info[0].get("nickname") == "Test Plan (Ion)"
 
