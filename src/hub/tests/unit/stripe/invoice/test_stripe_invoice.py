@@ -5,11 +5,19 @@
 import mock
 import unittest
 import json
+import time
 
 from stripe.util import convert_to_stripe_object
 from stripe.error import InvalidRequestError
 
-from hub.vendor.invoices import StripeInvoicePaymentFailed
+from hub.vendor.invoices import (
+    StripeInvoicePaymentFailed,
+    StripeInvoicePaymentSucceeded,
+)
+
+from shared.log import get_logger
+
+logger = get_logger()
 
 
 class StripeInvoicePaymentFailedTest(unittest.TestCase):
@@ -92,3 +100,106 @@ class StripeInvoicePaymentFailedTest(unittest.TestCase):
         ).create_payload()
 
         assert expected_payload == actual_payload
+
+
+class StripeInvoicePaymentSucceededTest(unittest.TestCase):
+    def setUp(self) -> None:
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test_expanded.json") as fh:
+            sub_test1 = json.loads(fh.read())
+        self.subscription = convert_to_stripe_object(sub_test1)
+
+        with open(
+            "src/hub/tests/unit/fixtures/stripe_invoice_payment_succeeded_new_event.json"
+        ) as fh:
+            self.payment_succeeded_new_event = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_in_test1.json") as fh:
+            self.invoice = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test4.json") as fh:
+            self.subscription4 = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test5.json") as fh:
+            self.subscription5 = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test6.json") as fh:
+            self.subscription6 = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test7.json") as fh:
+            self.subscription7 = json.loads(fh.read())
+
+        with open("src/hub/tests/unit/fixtures/stripe_ch_test1.json") as fh:
+            self.charge = json.loads(fh.read())
+
+        subscription_patcher = mock.patch("stripe.Subscription.retrieve")
+        invoice_patcher = mock.patch("stripe.Invoice.upcoming")
+        invoice_retrieve_patcher = mock.patch("stripe.Invoice.retrieve")
+        charge_retrieve_patcher = mock.patch("stripe.Charge.retrieve")
+        run_pipeline_patcher = mock.patch("hub.routes.pipeline.RoutesPipeline.run")
+
+        self.addCleanup(subscription_patcher.stop)
+        self.addCleanup(invoice_patcher.stop)
+        self.addCleanup(run_pipeline_patcher.stop)
+        self.addCleanup(invoice_retrieve_patcher.stop)
+        self.addCleanup(charge_retrieve_patcher.stop)
+
+        self.mock_subscription = subscription_patcher.start()
+        self.mock_invoice = invoice_patcher.start()
+        self.mock_run_pipeline = run_pipeline_patcher.start()
+        self.mock_retrieve_invoice = invoice_retrieve_patcher.start()
+        self.mock_retrieve_charge = charge_retrieve_patcher.start()
+
+    def test_run_success(self):
+        self.mock_subscription.return_value = self.subscription
+        self.mock_invoice.return_value = self.invoice
+        self.mock_run_pipeline.return_value = None
+        self.mock_retrieve_invoice.return_value = self.invoice
+        self.mock_retrieve_charge.return_value = self.charge
+
+        did_run = StripeInvoicePaymentSucceeded(self.payment_succeeded_new_event).run()
+
+        assert did_run
+
+    def test_determine_new(self):
+        invoice_succeeded = StripeInvoicePaymentSucceeded(
+            self.payment_succeeded_new_event
+        )
+        determine_if_new = invoice_succeeded.determine_new(
+            self.subscription4, 1579623792
+        )
+        assert determine_if_new == "recurring"
+
+    def test_determine_unknown(self):
+        invoice_succeeded = StripeInvoicePaymentSucceeded(
+            self.payment_succeeded_new_event
+        )
+        determine_if_new = invoice_succeeded.determine_new(
+            self.subscription5, 1579623792
+        )
+        assert determine_if_new == "unsupported-unknown"
+
+    def test_run_new(self):
+        self.subscription7["start_date"] = time.time()
+        self.mock_subscription.return_value = self.subscription7
+        self.mock_invoice.return_value = self.invoice
+        self.mock_run_pipeline.return_value = None
+        self.mock_retrieve_invoice.return_value = self.invoice
+        self.mock_retrieve_charge.return_value = self.charge
+        logger.error("run new ", success_event=type(self.payment_succeeded_new_event))
+        self.payment_succeeded_new_event["data"]["object"]["created"] = time.time() - (
+            24 * 60 * 60
+        )
+
+        did_run = StripeInvoicePaymentSucceeded(self.payment_succeeded_new_event).run()
+
+        assert did_run
+
+    def test_determine_no_plan(self):
+        self.subscription6["plan"] = {}
+        invoice_succeeded = StripeInvoicePaymentSucceeded(
+            self.payment_succeeded_new_event
+        )
+        determine_if_new = invoice_succeeded.determine_new(
+            self.subscription6, 1579623792
+        )
+        assert determine_if_new == "unsupported-unknown"

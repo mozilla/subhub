@@ -179,6 +179,36 @@ def retrieve_stripe_customer(customer_id: str) -> Optional[Customer]:
     stop=stop_after_attempt(4),
     reraise=True,
 )
+def retrieve_stripe_subscription(subscription_id: str) -> Subscription:
+    """
+    Create a new Stripe subscription for a given customer
+    :param customer_id:
+    :param plan_id:
+    :param idempotency_key:
+    :return: Subscription object
+    """
+    try:
+        sub = Subscription.retrieve(id=subscription_id, expand=["customer"])
+        logger.debug("retrieve stripe subscription", sub=sub)
+        return sub
+    except (
+        InvalidRequestError,
+        APIConnectionError,
+        APIError,
+        RateLimitError,
+        IdempotencyError,
+        StripeErrorWithParamCode,
+        AuthenticationError,
+    ) as e:
+        logger.error("sub error", error=e)
+        raise e
+
+
+@retry(
+    wait=wait_exponential(multiplier=1, min=1, max=8),
+    stop=stop_after_attempt(4),
+    reraise=True,
+)
 def build_stripe_subscription(
     customer_id: str, plan_id: str, idempotency_key: str
 ) -> Subscription:
