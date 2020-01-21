@@ -536,7 +536,6 @@ def task_tar():
             "--exclude=__pycache__",
             "--exclude=*.pyc",
             "--exclude=.env",
-            "--exclude=sub/tests",
             "--exclude=hub/tests",
             "--exclude=shared/tests",
             "--exclude=.git",
