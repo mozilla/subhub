@@ -445,11 +445,10 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             and self.payload.data.object.status == "active"
             and not previous_plan
         ):
-            data = self.create_payload(
-                "customer.recurring_charge", user_id, previous_plan=None
+            logger.info(
+                "customer subscription recurring handled via invoice payment succeeded"
             )
-            logger.info("customer subscription new recurring", data=data)
-            routes = [StaticRoutes.SALESFORCE_ROUTE]
+            return True
         elif previous_plan:
             data = self.create_payload(
                 "customer.subscription_change", user_id, previous_plan=previous_plan
@@ -541,8 +540,6 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
 
             if event_type == "customer.subscription_cancelled":
                 payload.update(self.get_cancellation_data())
-            elif event_type == "customer.recurring_charge":
-                payload.update(self.get_recurring_data(product_name=product["name"]))
             elif event_type == "customer.subscription.reactivated":
                 payload.update(self.get_reactivation_data())
             elif event_type == "customer.subscription_change":
@@ -569,58 +566,6 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             current_period_start=self.payload.data.object.current_period_start,
             current_period_end=self.payload.data.object.current_period_end,
             invoice_id=self.payload.data.object.latest_invoice,
-        )
-
-    def get_recurring_data(self, product_name) -> Dict[str, Any]:
-        """
-        Format data specific to recurring charge
-        :param product_name:
-        :return dict:
-        """
-        invoice_id = self.payload.data.object.latest_invoice
-        latest_invoice = vendor.retrieve_stripe_invoice(invoice_id)
-        invoice_number = latest_invoice.number
-        charge_id = latest_invoice.charge
-        latest_charge = vendor.retrieve_stripe_charge(charge_id)
-        last4 = latest_charge.payment_method_details.card.last4
-        brand = format_brand(latest_charge.payment_method_details.card.brand)
-        upcoming_invoice = vendor.retrieve_stripe_invoice_upcoming(
-            customer=self.payload.data.object.customer
-        )
-
-        logger.info("latest invoice", latest_invoice=latest_invoice)
-        logger.info("latest charge", latest_charge=latest_charge)
-
-        next_invoice = vendor.retrieve_stripe_invoice_upcoming_by_subscription(
-            customer_id=self.payload.data.object.customer,
-            subscription_id=self.payload.data.object.id,
-        )
-        next_invoice_date = next_invoice.get("period_end", 0)
-
-        return dict(
-            canceled_at=self.payload.data.object.canceled_at,
-            cancel_at=self.payload.data.object.cancel_at,
-            cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-            current_period_start=self.payload.data.object.current_period_start,
-            current_period_end=self.payload.data.object.current_period_end,
-            next_invoice_date=next_invoice_date,
-            invoice_id=self.payload.data.object.latest_invoice,
-            active=self.is_active_or_trialing,
-            subscriptionId=self.payload.data.object.id,  # required by FxA
-            productName=product_name,
-            eventCreatedAt=self.payload.created,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            created=self.payload.data.object.created,
-            eventId=self.payload.id,  # required by FxA
-            currency=self.payload.data.object.plan.currency,
-            invoice_number=invoice_number,
-            brand=brand,
-            last4=last4,
-            charge=charge_id,
-            proration_amount=upcoming_invoice.get("amount_due", 0),
-            total_amount=self.get_total_upcoming_invoice_amount(
-                upcoming_invoice=upcoming_invoice
-            ),
         )
 
     def get_total_upcoming_invoice_amount(
