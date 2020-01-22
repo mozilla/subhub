@@ -292,7 +292,7 @@ def check_precommit():
         "actions": [f"pre-commit install >> /dev/null"],
     }
 
-
+@skip("reqs")
 def check_reqs():
     """
     check requirements
@@ -302,7 +302,7 @@ def check_reqs():
     required = [
         line
         for line in open("automation_requirements.txt").read().strip().split("\n")
-        if not line.startswith("#")
+        if not line.startswith("#") and line != ''
     ]
     required = [
         tuple(item.split("==")) if "==" in item else (item, None) for item in required
