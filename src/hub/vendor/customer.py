@@ -123,13 +123,8 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
             plan_amount=plan_amount,
             nickname=nicknames,
             subscription_id=subs,
-            subscriptionId=subs,  # required by FxA
             current_period_end=current_period_end,
             current_period_start=current_period_start,
-            uid=self.payload.data.object.metadata.userid,  # required by FxA
-            eventCreatedAt=self.payload.created,  # required by FxA
-            messageCreatedAt=int(time.time()),  # required by FxA
-            eventId=self.payload.id,  # required by FxA
         )
 
 

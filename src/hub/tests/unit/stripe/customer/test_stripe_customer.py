@@ -156,13 +156,8 @@ class StripeCustomerDeletedTest(TestCase):
             plan_amount=499,
             nickname=[self.subscription_item.get("nickname")],
             subscription_id=f"{self.subscription_item.get('subscription_id')}",
-            subscriptionId=f"{self.subscription_item.get('subscription_id')}",
             current_period_end=self.subscription_item.get("current_period_end"),
             current_period_start=self.subscription_item.get("current_period_start"),
-            uid=self.user_id,
-            eventCreatedAt=1326853478,
-            messageCreatedAt=int(time.time()),
-            eventId="evt_00000000000000",
         )
 
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
@@ -170,13 +165,6 @@ class StripeCustomerDeletedTest(TestCase):
         )
 
         self.assertEqual(payload.keys(), expected_payload.keys())
-        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
         self.assertEqual(payload, expected_payload)
 
     def test_create_payload_no_subscription_data(self):
@@ -188,13 +176,8 @@ class StripeCustomerDeletedTest(TestCase):
             plan_amount=0,
             nickname=[],
             subscription_id="",
-            subscriptionId="",
             current_period_end=None,
             current_period_start=None,
-            uid=self.user_id,
-            eventCreatedAt=1326853478,
-            messageCreatedAt=int(time.time()),
-            eventId="evt_00000000000000",
         )
 
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
@@ -202,13 +185,6 @@ class StripeCustomerDeletedTest(TestCase):
         )
 
         self.assertEqual(payload.keys(), expected_payload.keys())
-        if payload["messageCreatedAt"] != expected_payload["messageCreatedAt"]:
-            self.assertAlmostEqual(
-                payload["messageCreatedAt"],
-                expected_payload["messageCreatedAt"],
-                delta=10,
-            )
-            expected_payload["messageCreatedAt"] = payload["messageCreatedAt"]
         self.assertEqual(payload, expected_payload)
 
 
