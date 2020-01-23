@@ -13,7 +13,6 @@ import pytest
 
 from hub.routes.pipeline import RoutesPipeline, AllRoutes
 from hub.routes.static import StaticRoutes
-from hub.routes.firefox import FirefoxRoute
 from hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError
 from shared.log import get_logger
 
@@ -113,39 +112,3 @@ class RouteTest(TestCase):
         route = RoutesPipeline(report_route, expected_data)
         with pytest.raises(UnsupportedStaticRouteError):
             route.run()
-
-
-class FirefoxRouteTest(TestCase):
-    def setUp(self) -> None:
-        sns_client_patch = patch("boto3.client")
-
-        self.addCleanup(sns_client_patch.stop)
-
-        self.sns_client = sns_client_patch.start()
-
-    def test_firefox_route(self):
-        expected_data = {"event_id": "some_event"}
-        report_route = ["firefox_route"]
-        self.sns_client.return_value = MockClient()
-        route = RoutesPipeline(report_route, json.dumps(expected_data))
-        route_ran = route.run()
-        assert route_ran["ResponseMetadata"]["HTTPStatusCode"] == 200
-
-
-class FirefoxAllRouteTest(TestCase):
-    def setUp(self) -> None:
-        self.expected_firefox_data = [
-            dict(route_type="firefox_route", data=dict(event_id="some_event"))
-        ]
-
-        sns_client_patch = patch("boto3.client")
-
-        self.addCleanup(sns_client_patch.stop)
-
-        self.sns_client = sns_client_patch.start()
-
-    def test_firefox_route(self):
-        self.sns_client.return_value = MockClient()
-        route = AllRoutes(self.expected_firefox_data)
-        route_ran = route.run()
-        assert route_ran["ResponseMetadata"]["HTTPStatusCode"] == 200
