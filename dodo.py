@@ -83,7 +83,6 @@ def envs(sep=" ", **kwargs):
         STRIPE_MOCK_PORT=CFG.STRIPE_MOCK_PORT,
         SUPPORT_API_KEY=CFG.SUPPORT_API_KEY,
         PROJECT_NAME=CFG.PROJECT_NAME,
-        USER_TABLE=CFG.USER_TABLE,
         VERSION=CFG.VERSION,
     )
     return sep.join(
