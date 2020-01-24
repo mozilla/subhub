@@ -172,10 +172,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         }
 
     @property
-    def USER_TABLE(self):
-        return self("USER_TABLE", f"users-{CFG.DEPLOYED_ENV}")
-
-    @property
     def DELETED_USER_TABLE(self):
         return self("DELETED_USER_TABLE", f"deleted-users-{CFG.DEPLOYED_ENV}")
 
@@ -233,10 +229,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     @property
     def BASKET_API_KEY(self):
         return self("BASKET_API_KEY", "fake_basket_api_key")
-
-    @property
-    def FXA_SQS_URI(self):
-        return self("FXA_SQS_URI", "https://google.com")
 
     @property
     def AWS_REGION(self):
