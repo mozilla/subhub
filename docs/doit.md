@@ -30,14 +30,6 @@ This task will run the `black` code formatter on the `subhub/` directory.
 doit black
 ```
 
-## Install npm packages
-
-The npm task installs packages defined in the `package.json` file.  These are for use with `serverless` and `dynalite`.
-
-```
-doit npm
-```
-
 ## Run checks
 
 These are a series of checks which help ensure that the system is in good order to run other `doit` tasks.
@@ -62,25 +54,6 @@ This task will create the virtual env and install all of the requirements for us
 
 ```
 doit venv
-```
-
-## Dynalite
-
-The `dynalite` `npm` package is a database webserver.
-
-### Start dynalite
-
-This starts, if not already running, the `dynalite process` on the `DYNALITE_PORT` (default: `8000`)
-
-```
-doit dynalite:start
-```
-
-### Stop dynalite
-
-This stops, if already running,  the `dynalite` process on the `DYNALITE_PORT` (default: `8000`)
-```
-doit dynalite:stop
 ```
 
 ## Run locally
@@ -156,4 +129,4 @@ doit deploy SERVICE FUNCTION
 
 Where,
     SERVICE is the service that you are deploying from the set of fxa.
-    FUNCTION is the function that you are deploying from the set of sub, hub, mia.
+    FUNCTION is the function that you are deploying from the set of hub, mia.

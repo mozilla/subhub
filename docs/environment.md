@@ -400,24 +400,6 @@ The environment variables as read from the application, in alphabetical order ar
 
 </details>
 
-### TOPIC_ARN_KEY
-<details>
-  <summary>Learn more.</summary>
-
-
-</details>
-
-### USER_TABLE
-<details>
-  <summary>Learn more.</summary>
-
-  #### Amazon Web Services (AWS) DynamoDB, Users Table
-
-  This is the name of the table to be created in `dynamodb`.  It is defaulted if not specified.  This is
-  the common use case for local testing with `doit local`.
-
-</details>
-
 ### VERSION
 <details>
   <summary>Learn more.</summary>

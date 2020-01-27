@@ -35,6 +35,4 @@ Payment subscription REST api for customers:
 
 ## Authors
 
-* Scott Idler
-* Stewart Henderson
-* Marty Ballard
+Scott Idler  Stewart Henderson Marty Ballard
