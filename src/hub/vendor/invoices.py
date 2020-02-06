@@ -134,10 +134,17 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         )
         if plan:
             interval = plan.get("interval")
+            logger.info("interval", interval=interval)
             if interval == "month":
                 month_diff = self.diff_month(start_date, created_date)
                 logger.info("month diff", month_diff=month_diff)
                 if month_diff > 0:
+                    return "recurring"
+                else:
+                    return "new"
+            elif interval == "day":
+                diff_day = self.diff_day(start_date, created_date)
+                if diff_day > 0:
                     return "recurring"
                 else:
                     return "new"
@@ -155,6 +162,26 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         return (
             (end_date.year - begin_date.year) * 12 + end_date.month - begin_date.month
         )
+
+    def diff_day(self, begin_date_int: int, end_date_int: int) -> int:
+        """
+        Calculate the difference in months between two unix date objects and return as int
+        """
+        begin_date = datetime.fromtimestamp(begin_date_int)
+        begin = datetime(begin_date.year, begin_date.month, begin_date.day).strftime(
+            "%s"
+        )
+        end_date = datetime.fromtimestamp(end_date_int)
+        end = datetime(end_date.year, end_date.month, end_date.day).strftime("%s")
+        logger.debug(
+            "diff day",
+            begin_date=begin_date,
+            end_date=end_date,
+            begin=begin,
+            end=end,
+            rounded=round((float(end) - float(begin)) / (60 * 60 * 24)),
+        )
+        return round((float(end) - float(begin)) / (60 * 60 * 24))
 
     def create_payload(
         self,

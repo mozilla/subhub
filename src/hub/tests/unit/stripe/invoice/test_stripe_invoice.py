@@ -128,6 +128,9 @@ class StripeInvoicePaymentSucceededTest(unittest.TestCase):
         with open("src/hub/tests/unit/fixtures/stripe_sub_test7.json") as fh:
             self.subscription7 = json.loads(fh.read())
 
+        with open("src/hub/tests/unit/fixtures/stripe_sub_test8.json") as fh:
+            self.subscription8 = json.loads(fh.read())
+
         with open("src/hub/tests/unit/fixtures/stripe_ch_test1.json") as fh:
             self.charge = json.loads(fh.read())
 
@@ -169,12 +172,21 @@ class StripeInvoicePaymentSucceededTest(unittest.TestCase):
         )
         assert determine_if_new == "recurring"
 
-    def test_determine_unknown(self):
+    def test_determine_new_day(self):
         invoice_succeeded = StripeInvoicePaymentSucceeded(
             self.payment_succeeded_new_event
         )
         determine_if_new = invoice_succeeded.determine_new(
             self.subscription5, 1579623792
+        )
+        assert determine_if_new == "recurring"
+
+    def test_determine_unknown(self):
+        invoice_succeeded = StripeInvoicePaymentSucceeded(
+            self.payment_succeeded_new_event
+        )
+        determine_if_new = invoice_succeeded.determine_new(
+            self.subscription8, 1579623792
         )
         assert determine_if_new == "unsupported-unknown"
 
