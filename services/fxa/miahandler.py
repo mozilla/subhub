@@ -33,7 +33,7 @@ patch_all()
 # NOTE: Available environment passed to the Flask from serverless-wsgi
 #   https://github.com/logandk/serverless-wsgi/blob/2911d69a87ae8057110a1dcf0c21288477e07ce1/serverless_wsgi.py#L126
 @newrelic.agent.lambda_handler()
-def handle_mia(event, context):
+def handle(event, context):
     try:
         processing_duration = int(os.getenv("PROCESS_EVENTS_HOURS", "6"))
         events_check.process_events(processing_duration)

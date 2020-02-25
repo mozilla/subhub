@@ -8,6 +8,7 @@ import os
 import stripe
 
 from stripe.error import InvalidRequestError
+from stripe import Subscription
 from datetime import datetime
 from typing import Optional, Dict, Any, List
 from flask import g
@@ -20,6 +21,7 @@ from hub.shared.vendor_utils import format_brand
 from shared.log import get_logger
 from hub.shared import vendor
 from hub.shared.db import SubHubDeletedAccountModel
+from hub.shared import utils
 
 logger = get_logger()
 
@@ -51,6 +53,58 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
             name=cust_name,
             user_id=self.payload.data.object.metadata.get("userid", None),
         )
+
+
+class StripeCustomerUpdated(AbstractStripeHubEvent):
+    def run(self) -> bool:
+        """
+        Parse the event data sent by Stripe contained within self.payload
+        :return True to indicate successfully sent
+        """
+        logger.info("customer updated", payload=self.payload)
+        data = self.parse_payload()
+        logger.info("customer updated", data=data)
+        subscriptions = data.get("subscriptions")
+        deleted = data.get("deleted")
+        logger.info("updated deleted", deleted=deleted)
+        if deleted:
+            logger.info("updated subs ", subs=len(subscriptions))
+            if len(subscriptions) > 0:
+                for sub in subscriptions:
+                    logger.info("updated sub ", sub=sub.get("id"))
+                    self.cancel_subscription(subscription_id=sub.get("id"))
+                return True
+            else:
+                deleted_customer = vendor.delete_stripe_customer(
+                    customer_id=data.get("customer_id")
+                )
+                logger.info("deleted customer", deleted_customer=deleted_customer)
+                return True
+        return True
+
+    def parse_payload(self) -> Dict[str, Any]:
+        """
+        Create payload to be sent to external sources
+        :return:
+        """
+        cust_name = self.payload.data.object.name
+        if not cust_name:
+            cust_name = ""
+        return self.create_data(
+            email=self.payload.data.object.email,
+            customer_id=self.payload.data.object.id,
+            name=cust_name,
+            user_id=self.payload.data.object.metadata.get("userid", None),
+            deleted=self.payload.data.object.metadata.get("delete", False),
+            subscriptions=self.payload.data.object.subscriptions.get("data"),
+        )
+
+    def cancel_subscription(self, subscription_id) -> Subscription:
+        subscription = vendor.cancel_stripe_subscription_immediately(
+            subscription_id=subscription_id,
+            idempotency_key=utils.get_indempotency_key(),
+        )
+        return subscription
 
 
 class StripeCustomerDeleted(AbstractStripeHubEvent):
