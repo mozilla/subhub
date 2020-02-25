@@ -16,6 +16,7 @@ from hub.vendor.customer import (
     StripeCustomerSourceExpiring,
     StripeCustomerSubscriptionUpdated,
     StripeCustomerSubscriptionDeleted,
+    StripeCustomerUpdated,
 )
 from hub.shared.exceptions import ClientError
 from hub.shared.db import SubHubDeletedAccountModel
@@ -70,6 +71,60 @@ class StripeCustomerCreatedTest(TestCase):
         actual_payload = StripeCustomerCreated(
             self.customer_created_event_missing_name
         ).create_payload()
+
+        assert actual_payload == expected_payload
+
+
+class StripeCustomerUpdatedTest(TestCase):
+    def setUp(self) -> None:
+        fixture_dir = "src/hub/tests/unit/fixtures/"
+        with open(f"{fixture_dir}stripe_cust_updated_event.json") as fh:
+            self.customer_updated_event = json.loads(fh.read())
+
+        with open(f"{fixture_dir}stripe_cust_updated_event_missing_name.json") as fh:
+            self.customer_updated_event_missing_name = json.loads(fh.read())
+
+        run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
+        self.addCleanup(run_pipeline_patcher.stop)
+        self.mock_run_pipeline = run_pipeline_patcher.start()
+
+    def test_run(self):
+        self.mock_run_pipeline.return_value = None
+        did_run = StripeCustomerCreated(self.customer_updated_event).run()
+        assert did_run
+
+    def test_create_payload(self):
+        expected_payload = {
+            "event_id": "evt_00000000000000",
+            "event_type": "customer.updated",
+            "email": "user123@tester.com",
+            "customer_id": "cus_00000000000000",
+            "name": "Jon Tester",
+            "user_id": "user123",
+            "deleted": "true",
+            "subscriptions": [{"id": "sub_00000000000000"}],
+        }
+        actual_payload = StripeCustomerUpdated(
+            self.customer_updated_event
+        ).parse_payload()
+        print(f"payload subs {expected_payload['subscriptions']}")
+
+        assert actual_payload == expected_payload
+
+    def test_create_payload_missing_name(self):
+        expected_payload = {
+            "event_id": "evt_00000000000000",
+            "event_type": "customer.updated",
+            "email": "user123@tester.com",
+            "customer_id": "cus_00000000000000",
+            "name": "",
+            "user_id": "user123",
+            "deleted": True,
+            "subscriptions": [],
+        }
+        actual_payload = StripeCustomerUpdated(
+            self.customer_updated_event_missing_name
+        ).parse_payload()
 
         assert actual_payload == expected_payload
 
