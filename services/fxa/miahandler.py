@@ -4,7 +4,6 @@
 
 import os
 import sys
-import newrelic.agent
 import serverless_wsgi
 import structlog
 
@@ -13,8 +12,6 @@ from os.path import join, dirname, realpath
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
-
-newrelic.agent.initialize()
 
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.core.context import Context
@@ -32,7 +29,6 @@ patch_all()
 #   https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html#python-context-object-props
 # NOTE: Available environment passed to the Flask from serverless-wsgi
 #   https://github.com/logandk/serverless-wsgi/blob/2911d69a87ae8057110a1dcf0c21288477e07ce1/serverless_wsgi.py#L126
-@newrelic.agent.lambda_handler()
 def handle(event, context):
     try:
         processing_duration = int(os.getenv("PROCESS_EVENTS_HOURS", "6"))
