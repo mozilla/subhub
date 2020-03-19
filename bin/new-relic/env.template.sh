@@ -1,4 +1,0 @@
-export NEW_RELIC_ACCOUNT_ID=""
-export NEW_RELIC_API_KEY=""
-export AWS_LINKED_ACCOUNT_NAME=""
-export AWS_REGION=""
