@@ -16,7 +16,6 @@ from flask import g
 from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
 from hub.shared.exceptions import ClientError
-from hub.shared.utils import format_plan_nickname
 from hub.shared.vendor_utils import format_brand
 from shared.log import get_logger
 from hub.shared import vendor
@@ -232,11 +231,7 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
                 product = vendor.retrieve_stripe_product(
                     subscription["plan"]["product"]
                 )
-
-                name = format_plan_nickname(
-                    product_name=product["name"],
-                    plan_interval=subscription["plan"]["interval"],
-                )
+                name = product["name"]
                 break
 
         return name
@@ -341,7 +336,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
         plan_amount = plan.get("amount")
         sub = dict(
             plan_amount=plan_amount,
-            nickname=format_plan_nickname(nickname, interval),
+            nickname=product["name"],
             productId=product,
             current_period_end=current_sub.get("current_period_end"),
             current_period_start=current_sub.get("current_period_start"),
@@ -355,7 +350,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
             plan_amount = plan.get("amount")
             sub = dict(
                 plan_amount=plan_amount,
-                nickname=format_plan_nickname(nickname, interval),
+                nickname=product["name"],
                 productId=subs.plan.product,
                 current_period_end=subs.current_period_end,
                 current_period_start=subs.current_period_start,
@@ -572,11 +567,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             product = vendor.retrieve_stripe_product(
                 self.payload.data.object.plan.product
             )
-            plan_nickname = format_plan_nickname(
-                product_name=product["name"],
-                plan_interval=self.payload.data.object.plan.interval,
-            )
-
+            plan_nickname = product["name"]
             payload = dict(
                 event_id=self.payload.id,
                 event_type=event_type,
@@ -678,10 +669,7 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             amount_due=upcoming_invoice.get("amount_due", 0),
         )
         plan = vendor.retrieve_stripe_plan(previous_plan.get("id", None))
-        nickname_old = format_plan_nickname(
-            product_name=previous_plan.get("nickname", "Not available"),
-            plan_interval=plan.get("interval", None),
-        )
+        nickname_old = previous_plan.get("name", None)
         return dict(
             nickname_old=nickname_old,
             nickname_new=payload.pop("nickname"),

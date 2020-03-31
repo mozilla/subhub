@@ -12,7 +12,6 @@ from typing import Dict, Any
 
 from hub.vendor.abstract import AbstractStripeHubEvent
 from hub.routes.static import StaticRoutes
-from hub.shared.utils import format_plan_nickname
 from hub.shared.vendor_utils import format_brand
 from hub.shared.vendor import (
     retrieve_stripe_subscription,
@@ -57,10 +56,7 @@ class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
         try:
             invoice_data = self.payload.data.object.lines.data
             product = Product.retrieve(invoice_data[0]["plan"]["product"])
-            nickname = format_plan_nickname(
-                product_name=product["name"],
-                plan_interval=invoice_data[0]["plan"]["interval"],
-            )
+            nickname = product["name"]
         except InvalidRequestError as e:
             logger.error("Unable to get plan nickname for payload", error=e)
             nickname = ""
@@ -203,9 +199,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         """
         logger.debug("create payload", event_type=event_type)
         try:
-            plan_nickname = format_plan_nickname(
-                product_name=plan.get("nickname"), plan_interval=plan.get("interval")
-            )
+            plan_nickname = plan.get("name")
 
             payload = dict(
                 event_id=self.payload.id,
