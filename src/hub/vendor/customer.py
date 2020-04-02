@@ -350,7 +350,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
             plan_amount = plan.get("amount")
             sub = dict(
                 plan_amount=plan_amount,
-                nickname=product["name"],
+                nickname=product,
                 productId=subs.plan.product,
                 current_period_end=subs.current_period_end,
                 current_period_start=subs.current_period_start,

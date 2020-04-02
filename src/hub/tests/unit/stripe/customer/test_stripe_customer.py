@@ -753,8 +753,6 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         expected_sub_change = dict(
             close_date=1571949975,
-            nickname_old="Previous Product",
-            nickname_new="Test Plan Original",
             event_type="customer.subscription.upgrade",
             plan_amount_old=499,
             plan_amount_new=999,
@@ -772,7 +770,6 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             customer_id="cus_123",
             subscription_id="sub_123",
             plan_amount=999,
-            nickname="Test Plan Original",
         )
 
         actual_sub_change = StripeCustomerSubscriptionUpdated(
