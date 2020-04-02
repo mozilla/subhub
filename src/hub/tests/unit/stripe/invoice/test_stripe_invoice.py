@@ -73,7 +73,7 @@ class StripeInvoicePaymentFailedTest(unittest.TestCase):
             "charge_id": "ch_000000",
             "amount_due": 100,
             "created": 1558624628,
-            "nickname": "Project Guardian (Daily)",
+            "nickname": "Project Guardian",
         }
         actual_payload = StripeInvoicePaymentFailed(
             self.payment_failed_event
