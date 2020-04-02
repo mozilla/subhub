@@ -136,7 +136,7 @@ class StripeCustomerDeletedTest(TestCase):
         self.subscription_item = dict(
             current_period_end=1574519675,
             current_period_start=1571841275,
-            nickname="Guardian VPN (Monthly)",
+            nickname="Guardian VPN",
             plan_amount=499,
             productId="prod_FvnsFHIfezy3ZI",
             subscription_id="sub_G2qciC6nDf1Hz1",
@@ -313,7 +313,7 @@ class StripeCustomerSourceExpiringTest(TestCase):
             event_id="evt_00000000000000",
             event_type="customer.source.expiring",
             email="test@example.com",
-            nickname="Project Guardian (Monthly)",
+            nickname="Project Guardian",
             customer_id="cus_00000000000000",
             last4="4242",
             brand="Visa",
@@ -513,7 +513,7 @@ class StripeCustomerSubscriptionDeletedTest(TestCase):
             subscriptions=self.customer_active_sub.get("subscriptions"),
             current_sub=self.sub_to_delete,
         )
-        assert check_sub_info[0].get("nickname") == "Test Plan (Ion)"
+        assert check_sub_info[0].get("nickname") == "test plan"
 
 
 class StripeCustomerSubscriptionUpdatedTest(TestCase):
@@ -701,7 +701,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             customer_id="cus_FCUzOhOp9iutWa",
             subscription_id="sub_FCUzkHmNY3Mbj1",
             plan_amount=100,
-            nickname="Project Guardian (Daily)",
+            nickname="Project Guardian",
             canceled_at=None,
             cancel_at=None,
             cancel_at_period_end=True,
@@ -731,7 +731,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
             customer_id="cus_FCUzOhOp9iutWa",
             subscription_id="sub_FCUzkHmNY3Mbj1",
             plan_amount=100,
-            nickname="Project Guardian (Daily)",
+            nickname="Project Guardian",
             close_date=1571949975,
             current_period_end=1572036371,
             brand="Visa",
@@ -753,7 +753,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
 
         expected_sub_change = dict(
             close_date=1571949975,
-            nickname_old="Previous Product (Monthly)",
+            nickname_old="Previous Product",
             nickname_new="Test Plan Original",
             event_type="customer.subscription.upgrade",
             plan_amount_old=499,
