@@ -78,75 +78,36 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         Parse the event data sent by Stripe contained within self.payload
         :return True to indicate successfully sent
         """
+        invoice = self.payload.data.object
         logger.debug("invoice payment succeeded", payload=self.payload)
-        subscription_id = self.payload.data.object.subscription
+        subscription_id = invoice.subscription
         subscription = retrieve_stripe_subscription(subscription_id)
         if subscription:
             plan = subscription.get("plan")
-            created = self.payload.data.object.created
             customer = subscription.get("customer")
             user_id = None
             metadata = customer.get("metadata")
             if metadata:
                 user_id = metadata.get("userid")
-            is_subscription_new = self.determine_new(subscription, created)
             logger.debug(
                 "invoice payment succeeded",
-                is_subscription_new=is_subscription_new,
+                billing_reason=invoice.billing_reason,
                 customer=customer,
             )
-            if is_subscription_new == "new":
-                event_type = "customer.subscription.created"
-                data = self.create_payload(
-                    event_type, user_id, plan, customer, subscription
-                )
-                logger.debug("data", data=data)
-                routes = [StaticRoutes.SALESFORCE_ROUTE]
-                self.send_to_routes(routes, json.dumps(data))
-                return True
-            elif is_subscription_new == "recurring":
-                event_type = "customer.recurring_charge"
-                data = self.create_payload(
-                    event_type, user_id, plan, customer, subscription
-                )
-                logger.debug("data", data=data)
-                routes = [StaticRoutes.SALESFORCE_ROUTE]
-                self.send_to_routes(routes, json.dumps(data))
-                return True
-            else:
-                logger.error(
-                    "plan type not supported", payment_type=is_subscription_new
-                )
-        return False
 
-    def determine_new(self, subscription: Subscription, created_date: int) -> str:
-        """
-        Evaluate Subscription information to determine if payment is for a new subscription.
-        """
-        plan = subscription.get("plan")
-        start_date = subscription.get("start_date")
-        logger.debug(
-            "determine new", plan=plan, start_date=start_date, created_date=created_date
-        )
-        if plan:
-            interval = plan.get("interval")
-            logger.info("interval", interval=interval)
-            if interval == "month":
-                month_diff = self.diff_month(start_date, created_date)
-                logger.info("month diff", month_diff=month_diff)
-                if month_diff > 0:
-                    return "recurring"
-                else:
-                    return "new"
-            elif interval == "day":
-                diff_day = self.diff_day(start_date, created_date)
-                if diff_day > 0:
-                    return "recurring"
-                else:
-                    return "new"
-            else:
-                return "unsupported-unknown"
-        return "unsupported-unknown"
+            event_type = "customer.recurring_charge"
+            if invoice.billing_reason == "subscription_create":
+                event_type = "customer.subscription.created"
+
+            data = self.create_payload(
+                event_type, user_id, plan, customer, subscription
+            )
+            logger.debug("data", data=data)
+            routes = [StaticRoutes.SALESFORCE_ROUTE]
+            self.send_to_routes(routes, json.dumps(data))
+            return True
+
+        return False
 
     def diff_month(self, begin_date_int: int, end_date_int: int) -> int:
         """

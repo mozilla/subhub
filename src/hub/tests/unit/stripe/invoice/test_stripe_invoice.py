@@ -163,33 +163,6 @@ class StripeInvoicePaymentSucceededTest(unittest.TestCase):
 
         assert did_run
 
-    def test_determine_new(self):
-        invoice_succeeded = StripeInvoicePaymentSucceeded(
-            self.payment_succeeded_new_event
-        )
-        determine_if_new = invoice_succeeded.determine_new(
-            self.subscription4, 1579623792
-        )
-        assert determine_if_new == "recurring"
-
-    def test_determine_new_day(self):
-        invoice_succeeded = StripeInvoicePaymentSucceeded(
-            self.payment_succeeded_new_event
-        )
-        determine_if_new = invoice_succeeded.determine_new(
-            self.subscription5, 1579623792
-        )
-        assert determine_if_new == "recurring"
-
-    def test_determine_unknown(self):
-        invoice_succeeded = StripeInvoicePaymentSucceeded(
-            self.payment_succeeded_new_event
-        )
-        determine_if_new = invoice_succeeded.determine_new(
-            self.subscription8, 1579623792
-        )
-        assert determine_if_new == "unsupported-unknown"
-
     def test_run_new(self):
         self.subscription7["start_date"] = time.time()
         self.mock_subscription.return_value = self.subscription7
@@ -205,13 +178,3 @@ class StripeInvoicePaymentSucceededTest(unittest.TestCase):
         did_run = StripeInvoicePaymentSucceeded(self.payment_succeeded_new_event).run()
 
         assert did_run
-
-    def test_determine_no_plan(self):
-        self.subscription6["plan"] = {}
-        invoice_succeeded = StripeInvoicePaymentSucceeded(
-            self.payment_succeeded_new_event
-        )
-        determine_if_new = invoice_succeeded.determine_new(
-            self.subscription6, 1579623792
-        )
-        assert determine_if_new == "unsupported-unknown"
