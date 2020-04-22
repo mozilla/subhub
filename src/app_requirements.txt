@@ -33,6 +33,7 @@ python-dateutil==2.8.0
 python-decouple==3.1
 python-json-logger==0.1.11
 PyYAML==5.1.1
+raven==6.10.0
 requests==2.22.0
 s3transfer==0.2.1
 serverless-wsgi==1.7.3
