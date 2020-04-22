@@ -26,6 +26,7 @@ dict_config = {
     "loggers": {
         "": {"handlers": ["json"], "level": CFG.LOG_LEVEL},
         "werkzeug": {"level": "ERROR", "handlers": ["json"], "propagate": False},
+        "stripe": {"level": "ERROR", "handlers": ["json"], "propagate": False},
         "pytest": {"level": "ERROR", "handlers": ["json"], "propagate": False},
         "pynamodb": {"level": "ERROR", "handlers": ["json"], "propagate": False},
         "botocore": {"level": "ERROR", "handlers": ["json"], "propagate": False},
