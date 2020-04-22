@@ -123,8 +123,8 @@ provider:
     # NOTE: https://github.com/serverless/serverless/issues/6112
     # Logging documentation:
     #   https://serverless.com/framework/docs/providers/aws/events/apigateway/
-    restApi: true
-  tracing: true
+    restApi: ${env:REST_API_LOGS}
+  tracing: ${env:TRACING}
   memorySize: ${file(functions.yml):${self:provider.stage}.LAMBDA_MEMORY_SIZE}
   timeout: ${file(functions.yml):${self:provider.stage}.LAMBDA_TIMEOUT}
   snsaccount: ${file(accounts.yml):fxa.${self:provider.stage}}
