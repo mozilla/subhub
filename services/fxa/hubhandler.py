@@ -16,7 +16,6 @@ serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
-
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.core.context import Context
 from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
