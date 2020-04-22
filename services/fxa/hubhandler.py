@@ -8,6 +8,7 @@ import os
 import sys
 import serverless_wsgi
 
+from raven import Client
 from os.path import join, dirname, realpath
 
 serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
@@ -16,6 +17,8 @@ serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
+
+client = Client(os.environ["SENTRY_URL"])
 
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.core.context import Context
@@ -40,6 +43,7 @@ def handle(event, context):
     try:
         return serverless_wsgi.handle_request(hub_app.app, event, context)
     except Exception as e:  # pylint: disable=broad-except
+        client.captureException()
         logger.exception(
             "exception occurred", subhub_event=event, context=context, error=e
         )

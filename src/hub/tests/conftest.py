@@ -13,7 +13,6 @@ import stripe
 
 from flask import g
 
-from hub.app import create_app
 from hub.shared.cfg import CFG
 from shared.log import get_logger
 from shared.dynamodb import dynamodb
@@ -33,6 +32,7 @@ def pytest_configure():
 @pytest.fixture(autouse=True, scope="module")
 def app(dynamodb):
     os.environ["DYNALITE_URL"] = dynamodb
+    from hub.app import create_app
     app = create_app()
     with app.app.app_context():
         g.hub_table = app.app.hub_table

@@ -12,6 +12,7 @@ from flask import current_app, g, jsonify
 from flask_cors import CORS
 from flask import request
 from typing import Any
+from raven import Client
 
 from shared import secrets
 from shared.exceptions import SubHubError
@@ -21,15 +22,21 @@ from shared.cfg import CFG
 from shared.log import get_logger
 
 logger = get_logger()
-
+if "SENTRY_URL" in os.environ:
+    sentry_url=os.environ["SENTRY_URL"]
+else:
+    sentry_url=""
+client = Client(sentry_url)
 
 # Setup Stripe Error handlers
 def intermittent_stripe_error(e):
+    client.captureException()
     logger.error("intermittent stripe error", error=e)
     return jsonify({"message": f"{e.user_message}"}), 503
 
 
 def server_stripe_error(e):
+    client.captureException()
     logger.error("server stripe error", error=e)
     return (
         jsonify(
@@ -40,6 +47,7 @@ def server_stripe_error(e):
 
 
 def server_stripe_error_with_params(e):
+    client.captureException()
     logger.error("server stripe error with params", error=e)
     return (
         jsonify(
@@ -54,11 +62,13 @@ def server_stripe_error_with_params(e):
 
 
 def server_stripe_card_error(e):
+    client.captureException()
     logger.error("server stripe card error", error=e)
     return jsonify({"message": f"{e.user_message}", "code": f"{e.code}"}), 402
 
 
 def database_connection_error(e):
+    client.captureException()
     logger.error("unable to connect to db", error=e)
     return jsonify({"message": "Server Error", "status_code": "bad_connection"}), 500
 
@@ -109,6 +119,7 @@ def create_app(config=None) -> Any:
     # Setup error handlers
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
+        client.captureException()
         if e.status_code == 500:
             logger.error("display hub errors", error=e)
         response = jsonify(e.to_dict())

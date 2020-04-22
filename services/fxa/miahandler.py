@@ -7,11 +7,14 @@ import sys
 import serverless_wsgi
 import structlog
 
+from raven import Client
 from os.path import join, dirname, realpath
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
+
+client = Client(os.environ["SENTRY_URL"])
 
 from aws_xray_sdk.core import xray_recorder, patch_all
 from aws_xray_sdk.core.context import Context
@@ -34,6 +37,7 @@ def handle(event, context):
         processing_duration = int(os.getenv("PROCESS_EVENTS_HOURS", "6"))
         events_check.process_events(processing_duration)
     except Exception as e:  # pylint: disable=broad-except
+        client.captureException()
         logger.exception(
             "exception occurred", subhub_event=event, context=context, error=e
         )
