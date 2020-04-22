@@ -13,8 +13,8 @@ import stripe
 
 from flask import g
 
-from hub.app import create_app
 from hub.shared.cfg import CFG
+from hub.app import create_app
 from shared.log import get_logger
 from shared.dynamodb import dynamodb
 

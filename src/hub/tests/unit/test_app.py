@@ -19,7 +19,6 @@ from shared.log import get_logger
 
 logger = get_logger()
 
-
 def test_create_app():
     app = create_app()
     assert app
@@ -71,14 +70,4 @@ class TestApp(TestCase):
         path = "/v1/versions"
         response = self.client.get(path)
         self.assertEqual(response.status_code, 404)
-        # self.assertIn(path, response.data)
         print(f"path {path} data {response}")
-
-    # def test_subhub_error(self):
-    #     with pytest.raises(SubHubError) as subhub_error:
-    #         expected = jsonify({"message": "something"}), 503
-    #         error = StripeError("something")
-    #         actual = intermittent_stripe_error(error)
-    #         assert actual[0].json == expected[0].json
-    #         assert actual[1] == expected[1]
-    #         assert actual[0]["status_code"] == expected[0]["status_code"]

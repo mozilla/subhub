@@ -239,6 +239,10 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("SUPPORTED_COUNTRIES", "US, CA").split(",")
 
     @property
+    def SENTRY_URL(self):
+        return self("SENTRY_URL", "")
+
+    @property
     def PAYMENT_API_KEY(self):
         return self("PAYMENT_API_KEY", "fake_payment_api_key")
 
