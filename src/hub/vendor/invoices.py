@@ -62,13 +62,13 @@ class StripeInvoicePaymentFailed(AbstractStripeHubEvent):
             nickname = ""
 
         return self.create_data(
-            customer_id=self.payload.data.object.customer,
-            subscription_id=self.payload.data.object.subscription,
-            currency=self.payload.data.object.currency,
-            charge_id=self.payload.data.object.charge,
-            amount_due=self.payload.data.object.amount_due,
-            created=self.payload.data.object.created,
-            nickname=nickname,
+            Donation_Contact__c=self.payload.data.object.customer,
+            PMT_Subscription_ID__c=self.payload.data.object.subscription,
+            Currency__c=self.payload.data.object.currency,
+            PMT_Transaction_ID__c=self.payload.data.object.charge,
+            Amount=self.payload.data.object.amount_due,
+            CloseDate=self.payload.data.object.created,
+            Service_Plan__c=nickname,
         )
 
 
@@ -85,6 +85,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         if subscription:
             plan = subscription.get("plan")
             customer = subscription.get("customer")
+            email = self.payload.data.object.get("customer_email")
             user_id = None
             metadata = customer.get("metadata")
             if metadata:
@@ -100,7 +101,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
                 event_type = "customer.subscription.created"
 
             data = self.create_payload(
-                event_type, user_id, plan, customer, subscription
+                event_type, user_id, plan, customer, subscription, email
             )
             logger.debug("data", data=data)
             routes = [StaticRoutes.SALESFORCE_ROUTE]
@@ -147,6 +148,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         plan: Dict[str, Any],
         customer: Dict[str, Any],
         subscription: Dict[str, Any],
+        email: str
     ) -> Dict[str, Any]:
         """
         Create payload to be sent to external sources based on event_type
@@ -163,13 +165,14 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
             plan_nickname = plan.get("nickname")
 
             payload = dict(
-                event_id=self.payload.id,
-                event_type=event_type,
-                uid=user_id,
-                customer_id=customer.get("id"),
-                subscription_id=subscription.get("id"),
-                plan_amount=plan.get("amount"),
-                nickname=plan_nickname,
+                Event_Id__c=self.payload.id,
+                Event_Name__c=event_type,
+                FxA_Id__c=user_id,
+                Donation_Contact__c=customer.get("id"),
+                PMT_Subscription_ID__c=subscription.get("id"),
+                Amount=plan.get("amount"),
+                Service_Plan__c=plan_nickname,
+                Email=email,
             )
             payload.update(
                 self.get_subscription_data(
@@ -189,7 +192,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         customer: Dict[str, Any],
         product_name: str,
         subscription: Dict[str, Any],
-        event_type: str,
+        event_type: str
     ) -> Dict[str, Any]:
         """
         Format data specific to new subscription
@@ -222,21 +225,16 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         next_invoice_date = next_invoice.get("period_end", 0)
 
         data = dict(
-            canceled_at=subscription.get("canceled_at"),
-            cancel_at=subscription.get("cancel_at"),
-            cancel_at_period_end=subscription.get("cancel_at_period_end"),
-            current_period_start=subscription.get("current_period_start"),
-            current_period_end=subscription.get("current_period_end"),
-            next_invoice_date=next_invoice_date,
-            invoice_id=subscription.get("latest_invoice"),
-            active=self.payment_active_or_trialing(subscription.get("status")),
-            productName=product_name,
-            created=subscription.get("created"),
-            currency=plan.get("currency"),
-            invoice_number=invoice_number,
-            brand=brand,
-            last4=last4,
-            charge=charge_id,
+            Billing_Cycle_Start__c=subscription.get("current_period_start"),
+            Billing_Cycle_End__c=subscription.get("current_period_end"),
+            Next_Invoice_Date__c=next_invoice_date,
+            PMT_Invoice_ID__c=subscription.get("latest_invoice"),
+            CloseDate=subscription.get("created"),
+            Currency__c=plan.get("currency"),
+            Invoice_Number__c=invoice_number,
+            Credit_Card_Type__c=brand,
+            Last_4_Digits__c=last4,
+            PMT_Transaction_ID__c=charge_id,
         )
         if event_type == "customer.recurring_charge":
             data.update(self.get_recurring_data(customer_id=customer.get("id")))

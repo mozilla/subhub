@@ -2,7 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-black==19.3b0
+black==19.10b0
 codecov==2.0.15
 # requirements for getting doit commands to run
 # this is for automation of dev tasks, not required to run

@@ -21,8 +21,9 @@ class SalesforceRoute(AbstractRoute):
             route_payload = self.payload
         else:
             route_payload = json.loads(self.payload)
-        basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
-        request_post = requests.post(basket_url, json=route_payload)
+        headers = {"x-api-key": CFG.BASKET_API_KEY}
+        basket_url = CFG.SALESFORCE_BASKET_URI
+        request_post = requests.post(basket_url, json=route_payload, headers=headers)
         self.report_route(route_payload, "salesforce")
         logger.info(
             "sending to salesforce", payload=self.payload, request_post=request_post

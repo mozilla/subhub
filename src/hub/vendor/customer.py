@@ -46,11 +46,20 @@ class StripeCustomerCreated(AbstractStripeHubEvent):
         cust_name = self.payload.data.object.name
         if not cust_name:
             cust_name = ""
+        cust_name = cust_name.split(" ")
+        first_name = cust_name[0]
+        if len(cust_name) > 1:
+            last_name = cust_name[1]
+        else:
+            last_name = "_"
         return self.create_data(
-            email=self.payload.data.object.email,
-            customer_id=self.payload.data.object.id,
-            name=cust_name,
-            user_id=self.payload.data.object.metadata.get("userid", None),
+            Email=self.payload.data.object.email,
+            PMT_Cust_Id__c=self.payload.data.object.id,
+            FirstName=first_name,
+            LastName=last_name,
+            FxA_Id__c=self.payload.data.object.metadata.get(
+                "userid", utils.get_indempotency_key()
+            ),
         )
 
 
@@ -89,11 +98,22 @@ class StripeCustomerUpdated(AbstractStripeHubEvent):
         cust_name = self.payload.data.object.name
         if not cust_name:
             cust_name = ""
+        cust_name = cust_name.split(" ")
+        first_name = cust_name[0]
+        if len(cust_name) > 1:
+            if cust_name[1] == "":
+                last_name = "_"
+            else:
+                last_name = cust_name[1]
+        else:
+            last_name = "_"
+            # TODO fix payload for deleted
         return self.create_data(
             email=self.payload.data.object.email,
             customer_id=self.payload.data.object.id,
-            name=cust_name,
-            user_id=self.payload.data.object.metadata.get("userid", None),
+            FirstName=first_name,
+            LastName=last_name,
+            userid=self.payload.data.object.metadata.get("userid", None),
             deleted=self.payload.data.object.metadata.get("delete", False),
             subscriptions=self.payload.data.object.subscriptions.get("data"),
         )
@@ -171,13 +191,13 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         )
 
         return self.create_data(
-            created=self.payload.data.object.created,
-            customer_id=self.payload.data.object.id,
-            plan_amount=plan_amount,
-            nickname=nicknames,
-            subscription_id=subs,
-            current_period_end=current_period_end,
-            current_period_start=current_period_start,
+            CloseDate=self.payload.data.object.created,
+            PMT_Cust_Id__c=self.payload.data.object.id,
+            Amount=plan_amount,
+            Name=nicknames,
+            PMT_Subscription_ID__c=subs,
+            Billing_Cycle_End__c=current_period_end,
+            Billing_Cycle_Start__c=current_period_start,
         )
 
 
@@ -210,13 +230,13 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
         email = customer.email
         plan_nickname = self.first_plan_name(customer.subscriptions["data"])
         return self.create_data(
-            email=email,
-            nickname=plan_nickname,
-            customer_id=self.payload.data.object.customer,
-            last4=self.payload.data.object.last4,
-            brand=self.payload.data.object.brand,
-            exp_month=self.payload.data.object.exp_month,
-            exp_year=self.payload.data.object.exp_year,
+	        Email=email,
+            Name=plan_nickname,
+            PMT_Cust_Id__c=self.payload.data.object.customer,
+            Last_4_Digits__c=self.payload.data.object.last4,
+            Credit_Card_Type__c=self.payload.data.object.brand,
+            Credit_Card_Exp_Month__c=self.payload.data.object.exp_month,
+            Credit_Card_Exp_Year__c=self.payload.data.object.exp_year,
         )
 
     def first_plan_name(self, subscriptions) -> str:
@@ -570,13 +590,13 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
             plan_nickname = product["name"]
 
             payload = dict(
-                event_id=self.payload.id,
-                event_type=event_type,
-                uid=user_id,
-                customer_id=self.payload.data.object.customer,
-                subscription_id=self.payload.data.object.id,
-                plan_amount=self.payload.data.object.plan.amount,
-                nickname=plan_nickname,
+                Event_Id__c=self.payload.id,
+                Event_Name__c=event_type,
+                FxA_Id__c=user_id,
+                PMT_Cust_Id__c=self.payload.data.object.customer,
+                PMT_Subscription_ID__c=self.payload.data.object.id,
+                Amount=self.payload.data.object.plan.amount,
+                Name=plan_nickname,
             )
 
             if event_type == "customer.subscription_cancelled":
@@ -601,12 +621,10 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         :return dict:
         """
         return dict(
-            canceled_at=self.payload.data.object.canceled_at,
-            cancel_at=self.payload.data.object.cancel_at,
-            cancel_at_period_end=self.payload.data.object.cancel_at_period_end,
-            current_period_start=self.payload.data.object.current_period_start,
-            current_period_end=self.payload.data.object.current_period_end,
-            invoice_id=self.payload.data.object.latest_invoice,
+            CloseDate=self.payload.data.object.cancel_at,
+            Billing_Cycle_Start__c=self.payload.data.object.current_period_start,
+            Billing_Cycle_End__c=self.payload.data.object.current_period_end,
+            PMT_Invoice_ID__c=self.payload.data.object.latest_invoice,
         )
 
     def get_total_upcoming_invoice_amount(
@@ -634,10 +652,10 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         brand = format_brand(latest_charge.payment_method_details.card.brand)
 
         return dict(
-            close_date=self.payload.created,
-            current_period_end=self.payload.data.object.current_period_end,
-            last4=last4,
-            brand=brand,
+	        CloseDate=self.payload.created,
+            Billing_Cycle_End__c=self.payload.data.object.current_period_end,
+            Last_4_Digits__c=last4,
+            Credit_Card_Type__c=brand,
         )
 
     def get_subscription_change(
@@ -671,20 +689,21 @@ class StripeCustomerSubscriptionUpdated(AbstractStripeHubEvent):
         )
         plan = vendor.retrieve_stripe_plan(previous_plan.get("id", None))
         nickname_old = previous_plan.get("nickname", "Not available")
+        logger.info("payload", payload=payload)
         return dict(
-            nickname_old=nickname_old,
-            nickname_new=payload.pop("nickname"),
-            event_type=event_type,
-            close_date=self.payload.get("created", None),
-            plan_amount_new=payload.pop("plan_amount"),
-            plan_amount_old=self.get_previous_plan_amount(
+            Nickname_Old__c=nickname_old,
+            Service_Plan__c=payload.pop("nickname"),
+            Event_Name__c=event_type,
+            CloseDate=self.payload.get("created", None),
+            Amount=payload.pop("plan_amount"),
+            Plan_Amount_Old__c=self.get_previous_plan_amount(
                 previous_plan=previous_plan.get("id", None)
             ),
-            interval=self.payload.data.object.plan.interval,
-            current_period_end=self.payload.data.object.current_period_end,
-            invoice_number=invoice.get("number", None),
-            invoice_id=invoice.get("id", None),
-            proration_amount=upcoming_invoice.get("amount_due", 0),
+            Payment_Interval__c=self.payload.data.object.plan.interval,
+            Billing_Cycle_End__c=self.payload.data.object.current_period_end,
+            Invoice_Number__c=invoice.get("number", None),
+            PMT_Invoice_ID__c=invoice.get("id", None),
+            Proration_Amount__c=upcoming_invoice.get("amount_due", 0),
         )
 
     def get_subscription_type(

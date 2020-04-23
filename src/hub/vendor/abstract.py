@@ -52,7 +52,9 @@ class AbstractStripeHubEvent(ABC):
         raise NotImplementedError
 
     def create_data(self, **kwargs) -> Dict[str, str]:
-        return dict(event_id=self.payload.id, event_type=self.payload.type, **kwargs)
+        return dict(
+            Event_Id__c=self.payload.id, Event_Name__c=self.payload.type, **kwargs
+        )
 
     def customer_event_to_all_routes(self, data_projection, data) -> None:
         subsets = []
