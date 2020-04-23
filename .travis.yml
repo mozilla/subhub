@@ -32,7 +32,6 @@ before_install:
 - sudo rm -f /etc/boto.cfg
 - pip install -r automation_requirements.txt
 script:
-- tox
 - bash bin/aws-credentials.sh
 - bash bin/deploy.sh
 after_success:
