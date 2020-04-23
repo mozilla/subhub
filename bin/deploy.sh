@@ -6,7 +6,7 @@ fi
 
 case "$TRAVIS_BRANCH" in
 'feature/staging')
-    DEPLOYED_ENV=staging doit deploy
+    DEPLOYED_ENV=stage doit deploy
     ;;
 'release/prod-test')
     DEPLOY_ENV=prod-test doit deploy
