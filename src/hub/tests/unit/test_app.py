@@ -19,6 +19,7 @@ from shared.log import get_logger
 
 logger = get_logger()
 
+
 def test_create_app():
     app = create_app()
     assert app
