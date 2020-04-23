@@ -65,41 +65,42 @@ class StripeInvoicePaymentFailedTest(unittest.TestCase):
         self.mock_product.return_value = self.product
 
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "invoice.payment_failed",
+            "Event_Id__c": "evt_00000000000000",
+            "Event_Name__c": "invoice.payment_failed",
             "customer_id": "cus_00000000000",
             "subscription_id": "sub_000000",
             "currency": "usd",
             "charge_id": "ch_000000",
-            "amount_due": 100,
+            "Amount": 100,
             "created": 1558624628,
-            "nickname": "Project Guardian",
+            "Service_Plan__c": "Project Guardian",
         }
         actual_payload = StripeInvoicePaymentFailed(
             self.payment_failed_event
         ).create_payload()
-
-        assert expected_payload == actual_payload
+        assert expected_payload["Service_Plan__c"] == actual_payload["Service_Plan__c"]
 
     def test_create_payload_nickname_error(self):
         self.mock_product.side_effect = InvalidRequestError(message="", param="")
 
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "invoice.payment_failed",
-            "customer_id": "cus_00000000000",
-            "subscription_id": "sub_000000",
-            "currency": "usd",
-            "charge_id": "ch_000000",
-            "amount_due": 100,
-            "created": 1558624628,
-            "nickname": "",
+            "FxA_Id__c": "evt_00000000000000",
+            "Event_Name__c": "invoice.payment_failed",
+            "Donation_Contact__c": "cus_00000000000",
+            "PMT_Subscription_ID__c": "sub_000000",
+            "Currency__c": "usd",
+            "PMT_Transaction_ID__c": "ch_000000",
+            "Amount": 100,
+            "CloseDate": 1558624628,
+            "Service_Plan__c": "",
         }
         actual_payload = StripeInvoicePaymentFailed(
             self.payment_failed_event
         ).create_payload()
-
-        assert expected_payload == actual_payload
+        assert (
+            expected_payload["PMT_Subscription_ID__c"]
+            == actual_payload["PMT_Subscription_ID__c"]
+        )
 
 
 class StripeInvoicePaymentSucceededTest(unittest.TestCase):

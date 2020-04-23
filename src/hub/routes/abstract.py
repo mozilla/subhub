@@ -20,7 +20,7 @@ class AbstractRoute(ABC):
         if payload.get("event_id"):
             event_id = payload["event_id"]
         else:
-            event_id = payload["eventId"]
+            event_id = payload["Event_Id__c"]
         existing = flask.g.hub_table.get_event(event_id)
         if not existing:
             created_event = flask.g.hub_table.new_event(

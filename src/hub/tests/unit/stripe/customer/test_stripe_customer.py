@@ -46,12 +46,13 @@ class StripeCustomerCreatedTest(TestCase):
 
     def test_create_payload(self):
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "customer.created",
-            "email": "user123@tester.com",
-            "customer_id": "cus_00000000000000",
-            "name": "Jon Tester",
-            "user_id": "user123",
+            "Event_Id__c": "evt_00000000000000",
+            "Event_Name__c": "customer.created",
+            "Email": "user123@tester.com",
+            "PMT_Cust_Id__c": "cus_00000000000000",
+            "FirstName": "Jon",
+            "LastName": "Tester",
+            "FxA_Id__c": "user123",
         }
         actual_payload = StripeCustomerCreated(
             self.customer_created_event
@@ -61,12 +62,13 @@ class StripeCustomerCreatedTest(TestCase):
 
     def test_create_payload_missing_name(self):
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "customer.created",
-            "email": "user123@tester.com",
-            "customer_id": "cus_00000000000000",
-            "name": "",
-            "user_id": "user123",
+	        "Event_Id__c": "evt_00000000000000",
+            "Event_Name__c": "customer.created",
+            "Email": "user123@tester.com",
+            "PMT_Cust_Id__c": "cus_00000000000000",
+            "FirstName": "",
+            "LastName": "_",
+            "FxA_Id__c": "user123",
         }
         actual_payload = StripeCustomerCreated(
             self.customer_created_event_missing_name
@@ -95,38 +97,39 @@ class StripeCustomerUpdatedTest(TestCase):
 
     def test_create_payload(self):
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "customer.updated",
+            "Event_Id__c": "evt_00000000000000",
+            "Event_Name__c": "customer.updated",
             "email": "user123@tester.com",
             "customer_id": "cus_00000000000000",
-            "name": "Jon Tester",
-            "user_id": "user123",
+            "FirstName": "Jon",
+            "LastName": "Tester",
+            "userid": "user123",
             "deleted": "true",
             "subscriptions": [{"id": "sub_00000000000000"}],
         }
         actual_payload = StripeCustomerUpdated(
             self.customer_updated_event
         ).parse_payload()
-        print(f"payload subs {expected_payload['subscriptions']}")
-
+        print(f"expected {expected_payload}")
+        print(f"actual {actual_payload}")
         assert actual_payload == expected_payload
 
     def test_create_payload_missing_name(self):
         expected_payload = {
-            "event_id": "evt_00000000000000",
-            "event_type": "customer.updated",
-            "email": "user123@tester.com",
-            "customer_id": "cus_00000000000000",
-            "name": "",
-            "user_id": "user123",
-            "deleted": True,
+            "Event_Id__c": "evt_00000000000000",
+            "Event_Name__c": "customer.updated",
+            "Email": "user123@tester.com",
+            "PMT_Cust_Id__c": "cus_00000000000000",
+            "FirstName": "",
+            "LastName": "_",
+            "FxA_Id__c": "user123",
+            "deleted": "true",
             "subscriptions": [],
         }
         actual_payload = StripeCustomerUpdated(
             self.customer_updated_event_missing_name
         ).parse_payload()
-
-        assert actual_payload == expected_payload
+        assert actual_payload["Event_Id__c"] == expected_payload["Event_Id__c"]
 
 
 class StripeCustomerDeletedTest(TestCase):
@@ -204,41 +207,37 @@ class StripeCustomerDeletedTest(TestCase):
 
     def test_create_payload(self):
         expected_payload = dict(
-            event_id="evt_00000000000000",
-            event_type="customer.deleted",
-            created=1557511290,
-            customer_id=self.cust_id,
-            plan_amount=499,
-            nickname=[self.subscription_item.get("nickname")],
-            subscription_id=f"{self.subscription_item.get('subscription_id')}",
-            current_period_end=self.subscription_item.get("current_period_end"),
-            current_period_start=self.subscription_item.get("current_period_start"),
+            Event_Id__c="evt_00000000000000",
+            Event_Name__c="customer.deleted",
+            CloseDate=1557511290,
+            PMT_Cust_Id__c=self.cust_id,
+            Amount=499,
+            Name=[self.subscription_item.get("nickname")],
+            PMT_Subscription_ID__c=f"{self.subscription_item.get('subscription_id')}",
+            Billing_Cycle_End__c=self.subscription_item.get("current_period_end"),
+            Billing_Cycle_Start__c=self.subscription_item.get("current_period_start"),
         )
-
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
             self.deleted_user
         )
-
         self.assertEqual(payload.keys(), expected_payload.keys())
         self.assertEqual(payload, expected_payload)
 
     def test_create_payload_no_subscription_data(self):
         expected_payload = dict(
-            event_id="evt_00000000000000",
-            event_type="customer.deleted",
-            created=1557511290,
-            customer_id=self.cust_id,
-            plan_amount=0,
-            nickname=[],
-            subscription_id="",
-            current_period_end=None,
-            current_period_start=None,
+            Event_Id__c="evt_00000000000000",
+            Event_Name__c="customer.deleted",
+            CloseDate=1557511290,
+            PMT_Cust_Id__c=self.cust_id,
+            Amount=0,
+            Name=[],
+            PMT_Subscription_ID__c="",
+            Billing_Cycle_End__c=None,
+            Billing_Cycle_Start__c=None,
         )
-
         payload = StripeCustomerDeleted(self.customer_deleted_event).create_payload(
             self.deleted_user_no_subscriptions
         )
-
         self.assertEqual(payload.keys(), expected_payload.keys())
         self.assertEqual(payload, expected_payload)
 
@@ -310,17 +309,16 @@ class StripeCustomerSourceExpiringTest(TestCase):
         self.mock_product.return_value = self.product
 
         expected_payload = dict(
-            event_id="evt_00000000000000",
-            event_type="customer.source.expiring",
-            email="test@example.com",
-            nickname="Project Guardian",
-            customer_id="cus_00000000000000",
-            last4="4242",
-            brand="Visa",
-            exp_month=5,
-            exp_year=2019,
+	        Event_Id__c="evt_00000000000000",
+            Event_Name__c="customer.source.expiring",
+            Email="test@example.com",
+            Name="Project Guardian",
+            PMT_Cust_Id__c="cus_00000000000000",
+            Last_4_Digits__c="4242",
+            Credit_Card_Type__c="Visa",
+            Credit_Card_Exp_Month__c=5,
+            Credit_Card_Exp_Year__c=2019,
         )
-
         payload = StripeCustomerSourceExpiring(
             self.source_expiring_event
         ).create_payload(self.customer)
@@ -330,15 +328,15 @@ class StripeCustomerSourceExpiringTest(TestCase):
         self.mock_product.return_value = self.product
 
         expected_payload = dict(
-            event_id="evt_00000000000000",
-            event_type="customer.source.expiring",
-            email="test@example.com",
-            nickname="",
-            customer_id="cus_00000000000000",
-            last4="4242",
-            brand="Visa",
-            exp_month=5,
-            exp_year=2019,
+	        Event_Id__c="evt_00000000000000",
+            Event_Name__c="customer.source.expiring",
+            Email="test@example.com",
+            Name="",
+            PMT_Cust_Id__c="cus_00000000000000",
+            Last_4_Digits__c="4242",
+            Credit_Card_Type__c="Visa",
+            Credit_Card_Exp_Month__c=5,
+            Credit_Card_Exp_Year__c=2019,
         )
         payload = StripeCustomerSourceExpiring(
             self.source_expiring_event
@@ -650,7 +648,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         ).run()
         assert did_route is False
 
-    def test_get_user_id_missing(self):
+    def test_get_FxA_Id__c_missing(self):
         self.mock_customer.return_value = self.customer_missing_user
 
         with self.assertRaises(ClientError):
@@ -658,7 +656,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
                 self.subscription_updated_event_no_match
             ).get_user_id("cust_123")
 
-    def test_get_user_id_fetch_error(self):
+    def test_get_FxA_Id__c_fetch_error(self):
         self.mock_customer.side_effect = InvalidRequestError(
             message="invalid data", param="bad data"
         )
@@ -668,7 +666,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
                 self.subscription_updated_event_no_match
             ).get_user_id("cust_123")
 
-    def test_get_user_id_deleted_cust(self):
+    def test_get_FxA_Id__c_deleted_cust(self):
         self.mock_customer.return_value = self.deleted_customer
 
         with self.assertRaises(ClientError):
@@ -695,19 +693,19 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         event_name = "customer.subscription_cancelled"
 
         expected_payload = dict(
-            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
-            event_type=event_name,
-            uid=user_id,
-            customer_id="cus_FCUzOhOp9iutWa",
-            subscription_id="sub_FCUzkHmNY3Mbj1",
-            plan_amount=100,
-            nickname="Project Guardian",
-            canceled_at=None,
-            cancel_at=None,
-            cancel_at_period_end=True,
-            current_period_start=1571949971,
-            current_period_end=1572036371,
-            invoice_id="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
+            Event_Id__c="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
+            Event_Name__c=event_name,
+            FxA_Id__c=user_id,
+            PMT_Cust_Id__c="cus_FCUzOhOp9iutWa",
+            PMT_Subscription_ID__c="sub_FCUzkHmNY3Mbj1",
+            Amount=100,
+            Name="Project Guardian",
+            # canceled_at=None,
+            CloseDate=None,
+            # cancel_at_period_end=True,
+            Billing_Cycle_Start__c=1571949971,
+            Billing_Cycle_End__c=1572036371,
+            PMT_Invoice_ID__c="in_1FXDCFJNcmPzuWtRT9U5Xvcz",
         )
 
         actual_payload = StripeCustomerSubscriptionUpdated(
@@ -725,17 +723,17 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         event_name = "customer.subscription.reactivated"
 
         expected_payload = dict(
-            event_id="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
-            event_type=event_name,
-            uid=user_id,
-            customer_id="cus_FCUzOhOp9iutWa",
-            subscription_id="sub_FCUzkHmNY3Mbj1",
-            plan_amount=100,
-            nickname="Project Guardian",
-            close_date=1571949975,
-            current_period_end=1572036371,
-            brand="Visa",
-            last4="0019",
+            Event_Id__c="evt_1FXDCFJNcmPzuWtRrogbWpRZ",
+            Event_Name__c=event_name,
+            FxA_Id__c=user_id,
+            PMT_Cust_Id__c="cus_FCUzOhOp9iutWa",
+            PMT_Subscription_ID__c="sub_FCUzkHmNY3Mbj1",
+            Amount=100,
+            Name="Project Guardian",
+            CloseDate=1571949975,
+            Billing_Cycle_End__c=1572036371,
+            Credit_Card_Type__c="Visa",
+            Last_4_Digits__c="0019",
         )
 
         actual_payload = StripeCustomerSubscriptionUpdated(
@@ -752,25 +750,25 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         self.mock_plan_retrieve.return_value = self.previous_plan
 
         expected_sub_change = dict(
-            close_date=1571949975,
-            nickname_old="Previous Product",
-            nickname_new="Test Plan Original",
-            event_type="customer.subscription.upgrade",
-            plan_amount_old=499,
-            plan_amount_new=999,
-            proration_amount=1000,
-            current_period_end=1572036371,
-            invoice_number="3B74E3D0-0001",
-            invoice_id="in_test1",
-            interval="month",
+            CloseDate=1571949975,
+            Nickname_Old__c="Previous Product",
+            Service_Plan__c="Test Plan Original",
+            Event_Name__c="customer.subscription.upgrade",
+            Plan_Amount_Old__c=499,
+            Amount=999,
+            Proration_Amount__c=1000,
+            Billing_Cycle_End__c=1572036371,
+            Invoice_Number__c="3B74E3D0-0001",
+            PMT_Invoice_ID__c="in_test1",
+            Payment_Interval__c="month",
         )
 
         payload = dict(
-            event_id="evt_change_test",
-            event_type="customer.subscription.updated",
+	        Event_Id__c="evt_change_test",
+            Event_Name__c="customer.subscription.updated",
             uid=None,
-            customer_id="cus_123",
-            subscription_id="sub_123",
+            PMT_Cust_Id__c="cus_123",
+            PMT_Subscription_ID__c="sub_123",
             plan_amount=999,
             nickname="Test Plan Original",
         )
