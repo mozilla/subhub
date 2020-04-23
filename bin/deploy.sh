@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+unset DEPLOYED_ENV
+
 if [[ $TRAVIS_EVENT_TYPE == cron ]]; then
   exit 1;
 fi
