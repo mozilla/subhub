@@ -148,7 +148,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         plan: Dict[str, Any],
         customer: Dict[str, Any],
         subscription: Dict[str, Any],
-        email: str
+        email: str,
     ) -> Dict[str, Any]:
         """
         Create payload to be sent to external sources based on event_type
@@ -192,7 +192,7 @@ class StripeInvoicePaymentSucceeded(AbstractStripeHubEvent):
         customer: Dict[str, Any],
         product_name: str,
         subscription: Dict[str, Any],
-        event_type: str
+        event_type: str,
     ) -> Dict[str, Any]:
         """
         Format data specific to new subscription
