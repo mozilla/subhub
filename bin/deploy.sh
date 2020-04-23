@@ -6,13 +6,13 @@ fi
 
 case "$TRAVIS_BRANCH" in
 'feature/staging')
-    DEPLOYED_ENV=stage doit deploy
+    DEPLOYED_ENV="stage" doit deploy
     ;;
 'release/prod-test')
-    DEPLOY_ENV=prod-test doit deploy
+    DEPLOY_ENV="prod-test" doit deploy
     ;;
 'release/prod')
-    DEPLOY_ENV=prod doit deploy
+    DEPLOY_ENV="prod" doit deploy
     ;;
 *)
     echo "No DEPLOY_ENV to set."
