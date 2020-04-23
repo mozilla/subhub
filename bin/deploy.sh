@@ -6,13 +6,13 @@ fi
 
 case "$TRAVIS_BRANCH" in
 'feature/staging')
-    export DEPLOY_ENV=staging
+    DEPLOYED_ENV=staging doit deploy
     ;;
 'release/prod-test')
-    export DEPLOY_ENV=prod-test
+    DEPLOY_ENV=prod-test doit deploy
     ;;
 'release/prod')
-    export DEPLOY_ENV=prod
+    DEPLOY_ENV=prod doit deploy
     ;;
 *)
     echo "No DEPLOY_ENV to set."
@@ -22,6 +22,5 @@ esac
 if [ -z "$DEPLOY_ENV" ]; then
       echo "Not deployinng"
 else
-      echo "Deploying to $DEPLOY_ENV"
-      doit deploy
+      echo "Deployed to $DEPLOY_ENV"
 fi
