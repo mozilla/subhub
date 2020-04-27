@@ -16,17 +16,10 @@ sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
 client = Client(os.environ["SENTRY_URL"])
 
-from aws_xray_sdk.core import xray_recorder, patch_all
-from aws_xray_sdk.core.context import Context
-from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
-
 from hub.verifications import events_check
 from shared.log import get_logger
 
 logger = get_logger()
-
-xray_recorder.configure(service="fxa.mia")
-patch_all()
 
 # NOTE: The context object has the following available to it.
 #   https://docs.aws.amazon.com/lambda/latest/dg/python-context-object.html#python-context-object-props

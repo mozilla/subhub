@@ -170,12 +170,6 @@ provider:
         - 'Fn::Join': [':', ['arn:aws:kms', Ref: AWS::Region, Ref: AWS::AccountId, 'key/*']]
     - Effect: Allow
       Action:
-        - 'xray:PutTraceSegments'
-        - 'xray:PutTelemetryRecords'
-      Resource:
-        - '*'
-    - Effect: Allow
-      Action:
         - sns:Publish
       Resource:
         - 'Fn::Join': [':', ['arn:aws:sns', Ref: AWS::Region, Ref: AWS::AccountId, '${self:provider.stage}-fxa-event-data']]
