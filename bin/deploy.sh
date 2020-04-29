@@ -13,12 +13,12 @@ case "$TRAVIS_BRANCH" in
     exit 1;
     ;;
 'release/prod-test')
-    DEPLOY_ENV="prod-test" doit deploy
+    DEPLOYED_ENV="prod-test" doit deploy
     echo "deployed ${DEPLOYED_ENV}";
     exit 1;
     ;;
 'release/prod')
-    DEPLOY_ENV="prod" doit deploy
+    DEPLOYED_ENV="prod" doit deploy
     echo "deployed ${DEPLOYED_ENV}";
     exit 1;
     ;;
