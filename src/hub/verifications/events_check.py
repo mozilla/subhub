@@ -9,8 +9,6 @@ from abc import ABC
 from datetime import datetime, timedelta
 from typing import Dict, Any
 from flask import current_app
-from aws_xray_sdk.core import xray_recorder
-from aws_xray_sdk.ext.flask.middleware import XRayMiddleware
 
 from hub.app import create_app, g
 from hub.vendor.controller import event_process
@@ -20,11 +18,9 @@ from shared.log import get_logger
 logger = get_logger()
 
 if not hasattr(sys, "_called_from_test"):
-    xray_recorder.configure(service="subhub-missing-events")
 
     try:
         app = create_app()
-        XRayMiddleware(app.app, xray_recorder)
     except Exception:  # pylint: disable=broad-except
         logger.exception("Exception occurred while loading app")
         raise
