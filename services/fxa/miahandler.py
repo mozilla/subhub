@@ -7,17 +7,18 @@ import sys
 import serverless_wsgi
 import structlog
 
-from raven import Client
+from sentry_sdk import init, capture_message
 from os.path import join, dirname, realpath
 
 # First some funky path manipulation so that we can work properly in
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
-client = Client(os.environ["SENTRY_URL"])
-
 from hub.verifications import events_check
 from shared.log import get_logger
+from shared.cfg import CFG
+
+init(CFG.SENTRY_URL)
 
 logger = get_logger()
 
@@ -30,7 +31,6 @@ def handle(event, context):
         processing_duration = int(os.getenv("PROCESS_EVENTS_HOURS", "6"))
         events_check.process_events(processing_duration)
     except Exception as e:  # pylint: disable=broad-except
-        client.captureException()
         logger.exception(
             "exception occurred", subhub_event=event, context=context, error=e
         )
