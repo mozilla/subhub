@@ -588,7 +588,7 @@ def task_deploy():
         call(deploy_cmd, stdout=None, stderr=None)
 
     return {
-        "task_dep": ["check", "creds", "yarn", "test"],
+        # "task_dep": ["check", "creds", "yarn", "test"],
         "pos_arg": "args",
         "actions": [(deploy,)],
     }

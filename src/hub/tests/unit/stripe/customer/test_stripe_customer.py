@@ -62,7 +62,7 @@ class StripeCustomerCreatedTest(TestCase):
 
     def test_create_payload_missing_name(self):
         expected_payload = {
-	        "Event_Id__c": "evt_00000000000000",
+            "Event_Id__c": "evt_00000000000000",
             "Event_Name__c": "customer.created",
             "Email": "user123@tester.com",
             "PMT_Cust_Id__c": "cus_00000000000000",
@@ -309,7 +309,7 @@ class StripeCustomerSourceExpiringTest(TestCase):
         self.mock_product.return_value = self.product
 
         expected_payload = dict(
-	        Event_Id__c="evt_00000000000000",
+            Event_Id__c="evt_00000000000000",
             Event_Name__c="customer.source.expiring",
             Email="test@example.com",
             Name="Project Guardian",
@@ -328,7 +328,7 @@ class StripeCustomerSourceExpiringTest(TestCase):
         self.mock_product.return_value = self.product
 
         expected_payload = dict(
-	        Event_Id__c="evt_00000000000000",
+            Event_Id__c="evt_00000000000000",
             Event_Name__c="customer.source.expiring",
             Email="test@example.com",
             Name="",
@@ -764,7 +764,7 @@ class StripeCustomerSubscriptionUpdatedTest(TestCase):
         )
 
         payload = dict(
-	        Event_Id__c="evt_change_test",
+            Event_Id__c="evt_change_test",
             Event_Name__c="customer.subscription.updated",
             uid=None,
             PMT_Cust_Id__c="cus_123",
