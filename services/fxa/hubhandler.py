@@ -8,7 +8,7 @@ import os
 import sys
 import serverless_wsgi
 
-from raven import Client
+from sentry_sdk import init, capture_message
 from os.path import join, dirname, realpath
 
 serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
@@ -17,12 +17,11 @@ serverless_wsgi.TEXT_MIME_TYPES.append("application/custom+json")
 # the AWS environment
 sys.path.insert(0, join(dirname(realpath(__file__)), "src"))
 
-
-client = Client(os.environ["SENTRY_URL"])
-
 from hub.app import create_app
+from shared.cfg import CFG
 from shared.log import get_logger
 
+init(CFG.SENTRY_URL)
 logger = get_logger()
 hub_app = create_app()
 
@@ -34,7 +33,6 @@ def handle(event, context):
     try:
         return serverless_wsgi.handle_request(hub_app.app, event, context)
     except Exception as e:  # pylint: disable=broad-except
-        client.captureException()
         logger.exception(
             "exception occurred", subhub_event=event, context=context, error=e
         )
