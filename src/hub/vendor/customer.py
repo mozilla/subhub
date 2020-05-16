@@ -177,19 +177,14 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         :param deleted_user:
         :return:
         """
-        plan_amount = 0
-        current_period_end = None
-        current_period_start = None
-        nicknames = list()
-        for user_plan in deleted_user.subscription_info:
-            plan_amount = plan_amount + user_plan["plan_amount"]
-            nicknames.append(user_plan["nickname"])
-            current_period_start = user_plan["current_period_start"]
-            current_period_end = user_plan["current_period_end"]
+        deleted_info = deleted_user.subscription_info[0]
+        plan_amount = deleted_info.plan_amount + deleted_info.user_plan["plan_amount"]
+        current_period_end = deleted_info.user_plan["current_period_start"]
+        current_period_start = deleted_info.user_plan["current_period_end"]
+        nicknames = deleted_info.user_plan["nickname"]
         subs = ",".join(
             [(x.get("subscription_id")) for x in deleted_user.subscription_info]
         )
-
         return self.create_data(
             CloseDate=self.payload.data.object.created,
             PMT_Cust_Id__c=self.payload.data.object.id,
@@ -253,7 +248,6 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
                 )
                 name = product["name"]
                 break
-
         return name
 
 
