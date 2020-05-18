@@ -180,25 +180,24 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         plan_amount = 0
         current_period_end = None
         current_period_start = None
-        nicknames = list()
+        nicknames = ""
         for user_plan in deleted_user.subscription_info:
             plan_amount = plan_amount + user_plan["plan_amount"]
-            nicknames.append(user_plan["nickname"])
+            nicknames = user_plan["nickname"]
             current_period_start = user_plan["current_period_start"]
             current_period_end = user_plan["current_period_end"]
-        subs = ",".join(
-            [(x.get("subscription_id")) for x in deleted_user.subscription_info]
-        )
-
-        return self.create_data(
-            CloseDate=self.payload.data.object.created,
-            PMT_Cust_Id__c=self.payload.data.object.id,
-            Amount=plan_amount,
-            Name=nicknames,
-            PMT_Subscription_ID__c=subs,
-            Billing_Cycle_End__c=current_period_end,
-            Billing_Cycle_Start__c=current_period_start,
-        )
+            subs = ",".join(
+                [(x.get("subscription_id")) for x in deleted_user.subscription_info]
+            )
+            return self.create_data(
+                CloseDate=self.payload.data.object.created,
+                PMT_Cust_Id__c=self.payload.data.object.id,
+                Amount=plan_amount,
+                Name=nicknames,
+                PMT_Subscription_ID__c=subs,
+                Billing_Cycle_End__c=current_period_end,
+                Billing_Cycle_Start__c=current_period_start,
+            )
 
 
 class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
@@ -253,7 +252,6 @@ class StripeCustomerSourceExpiring(AbstractStripeHubEvent):
                 )
                 name = product["name"]
                 break
-
         return name
 
 
