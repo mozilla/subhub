@@ -14,6 +14,8 @@ case "$TRAVIS_BRANCH" in
     ;;
 'release/prod')
     DEPLOY_ENV=prod
+    SKIP_TESTS=true
+    doit deploy
     ;;
 *)
     echo "No DEPLOY_ENV to set."
