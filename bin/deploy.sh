@@ -9,7 +9,7 @@ case "$TRAVIS_BRANCH" in
     SKIP_TEST=true DEPLOYED_ENV=prod-test doit deploy
     ;;
 'release/prod')
-    SKIP_TEST=true DEPLOYED_ENV=prod doit deploy
+    SKIP_TEST=true DEPLOY_TO=prod DEPLOYED_ENV=prod doit deploy
     ;;
 *)
     echo "No DEPLOY_ENV to set."
