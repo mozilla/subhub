@@ -13,18 +13,12 @@ case "$TRAVIS_BRANCH" in
     doit deploy
     ;;
 'release/prod')
-    DEPLOY_ENV=prod
     SKIP_TESTS=true
+    DEPLOYED_ENV=prod
+    DEPLOY_ENV=prod
     doit deploy
     ;;
 *)
     echo "No DEPLOY_ENV to set."
     ;;
 esac
-
-if [ -z "$DEPLOY_ENV" ]; then
-      echo "Not deployinng"
-else
-      echo "Deploying to $DEPLOY_ENV"
-      doit deploy
-fi
