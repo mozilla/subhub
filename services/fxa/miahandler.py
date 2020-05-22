@@ -18,7 +18,7 @@ from hub.verifications import events_check
 from shared.log import get_logger
 from shared.cfg import CFG
 
-init(CFG.SENTRY_URL)
+# init(CFG.SENTRY_URL)
 
 logger = get_logger()
 

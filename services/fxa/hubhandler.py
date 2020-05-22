@@ -21,7 +21,7 @@ from hub.app import create_app
 from shared.cfg import CFG
 from shared.log import get_logger
 
-init(CFG.SENTRY_URL)
+# init(CFG.SENTRY_URL)
 logger = get_logger()
 hub_app = create_app()
 
