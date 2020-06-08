@@ -3,25 +3,15 @@
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 import os
-import boto3
-import base64
-import json
-
 from typing import Dict, Any
 
+from cloudsecrets.aws import Secrets
 from shared.cfg import CFG
-from shared.exceptions import SecretStringMissingError
 
 
 def get_secret(secret_id) -> Dict[str, Any]:
-    """Fetch secret via boto3."""
-    client = boto3.client(service_name="secretsmanager")
-    get_secret_value_response = client.get_secret_value(SecretId=secret_id)
-
-    if "SecretString" in get_secret_value_response:
-        secret = get_secret_value_response["SecretString"]
-        return json.loads(secret)
-    raise SecretStringMissingError(secret)
+    secrets = Secrets(f"{CFG.DEPLOYED_ENV}/{CFG.PROJECT_NAME}", version="latest")
+    return dict(secrets).get(secret_id)
 
 
 if CFG.AWS_EXECUTION_ENV:
