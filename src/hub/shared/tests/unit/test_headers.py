@@ -6,7 +6,7 @@ import json
 import requests
 import responses
 
-from hub.shared.headers import dump_safe_headers, extract_safe
+from src.hub.shared.headers import dump_safe_headers, extract_safe
 
 CONTENT_TYPE_HEADER_ONLY_HEADERS = {"content-type": "application/json"}
 AUTHORIZATION_AND_HOST_ONLY_HEADERS = {

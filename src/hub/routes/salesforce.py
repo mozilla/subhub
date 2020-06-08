@@ -8,9 +8,9 @@ from requests import Response
 
 from typing import Dict, Tuple, Any
 
-from hub.routes.abstract import AbstractRoute
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.routes.abstract import AbstractRoute
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

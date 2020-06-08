@@ -4,9 +4,9 @@
 
 from typing import Any, Dict, Optional, List
 
-from hub.routes.salesforce import SalesforceRoute
-from hub.routes.static import StaticRoutes
-from hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError
+from src.hub.routes.salesforce import SalesforceRoute
+from src.hub.routes.static import StaticRoutes
+from src.hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError
 
 
 class RoutesPipeline:

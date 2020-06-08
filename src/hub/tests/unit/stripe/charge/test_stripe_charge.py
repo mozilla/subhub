@@ -8,8 +8,8 @@ import requests
 import boto3
 import flask
 
-from hub.shared.cfg import CFG
-from hub.shared.tests.unit.utils import run_test, MockSqsClient
+from src.hub.shared.cfg import CFG
+from src.hub.shared.tests.unit.utils import run_test, MockSqsClient
 
 CWD = os.path.realpath(os.path.dirname(__file__))
 
@@ -36,17 +36,10 @@ def test_stripe_hub_succeeded(mocker):
     # using mockito
     basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     mockito.when(requests).post(basket_url, json=data).thenReturn(response)
-    mockito.when(boto3).client(
-        "sqs",
-        region_name=CFG.AWS_REGION,
-        aws_access_key_id=CFG.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=CFG.AWS_SECRET_ACCESS_KEY,
-    ).thenReturn(MockSqsClient)
 
     # using pytest mock
     mocker.patch.object(flask, "g")
     flask.g.return_value = ""
-    flask.g.hub_table.get_event.return_value = ""
 
     # run the test
     run_test("charge-succeeded.json", cwd=CWD)

@@ -11,9 +11,9 @@ import flask
 import stripe.error
 from mockito import when, mock, unstub
 
-from hub.shared.cfg import CFG
-from hub.shared import secrets
-from hub.shared.tests.unit.utils import run_test, MockSqsClient
+from src.hub.shared.cfg import CFG
+from src.hub.shared import secrets
+from src.hub.shared.tests.unit.utils import run_test, MockSqsClient
 
 CWD = os.path.realpath(os.path.dirname(__file__))
 
@@ -60,9 +60,6 @@ def test_stripe_payment_intent_succeeded(mocker):
     }
     basket_url = CFG.SALESFORCE_BASKET_URI + CFG.BASKET_API_KEY
     response = mockito.mock({"status_code": 200, "text": "Ok"}, spec=requests.Response)
-    mockito.when(boto3).client("sqs", region_name=CFG.AWS_REGION).thenReturn(
-        MockSqsClient
-    )
     mockito.when(requests).post(basket_url, json=data).thenReturn(response)
     filename = "payment-intent-succeeded.json"
     run_customer(mocker, data, filename)

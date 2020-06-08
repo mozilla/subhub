@@ -8,21 +8,21 @@ import pytest
 
 from flask import g
 
-from hub.shared.cfg import CFG
-from hub.app import create_app
-from shared.log import get_logger
-from shared.dynamodb import patch_database
+from src.hub.shared.cfg import CFG
+from src.hub.app import create_app
+from src.hub.shared.log import get_logger
+# from src.hub.shared.dynamodb import patch_database
 
 logger = get_logger()
 
 
-def pytest_configure():
-    os.environ["ALLOWED_ORIGIN_SYSTEMS"] = "Test_system,Test_System,Test_System1"
-    sys._called_from_test = True
-
-
-@pytest.fixture(autouse=True, scope="module")
-def app(patch_database):
-    app = create_app()
-    with app.app.app_context():
-        yield app
+# def pytest_configure():
+#     os.environ["ALLOWED_ORIGIN_SYSTEMS"] = "Test_system,Test_System,Test_System1"
+#     sys._called_from_test = True
+#
+#
+# @pytest.fixture(autouse=True, scope="module")
+# def app(patch_database):
+#     app = create_app()
+#     with app.app.app_context():
+#         yield app

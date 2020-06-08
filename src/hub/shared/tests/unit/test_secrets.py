@@ -7,8 +7,8 @@ import boto3
 
 from mockito import when
 
-from hub.shared.exceptions import SecretStringMissingError
-from hub.shared import secrets
+from src.hub.shared.exceptions import SecretStringMissingError
+from src.hub.shared import secrets
 
 
 EXPECTED = {

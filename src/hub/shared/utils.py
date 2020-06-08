@@ -4,7 +4,7 @@
 
 import uuid
 
-from shared.cfg import CFG
+from src.hub.shared.cfg import CFG
 
 
 def get_indempotency_key() -> str:

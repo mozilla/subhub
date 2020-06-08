@@ -7,15 +7,15 @@ from mock import patch
 
 from flask import jsonify
 from stripe.error import AuthenticationError, CardError, StripeError
-from hub.shared.exceptions import SubHubError
+from src.hub.shared.exceptions import SubHubError
 
-from hub.app import create_app
-from hub.app import server_stripe_error
-from hub.app import intermittent_stripe_error
-from hub.app import server_stripe_error_with_params
-from hub.app import server_stripe_card_error
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.app import create_app
+from src.hub.app import server_stripe_error
+from src.hub.app import intermittent_stripe_error
+from src.hub.app import server_stripe_error_with_params
+from src.hub.app import server_stripe_card_error
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

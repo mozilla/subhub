@@ -13,14 +13,13 @@ from datetime import datetime
 from typing import Optional, Dict, Any, List
 from flask import g
 
-from hub.vendor.abstract import AbstractStripeHubEvent
-from hub.routes.static import StaticRoutes
-from hub.shared.exceptions import ClientError
-from hub.shared.vendor_utils import format_brand
-from shared.log import get_logger
-from hub.shared import vendor
-from hub.shared.db import SubHubDeletedAccountModel
-from hub.shared import utils
+from src.hub.vendor.abstract import AbstractStripeHubEvent
+from src.hub.routes.static import StaticRoutes
+from src.hub.shared.exceptions import ClientError
+from src.hub.shared.vendor_utils import format_brand
+from src.hub.shared.log import get_logger
+from src.hub.shared import vendor
+from src.hub.shared import utils
 
 logger = get_logger()
 
@@ -140,7 +139,7 @@ class StripeCustomerDeleted(AbstractStripeHubEvent):
         self.send_to_routes(routes, json.dumps(data))
         return True
 
-    def get_deleted_user(self) -> SubHubDeletedAccountModel:
+    def get_deleted_user(self):
         """
         Fetch a deleted user based off of key data within payload
         Raise error if user cannot be fetched or does not exist
@@ -307,7 +306,7 @@ class StripeCustomerSubscriptionDeleted(AbstractStripeHubEvent):
 
     def check_for_deleted_user(
         self, user_id: str, cust_id: str
-    ) -> Optional[SubHubDeletedAccountModel]:
+    ):
         return g.subhub_deleted_users.get_user(uid=user_id, cust_id=cust_id)
 
     def update_deleted_user(

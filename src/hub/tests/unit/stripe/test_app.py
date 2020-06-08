@@ -5,12 +5,12 @@
 from flask import jsonify
 from stripe.error import AuthenticationError, CardError, StripeError
 
-from hub.app import create_app
-from hub.app import server_stripe_error
-from hub.app import intermittent_stripe_error
-from hub.app import server_stripe_error_with_params
-from hub.app import server_stripe_card_error
-from shared.cfg import CFG
+from src.hub.app import create_app
+from src.hub.app import server_stripe_error
+from src.hub.app import intermittent_stripe_error
+from src.hub.app import server_stripe_error_with_params
+from src.hub.app import server_stripe_card_error
+from src.hub.shared.cfg import CFG
 
 
 def test_create_app():

@@ -8,8 +8,8 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any
 from attrdict import AttrDict
 
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

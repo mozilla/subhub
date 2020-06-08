@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from typing import Dict, Any
 from flask import current_app
 
-from hub.app import create_app, g
-from hub.vendor.controller import event_process
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.app import create_app, g
+from src.hub.vendor.controller import event_process
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

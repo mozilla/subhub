@@ -10,12 +10,12 @@ import time
 from stripe.util import convert_to_stripe_object
 from stripe.error import InvalidRequestError
 
-from hub.vendor.invoices import (
+from src.hub.vendor.invoices import (
     StripeInvoicePaymentFailed,
     StripeInvoicePaymentSucceeded,
 )
 
-from shared.log import get_logger
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 
@@ -37,7 +37,7 @@ class StripeInvoicePaymentFailedTest(unittest.TestCase):
             self.payment_failed_event_sub_create = json.loads(fh.read())
 
         product_patcher = mock.patch("stripe.Product.retrieve")
-        run_pipeline_patcher = mock.patch("hub.routes.pipeline.RoutesPipeline.run")
+        run_pipeline_patcher = mock.patch("src.hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(product_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
@@ -139,7 +139,7 @@ class StripeInvoicePaymentSucceededTest(unittest.TestCase):
         invoice_patcher = mock.patch("stripe.Invoice.upcoming")
         invoice_retrieve_patcher = mock.patch("stripe.Invoice.retrieve")
         charge_retrieve_patcher = mock.patch("stripe.Charge.retrieve")
-        run_pipeline_patcher = mock.patch("hub.routes.pipeline.RoutesPipeline.run")
+        run_pipeline_patcher = mock.patch("src.hub.routes.pipeline.RoutesPipeline.run")
 
         self.addCleanup(subscription_patcher.stop)
         self.addCleanup(invoice_patcher.stop)

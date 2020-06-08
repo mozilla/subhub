@@ -8,9 +8,9 @@ from abc import ABC, abstractmethod
 from typing import Dict
 from attrdict import AttrDict
 
-from hub.routes.pipeline import RoutesPipeline, AllRoutes
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.routes.pipeline import RoutesPipeline, AllRoutes
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

@@ -6,7 +6,6 @@ import os
 import sys
 import connexion
 import stripe
-import pynamodb
 
 from flask import current_app, g, jsonify
 from flask_cors import CORS
@@ -14,12 +13,11 @@ from flask import request
 from typing import Any
 from raven import Client
 
-from shared import secrets
-from shared.exceptions import SubHubError
-from shared.db import HubEvent, SubHubDeletedAccount
-from shared.headers import dump_safe_headers
-from shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.shared import secrets
+from src.hub.shared.exceptions import SubHubError
+from src.hub.shared.headers import dump_safe_headers
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 client = Client(CFG.SENTRY_URL)
@@ -102,12 +100,6 @@ def create_app(config=None) -> Any:
     app = connexion.FlaskApp(__name__, specification_dir=".", options=options)
     app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
-    # TODO
-    app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
-    app.app.subhub_deleted_users = SubHubDeletedAccount(
-        table_name=CFG.DELETED_USER_TABLE, region=region, host=host
-    )
-
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
         client.captureException()
@@ -136,9 +128,6 @@ def create_app(config=None) -> Any:
 
     for error in (stripe.error.CardError,):
         app.app.errorhandler(error)(server_stripe_card_error)
-
-    for error in (pynamodb.exceptions.GetError,):
-        app.app.errorhandler(error)(database_connection_error)
 
     @app.app.before_request
     def before_request():

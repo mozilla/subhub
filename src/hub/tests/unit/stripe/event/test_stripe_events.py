@@ -14,11 +14,11 @@ from flask import Response
 from mockito import when, mock, unstub
 from datetime import datetime, timedelta
 
-from hub.tests import conftest
+from src.hub.tests import conftest
 
-from hub.shared.tests.unit.utils import run_view, run_event_process
-from hub.shared.cfg import CFG
-from shared.log import get_logger
+from src.hub.shared.tests.unit.utils import run_view, run_event_process
+from src.hub.shared.cfg import CFG
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 
@@ -26,7 +26,7 @@ CWD = os.path.realpath(os.path.dirname(__file__))
 
 
 def test_hours_back():
-    from hub.verifications.events_check import EventCheck
+    from src.hub.verifications.events_check import EventCheck
 
     event_check_class = EventCheck(hours_back=1)
     assert isinstance(
@@ -36,7 +36,7 @@ def test_hours_back():
 
 
 def test_process_missing_event(dynamodb):
-    from hub.verifications.events_check import EventCheck, process_events
+    from src.hub.verifications.events_check import EventCheck, process_events
 
     missing_event = "event.json"
     with open(os.path.join(CWD, missing_event)) as f:
@@ -45,7 +45,7 @@ def test_process_missing_event(dynamodb):
 
 
 def test_retrieve_events(dynamodb):
-    from hub.verifications.events_check import EventCheck, process_events
+    from src.hub.verifications.events_check import EventCheck, process_events
 
     missing_event = "event.json"
 
@@ -65,7 +65,7 @@ def test_retrieve_events(dynamodb):
 
 
 def test_retrieve_events_more():
-    from hub.verifications.events_check import EventCheck
+    from src.hub.verifications.events_check import EventCheck
 
     missing_event = "more_event.json"
 
@@ -90,7 +90,7 @@ def test_retrieve_events_more():
 def test_process_events(dynamodb):
     os.environ["DYNALITE_URL"] = dynamodb
     missing_event = "event.json"
-    from hub.verifications.events_check import process_events
+    from src.hub.verifications.events_check import process_events
 
     def get_hours_back():
         h_hours_ago = datetime.now() - timedelta(hours=6)

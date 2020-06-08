@@ -10,17 +10,17 @@ from stripe.error import InvalidRequestError
 from stripe import Product, Customer, Subscription
 from typing import Dict, Any
 
-from hub.vendor.abstract import AbstractStripeHubEvent
-from hub.routes.static import StaticRoutes
-from hub.shared.vendor_utils import format_brand
-from hub.shared.vendor import (
+from src.hub.vendor.abstract import AbstractStripeHubEvent
+from src.hub.routes.static import StaticRoutes
+from src.hub.shared.vendor_utils import format_brand
+from src.hub.shared.vendor import (
     retrieve_stripe_subscription,
     retrieve_stripe_invoice_upcoming,
     retrieve_stripe_invoice_upcoming_by_subscription,
     retrieve_stripe_invoice,
     retrieve_stripe_charge,
 )
-from shared.log import get_logger
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

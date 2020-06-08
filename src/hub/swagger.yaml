@@ -35,7 +35,7 @@ parameters:
 paths:
   /hub/version:
     get:
-      operationId: shared.version.get_version
+      operationId: src.hub.shared.version.get_version
       tags:
         - Version
       summary: SubHub - Hub API version
@@ -49,7 +49,7 @@ paths:
             $ref: '#/definitions/Version'
   /hub/deployed:
     get:
-      operationId: shared.deployed.get_deployed
+      operationId: src.hub.shared.deployed.get_deployed
       tags:
         - Deployed
       summary: SubHub deployed
@@ -63,7 +63,7 @@ paths:
             $ref: '#/definitions/Deployed'
   /hub:
     post:
-      operationId: hub.vendor.controller.view
+      operationId: src.hub.vendor.controller.view
       tags:
         - Hub
       summary: Receives hub calls

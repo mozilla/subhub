@@ -9,7 +9,7 @@ from mock import patch
 from stripe.error import APIError, APIConnectionError, InvalidRequestError
 from stripe.util import convert_to_stripe_object
 
-from hub.shared import vendor, utils
+from src.hub.shared import vendor, utils
 
 DIRECTORY = os.path.dirname(__file__)
 

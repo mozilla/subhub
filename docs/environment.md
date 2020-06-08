@@ -33,66 +33,6 @@ The environment variables as read from the application, in alphabetical order ar
 
 </details>
 
-### AWS_ACCESS_KEY_ID
-<details>
-  <summary>Learn more.</summary>
-
-  #### AWS Access Key Identifier (ID)
-
-  From reference 1,
-
-  ```
-  Access keys consist of two parts: an access key ID (for example, AKIAIOSFODNN7EXAMPLE) and a secret access key (for example, wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY). You use access keys to sign programmatic requests that you make to AWS if you use AWS CLI commands (using the SDKs) or using AWS API operations
-  ```
-
-  ##### References
-  1. [Access Keys (Access Key ID and Secret Access Key) ](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys)
-
-</details>
-
-### AWS_EXECUTION_ENV
-<details>
-  <summary>Learn more.</summary>
-
-  #### Amazon Web Services Execution Environment
-
-</details>
-
-### AWS_REGION
-<details>
-  <summary>Learn more.</summary>
-
-  #### Amazon Web Services (AWS) Region
-
-  From reference 1,
-
-  ```
-  Amazon EC2 is hosted in multiple locations world-wide. These locations are composed of Regions and Availability Zones. Each Region is a separate geographic area. Each Region has multiple, isolated locations known as Availability Zones.
-  ```
-
-  ##### References
-  1. [Regions and Availability Zones](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html)
-  1. [Available Regions](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/using-regions-availability-zones.html#concepts-available-regions)
-
-</details>
-
-### AWS_SECRET_ACCESS_KEY
-<details>
-  <summary>Learn more.</summary>
-
-  #### Amazon Web Services Secret Access Key
-
-  From reference 1,
-
-  ```
-  Access keys consist of two parts: an access key ID (for example, AKIAIOSFODNN7EXAMPLE) and a secret access key (for example, wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY). You use access keys to sign programmatic requests that you make to AWS if you use AWS CLI commands (using the SDKs) or using AWS API operations
-  ```
-
-  ##### References
-  1. [Access Keys (Access Key ID and Secret Access Key) ](https://docs.aws.amazon.com/general/latest/gr/aws-sec-cred-types.html#access-keys-and-secret-access-keys)
-
-</details>
-
 ### BASKET_API_KEY
 <details>
   <summary>Learn more.</summary>

@@ -5,9 +5,9 @@
 import pytest
 import mock
 
-from shared.log import get_logger
+from src.hub.shared.log import get_logger
 from google.cloud import spanner
-from shared.cfg import CFG
+from src.hub.shared.cfg import CFG
 
 logger = get_logger()
 

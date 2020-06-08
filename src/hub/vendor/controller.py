@@ -9,8 +9,8 @@ import stripe
 from flask import request, Response
 from typing import Dict, Any, Union, Iterable
 
-from shared.cfg import CFG
-from hub.vendor.customer import (
+from src.hub.shared.cfg import CFG
+from src.hub.vendor.customer import (
     StripeCustomerCreated,
     StripeCustomerSubscriptionUpdated,
     StripeCustomerSourceExpiring,
@@ -18,12 +18,12 @@ from hub.vendor.customer import (
     StripeCustomerSubscriptionDeleted,
     StripeCustomerUpdated,
 )
-from hub.vendor.invoices import (
+from src.hub.vendor.invoices import (
     StripeInvoicePaymentFailed,
     StripeInvoicePaymentSucceeded,
 )
-from hub.vendor.events import EventMaker
-from shared.log import get_logger
+from src.hub.vendor.events import EventMaker
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 

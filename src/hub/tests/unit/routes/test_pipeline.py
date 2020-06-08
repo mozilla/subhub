@@ -11,33 +11,20 @@ from typing import NamedTuple
 
 import pytest
 
-from hub.routes.pipeline import RoutesPipeline, AllRoutes
-from hub.routes.static import StaticRoutes
-from hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError
-from shared.log import get_logger
+from src.hub.routes.pipeline import RoutesPipeline, AllRoutes
+from src.hub.routes.static import StaticRoutes
+from src.hub.shared.exceptions import UnsupportedStaticRouteError, UnsupportedDataError, ClientError
+from src.hub.shared.log import get_logger
 
 logger = get_logger()
 
-
-class MockClient:
-    client_type = "sns"
-
-    def publish(self, TopicArn, Message, MessageStructure):
-        if TopicArn is None:
-            raise ClientError(
-                operation_name="test", error_response={"error": "test error"}
-            )
-        return dict(MessageId="Test123", ResponseMetadata=dict(HTTPStatusCode=200))
-
-
 class AllRoutesTest(TestCase):
     def setUp(self) -> None:
-        run_pipeline_patcher = patch("hub.routes.pipeline.AllRoutes.run")
-        pipeline_patcher = patch("hub.routes.pipeline.AllRoutes")
-        sns_client_patch = patch("boto3.client")
-        salesforce_route_patcher = patch("hub.routes.salesforce.SalesforceRoute.route")
+        run_pipeline_patcher = patch("src.hub.routes.pipeline.AllRoutes.run")
+        pipeline_patcher = patch("src.hub.routes.pipeline.AllRoutes")
+        salesforce_route_patcher = patch("src.hub.routes.salesforce.SalesforceRoute.route")
         salesforce_send_patcher = patch(
-            "hub.routes.pipeline.AllRoutes.send_to_salesforce"
+            "src.hub.routes.pipeline.AllRoutes.send_to_salesforce"
         )
         expected_data = dict(
             route_type="salesforce_route", data={"event_id": "some_event"}
@@ -46,13 +33,11 @@ class AllRoutesTest(TestCase):
 
         self.addCleanup(pipeline_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
-        self.addCleanup(sns_client_patch.stop)
         self.addCleanup(salesforce_route_patcher.stop)
         self.addCleanup(salesforce_send_patcher.stop)
 
         self.mock_pipeline = pipeline_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
-        self.sns_client = sns_client_patch.start()
         self.salesforce_route = salesforce_route_patcher.start()
         self.salesforce_send = salesforce_send_patcher.start()
 
@@ -75,23 +60,20 @@ class AllRoutesTest(TestCase):
 
 class RouteTest(TestCase):
     def setUp(self) -> None:
-        run_pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline.run")
-        pipeline_patcher = patch("hub.routes.pipeline.RoutesPipeline")
-        sns_client_patch = patch("boto3.client")
-        salesforce_route_patcher = patch("hub.routes.salesforce.SalesforceRoute.route")
+        run_pipeline_patcher = patch("src.hub.routes.pipeline.RoutesPipeline.run")
+        pipeline_patcher = patch("src.hub.routes.pipeline.RoutesPipeline")
+        salesforce_route_patcher = patch("src.hub.routes.salesforce.SalesforceRoute.route")
         salesforce_send_patcher = patch(
-            "hub.routes.pipeline.RoutesPipeline.send_to_salesforce"
+            "src.hub.routes.pipeline.RoutesPipeline.send_to_salesforce"
         )
 
         self.addCleanup(pipeline_patcher.stop)
         self.addCleanup(run_pipeline_patcher.stop)
-        self.addCleanup(sns_client_patch.stop)
         self.addCleanup(salesforce_route_patcher.stop)
         self.addCleanup(salesforce_send_patcher.stop)
 
         self.mock_pipeline = pipeline_patcher.start()
         self.mock_run_pipeline = run_pipeline_patcher.start()
-        self.sns_client = sns_client_patch.start()
         self.salesforce_route = salesforce_route_patcher.start()
         self.salesforce_send = salesforce_send_patcher.start()
 

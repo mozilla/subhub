@@ -1,11 +1,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
+
 import datetime
-from typing import Optional, Any, List, Dict
-from shared.log import get_logger
+
+from src.hub.shared.log import get_logger
+from src.hub.shared.cfg import CFG
 from google.cloud import spanner
-from shared.cfg import CFG
+from typing import Optional, Any, List, Dict
 
 logger = get_logger()
 
