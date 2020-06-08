@@ -43,13 +43,3 @@ class MockSnsClient:
         Message: dict = None, MessageStructure: str = "json", TopicArn: str = None
     ) -> Dict[str, Dict[str, int]]:
         return {"ResponseMetadata": {"HTTPStatusCode": 200}}
-
-
-class MockSubhubAccount:
-    def subhub_account(self) -> None:
-        pass
-
-
-class MockSubhubUser:
-    id = "123"
-    cust_id = "cust_123"

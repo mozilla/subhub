@@ -50,13 +50,6 @@ services:
     depends_on:
       - base
       - stripe
-      - dynamodb
-
-  dynamodb:
-    image: amazon/dynamodb-local:latest
-    container_name: dynamodb-local
-    ports:
-      - 8000:8000
 
   stripe:
     image: stripemock/stripe-mock:latest

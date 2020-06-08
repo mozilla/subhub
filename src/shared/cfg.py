@@ -172,14 +172,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         }
 
     @property
-    def DELETED_USER_TABLE(self):
-        return self("DELETED_USER_TABLE", f"deleted-users-{CFG.DEPLOYED_ENV}")
-
-    @property
-    def EVENT_TABLE(self):
-        return self("EVENT_TABLE", f"events-{CFG.DEPLOYED_ENV}")
-
-    @property
     def STRIPE_REQUEST_TIMEOUT(self):
         return self("STRIPE_REQUEST_TIMEOUT", 9, cast=int)
 
@@ -220,10 +212,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("BASKET_API_KEY", "fake_basket_api_key")
 
     @property
-    def AWS_REGION(self):
-        return self("AWS_REGION", "us-west-2")
-
-    @property
     def SUPPORTED_COUNTRIES(self):
         return self("SUPPORTED_COUNTRIES", "US, CA").split(",")
 
@@ -250,14 +238,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     @property
     def SPANNER_INSTANCE(self):
         return self("SPANNER_INSTANCE", "dev")
-
-    @property
-    def AWS_ACCESS_KEY_ID(self):
-        return self("AWS_ACCESS_KEY_ID", "fake_aws_access_key_id")
-
-    @property
-    def AWS_SECRET_ACCESS_KEY(self):
-        return self("AWS_SECRET_ACCESS_KEY", "fake_aws_secret_access_key")
 
     @property
     def HUB_API_KEY(self):

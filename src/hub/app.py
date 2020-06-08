@@ -95,24 +95,19 @@ if is_docker():  # pragma: no cover
 def create_app(config=None) -> Any:
     stripe.timeout = CFG.STRIPE_REQUEST_TIMEOUT
     logger.info("creating flask app", config=config)
-    region = "localhost"
-    host = f"http://dynamodb:{CFG.DYNALITE_PORT}" if is_docker() else CFG.DYNALITE_URL
     stripe.api_key = CFG.STRIPE_API_KEY
     logger.debug("aws", aws=CFG.AWS_EXECUTION_ENV)
-    if CFG.AWS_EXECUTION_ENV:
-        region = "us-west-2"
-        host = None
     options = dict(swagger_ui=CFG.SWAGGER_UI)
 
     app = connexion.FlaskApp(__name__, specification_dir=".", options=options)
     app.add_api("swagger.yaml", pass_context_arg_name="request", strict_validation=True)
 
+    # TODO
     app.app.hub_table = HubEvent(table_name=CFG.EVENT_TABLE, region=region, host=host)
     app.app.subhub_deleted_users = SubHubDeletedAccount(
         table_name=CFG.DELETED_USER_TABLE, region=region, host=host
     )
 
-    # Setup error handlers
     @app.app.errorhandler(SubHubError)
     def display_subhub_errors(e: SubHubError):
         client.captureException()
@@ -121,16 +116,6 @@ def create_app(config=None) -> Any:
         response = jsonify(e.to_dict())
         response.status_code = e.status_code
         return response
-
-    if not app.app.hub_table.model.exists():
-        app.app.hub_table.model.create_table(
-            read_capacity_units=1, write_capacity_units=1, wait=True
-        )
-
-    if not app.app.subhub_deleted_users.model.exists():
-        app.app.subhub_deleted_users.model.create_table(
-            read_capacity_units=1, write_capacity_units=1, wait=True
-        )
 
     for error in (
         stripe.error.APIConnectionError,
