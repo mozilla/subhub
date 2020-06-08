@@ -212,17 +212,6 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
         return self("LOCAL_HUB_FLASK_PORT", 5001, cast=int)
 
     @property
-    def DYNALITE_URL(self):
-        """
-        dynalite url
-        """
-        return self("DYNALITE_URL", "http://127.0.0.1:8000")
-
-    @property
-    def DYNALITE_PORT(self):
-        return self("DYNALITE_PORT", 8000, cast=int)
-
-    @property
     def SALESFORCE_BASKET_URI(self):
         return self("SALESFORCE_BASKET_URI", "http://www.example.com?api-key=")
 
@@ -253,6 +242,14 @@ class AutoConfigPlus(AutoConfig):  # pylint: disable=too-many-public-methods
     @property
     def SUPPORT_API_KEY(self):
         return self("SUPPORT_API_KEY", "fake_support_api_key")
+
+    @property
+    def SPANNER_DATABASE(self):
+        return self("SPANNER_DATABASE", "dev")
+
+    @property
+    def SPANNER_INSTANCE(self):
+        return self("SPANNER_INSTANCE", "dev")
 
     @property
     def AWS_ACCESS_KEY_ID(self):

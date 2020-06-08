@@ -1,306 +1,84 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
+import datetime
 from typing import Optional, Any, List, Dict
-from pynamodb.attributes import UnicodeAttribute, ListAttribute
-from pynamodb.connection import Connection
-from pynamodb.indexes import GlobalSecondaryIndex, AllProjection
-from pynamodb.models import Model, DoesNotExist
-from pynamodb.exceptions import PutError, DeleteError, GetError
-
 from shared.log import get_logger
+from google.cloud import spanner
+from shared.cfg import CFG
 
 logger = get_logger()
 
+class Database:
+    """
+    This file assumes the schema:
 
-# This exists purely for type-checking, the actual model is dynamically
-# created in DbAccount
-class SubHubAccountModel(Model):
+    CREATE TABLE DeletedUser (
+     user_id STRING(MAX) NOT NULL,
+     cust_id STRING(MAX),
+     origin_system STRING(MAX),
+     customer_status STRING(MAX),
+     subscription_info STRING(MAX),
+     deleted_at TIMESTAMP NOT NULL,
+    ) PRIMARY KEY (CustomerNumber);
 
-    user_id = UnicodeAttribute(hash_key=True)
-    cust_id = UnicodeAttribute(null=True)
-    origin_system = UnicodeAttribute()
-    customer_status = UnicodeAttribute()
+    CREATE TABLE Event (
+     event_id STRING(MAX) NOT NULL,
+     sent_system STRING(MAX),
+     event_at TIMESTAMP NOT NULL,
+    ) PRIMARY KEY (event_id);
+    """
+    def __init__(self):
+        spanner_client = spanner.Client()
+        instance = spanner_client.instance(CFG.SPANNER_INSTANCE)
+        self.database = instance.database(CFG.SPANNER_DATABASE)
 
+    def insert_event(self, transaction, event_id, sent_system):
+        transaction.update(
+            table='Event',
+            columns=('event_id', 'sent_system', 'event_at'),
+            values=[
+                (event_id, sent_system, datetime.datetime.utcnow()),
+            ])
 
-def _create_account_model(table_name_, region_, host_) -> Any:
-    class SubHubAccountModel(Model):
-        class Meta:
-            table_name = table_name_
-            region = region_
-            if host_:
-                host = host_
+    def update_event(self, transaction, event_id, sent_system):
+        transaction.insert(
+            table='Event',
+            columns=('event_id', 'sent_system', 'event_at'),
+            values=[
+                (event_id, sent_system, datetime.datetime.utcnow()),
+            ])
 
-        user_id = UnicodeAttribute(hash_key=True)
-        cust_id = UnicodeAttribute(null=True)
-        origin_system = UnicodeAttribute()
-        customer_status = UnicodeAttribute()
+    def insert_deleted_user(self, transaction, user_id, cust_id, origin_system, customer_status, subscription_info, deleted_at):
+        transaction.insert(
+            table='Event',
+            columns=('user_id', 'cust_id', 'origin_system', 'customer_status', 'subscription_info', 'deleted_at'),
+            values=[
+                (user_id, cust_id,  origin_system, customer_status, subscription_info, datetime.datetime.utcnow()),
+            ])
 
-    return SubHubAccountModel
+    def update_deleted_user(self, transaction, user_id, cust_id, origin_system, customer_status, subscription_info, deleted_at):
+        transaction.update(
+            table='Event',
+            columns=('user_id', 'cust_id', 'origin_system', 'customer_status', 'subscription_info', 'deleted_at'),
+            values=[
+                (user_id, cust_id,  origin_system, customer_status, subscription_info, datetime.datetime.utcnow()),
+            ])
 
+    def get_deleted_user(self, transaction, user_id, customer_id):
+        return transaction.execute_sql(
+            """SELECT user_id, cust_id, origin_system, customer_status, subscription_info, deleted_at From DeletedUser
+               WHERE user_id={user_id} AND cust_id={cust_id}""".format(
+                user_id=user_id, cust_id=customer_id))
 
-class SubHubAccount:
-    def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        self.model = _create_account_model(table_name, region, host)
+    def get_deleted_user_by(self, transaction, customer_id):
+        return transaction.execute_sql(
+            """SELECT user_id, cust_id, origin_system, customer_status, subscription_info, deleted_at From DeletedUser
+               WHERE cust_id={cust_id}""".format(
+                cust_id=customer_id))
 
-    def new_user(
-        self, uid: str, origin_system: str, cust_id: Optional[str] = None
-    ) -> SubHubAccountModel:
-        return self.model(
-            user_id=uid,
-            cust_id=cust_id,
-            origin_system=origin_system,
-            customer_status="active",
-        )
-
-    def get_user(self, uid: str) -> Optional[SubHubAccountModel]:
-        try:
-            subscription_user: SubHubAccountModel = self.model.get(
-                uid, consistent_read=True
-            )
-            logger.debug("get user", subscription_user=subscription_user)
-            return subscription_user
-        except GetError as e:
-            logger.error("get error, unable to reach database", uid=uid)
-            raise e
-        except DoesNotExist:
-            logger.debug("get user does not exist", uid=uid)
-            return None
-
-    @staticmethod
-    def save_user(user: SubHubAccountModel) -> bool:
-        try:
-            user.save()
-            logger.info("user saved", user=user)
-            return True
-        except PutError:
-            logger.error("save user", user=user)
-            return False
-
-    def append_custid(self, uid: str, cust_id: str) -> bool:
-        try:
-            update_user = self.model.get(uid, consistent_read=True)
-            update_user.cust_id = cust_id
-            update_user.save()
-            return True
-        except DoesNotExist:
-            logger.error("append custid", uid=uid, cust_id=cust_id)
-            return False
-
-    def remove_from_db(self, uid: str) -> bool:
-        try:
-            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
-            conn.delete_item(
-                self.model.Meta.table_name, hash_key=uid, range_key=None
-            )  # Note that range key is optional
-            return True
-        except DeleteError as e:
-            logger.error("failed to remove user from db", uid=uid)
-            return False
-
-    def mark_deleted(self, uid: str) -> bool:
-        try:
-            delete_user = self.model.get(uid, consistent_read=True)
-            delete_user.customer_status = "deleted"
-            delete_user.save()
-            return True
-        except DoesNotExist:
-            logger.error("mark deleted", uid=uid, error_message="user does not exist")
-            return False
-
-
-def _create_hub_model(table_name_, region_, host_) -> Any:
-    class HubEventModel(Model):
-        class Meta:
-            table_name = table_name_
-            region = region_
-            if host_:
-                host = host_
-
-        event_id = UnicodeAttribute(hash_key=True)
-        sent_system = ListAttribute()  # type: ignore
-
-    return HubEventModel
-
-
-class HubEventModel(Model):
-    event_id = UnicodeAttribute(hash_key=True)
-    sent_system: Any = ListAttribute(default=list)
-
-
-class HubEvent:
-    def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        self.model = _create_hub_model(table_name, region, host)
-
-    def new_event(self, event_id: str, sent_system: list) -> HubEventModel:
-        return self.model(event_id=event_id, sent_system=[sent_system])
-
-    def get_event(self, event_id: str) -> Optional[HubEventModel]:
-        try:
-            hub_event = self.model.get(event_id, consistent_read=True)
-            return hub_event
-        except DoesNotExist:
-            logger.debug("get event", event_id=event_id)
-            return None
-
-    @staticmethod
-    def save_event(hub_event: HubEventModel) -> bool:
-        try:
-            hub_event.save()
-            return True
-        except PutError:
-            logger.error("save event", hub_event=hub_event)
-            return False
-
-    def append_event(self, event_id: str, sent_system: str) -> bool:
-        try:
-            update_event = self.model.get(event_id, consistent_read=True)
-            if not sent_system in update_event.sent_system:
-                update_event.sent_system.append(sent_system)
-                update_event.save()
-                return True
-            return False
-        except DoesNotExist:
-            logger.error("append event", event_id=event_id, sent_system=sent_system)
-            return False
-
-    def remove_from_db(self, uid: str) -> bool:
-        try:
-            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
-            conn.delete_item(
-                self.model.Meta.table_name, hash_key=uid, range_key=None
-            )  # Note that range key is optional
-            return True
-        except DeleteError:
-            logger.error("failed to remove event from db", uid=uid)
-            return False
-
-
-# This exists purely for type-checking, the actual model is dynamically
-# created in DbAccount
-class SubHubDeletedAccountModel(Model):
-    user_id = UnicodeAttribute(hash_key=True)
-    cust_id = UnicodeAttribute(range_key=True)
-    origin_system = UnicodeAttribute()
-    customer_status = UnicodeAttribute()
-    subscription_info = ListAttribute()  # type: ignore
-
-
-def _create_deleted_account_model(table_name_, region_, host_) -> Any:
-    class CustomerIndex(GlobalSecondaryIndex):
-        class Meta:
-            index_name = "cust-index"
-            read_capacity_units = 1
-            write_capacity_units = 1
-            projection = AllProjection()
-
-        cust_id = UnicodeAttribute(hash_key=True)
-
-    class SubHubDeletedAccountModel(Model):
-        class Meta:
-            table_name = table_name_
-            region = region_
-            if host_:
-                host = host_
-
-        user_id = UnicodeAttribute(hash_key=True)
-        cust_id = UnicodeAttribute(range_key=True)
-        origin_system = UnicodeAttribute()
-        customer_status = UnicodeAttribute()
-        subscription_info = ListAttribute(default=list)  # type: ignore
-        cust_index = CustomerIndex()
-
-    return SubHubDeletedAccountModel
-
-
-class SubHubDeletedAccount:
-    def __init__(self, table_name: str, region: str, host: Optional[str] = None):
-        self.model = _create_deleted_account_model(table_name, region, host)
-
-    def new_user(
-        self,
-        uid: str,
-        origin_system: str,
-        subscription_info: Optional[List[Dict[str, Any]]],
-        cust_id: Optional[str] = None,
-    ) -> SubHubDeletedAccountModel:
-        return self.model(
-            user_id=uid,
-            cust_id=cust_id,
-            subscription_info=subscription_info,
-            origin_system=origin_system,
-            customer_status="deleted",
-        )
-
-    def get_user(self, uid: str, cust_id: str) -> Optional[SubHubDeletedAccountModel]:
-        try:
-            logger.info("deleted users get user", uid=uid, cust_id=cust_id)
-            subscription_user: Optional[Any] = self.model.get(
-                uid, cust_id, consistent_read=True
-            )
-            logger.info("deleted users sub user", subscription_user=subscription_user)
-            return subscription_user
-        except DoesNotExist:
-            logger.error("get user", uid=uid)
-            return None
-
-    def find_by_cust(self, customer_id: str) -> Optional[SubHubDeletedAccountModel]:
-        for item in self.model.cust_index.query(customer_id):
-            return item
-        return None
-
-    @staticmethod
-    def save_user(user: SubHubDeletedAccountModel) -> bool:
-        try:
-            user.save()
-            return True
-        except PutError:
-            logger.error("save user", user=user)
-            return False
-
-    def append_custid(self, uid: str, cust_id: str) -> bool:
-        try:
-            update_user = self.model.get(uid, consistent_read=True)
-            update_user.cust_id = cust_id
-            update_user.save()
-            return True
-        except DoesNotExist:
-            logger.error("append custid", uid=uid, cust_id=cust_id)
-            return False
-
-    def update_subscriptions(
-        self, uid: str, cust_id: str, subscriptions: List[Dict[str, Any]]
-    ) -> List[Dict[str, Any]]:
-        logger.info("update subscriptions", uid=uid, subscriptions=subscriptions)
-        try:
-            updated_user = self.model.get(uid, cust_id, consistent_read=True)
-            for sub in subscriptions:
-                if sub not in updated_user.subscription_info:
-                    updated_user.subscription_info.append(sub)
-            updated_user.save()
-            return updated_user.subscription_info
-        except DoesNotExist as e:
-            logger.error("update subscriptions", uid=uid, error=e)
-            raise e
-
-    def remove_from_db(self, uid: str) -> bool:
-        try:
-            conn = Connection(host=self.model.Meta.host, region=self.model.Meta.region)
-            conn.delete_item(
-                self.model.Meta.table_name, hash_key=uid, range_key=None
-            )  # Note that range key is optional
-            return True
-        except DeleteError:
-            logger.error("failed to remove deleted user from db", uid=uid)
-            return False
-
-    def mark_deleted(self, uid: str) -> bool:
-        try:
-            delete_user = self.model.get(uid, consistent_read=True)
-            delete_user.customer_status = "deleted"
-            delete_user.save()
-            return True
-        except DoesNotExist:
-            logger.error("mark deleted", uid=uid)
-            return False
+    def get_event(self, transaction, event_id):
+        return transaction.execute_sql(
+            """SELECT sent_system, event_at From DeletedUser
+               WHERE event_id={event_id}""".format(
+                event_id=event_id))

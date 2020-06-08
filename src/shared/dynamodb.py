@@ -12,10 +12,10 @@ import string
 import random
 import json
 
+from deprecated import deprecated
 from shared.log import get_logger
 
 logger = get_logger()
-
 
 def random_label(length: int) -> str:
     letters = string.ascii_lowercase
@@ -46,6 +46,7 @@ def pull_image(image):
         raise Exception("Could not pull {}: {}".format(image, pull_result["error"]))
 
 
+@deprecated(reason="Migrated to Google Cloud Spanner")
 @pytest.yield_fixture(scope="module", autouse=True)
 def dynamodb():
     pull_image(IMAGE)
