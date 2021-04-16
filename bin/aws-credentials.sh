@@ -4,8 +4,6 @@
 # Reference AWS Environment Variables
 #   https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-env-vars.html
 
-echo $AWS_ACCESS_KEY_ID | base64
-
 mkdir -p ~/.aws
 
 cat > ~/.aws/credentials << EOL
